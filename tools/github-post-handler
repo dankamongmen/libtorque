@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# CGI handler for GitHub commit notifications ("Post-Receive URLs"), as
+# configured in the administration section. The data comes in as a POSTed
+# JSON document; the following data comes from a hook test:
+
+# payload=%7b%22before%22%3a%22%22%2c%22repository%22%3a%7b%22description%22%3a%22A%20threaded%2c%20continuations-based%20I%2fO%20event%20library%20for%20manycore%20NUMA%20machines%22%2c%22watchers%22%3a4%2c%22fork%22%3afalse%2c%22private%22%3afalse%2c%22forks%22%3a0%2c%22homepage%22%3a%22http%3a%2f%2fdank.qemfd.net%2fdankwiki%2findex.php%2fLibtorque%22%2c%22open_issues%22%3a0%2c%22owner%22%3a%7b%22email%22%3a%22dank%40qemfd.net%22%2c%22name%22%3a%22dankamongmen%22%7d%2c%22url%22%3a%22http%3a%2f%2fgithub.com%2fdankamongmen%2flibtorque%22%2c%22name%22%3a%22libtorque%22%7d%2c%22after%22%3a%22dcd6f699deb0a320d71754fe1a015a1d7722951c%22%2c%22ref%22%3a%22refs%2fheads%2fmaster%22%2c%22commits%22%3a%5b%5d%7d
+
+# Note the absence of a trailing newline.
+
+set -e || exit 1
+set -o nounset
+set -o pipefail
+
+BUILDHOME="/usr/local/hephaestus"
+
+JSONARCHIVE="$BUILDHOME/posted.json"
+
+# want to authenticate, check syntax, etc first! how?
+cat >> "$JSONARCHIVE"
