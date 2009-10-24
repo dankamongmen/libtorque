@@ -1,13 +1,17 @@
 libtorque -- A multithreaded event-handling library for UNIX
- by Nick Black <dank@qemfd.net>
+Copyright © 2009 Nick Black <dank@qemfd.net>
 ============================================================
 
 I. Resources
 
- Git - git://github.com/dankamongmen/libtorque.git
- Wiki - http://dank.qemfd.net/dankwiki/index.php/Libtorque
- GitHub project page - http://github.com/dankamongmen/libtorque
- Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
+Git - git://github.com/dankamongmen/libtorque.git
+Wiki - http://dank.qemfd.net/dankwiki/index.php/Libtorque
+GitHub project page - http://github.com/dankamongmen/libtorque
+Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
 
- The original proposal for libtorque is available at:
-  http://dank.qemfd.net/tabpower/cse6230proposal.pdf
+The original proposal for libtorque is available at:
+ http://dank.qemfd.net/tabpower/cse6230proposal.pdf
+
+libtorque is licensed under version 3 of the GNU Lesser General Public License:
+ http://www.gnu.org/licenses/lgpl.html
+A copy can be found in the toplevel file LICENSE.
