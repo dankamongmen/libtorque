@@ -48,7 +48,7 @@ TAGS:=.tags
 
 all: $(TAGS) test
 
-test:
+test: $(TAGS)
 
 $(TAGS): $(MAKEFILE_LIST)
 	@[ -d $(@D) ] || mkdir -p $(@D)
