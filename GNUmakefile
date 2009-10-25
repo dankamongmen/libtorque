@@ -50,9 +50,11 @@ endif
 # System-specific variables closed to external specification
 ifeq ($(UNAME),Linux)
 READLINK:=readlink -f
+DFLAGS:=-D_FILE_OFFSET_BITS=64
 else
 ifeq ($(UNAME),FreeBSD)
 READLINK:=realpath
+DFLAGS:=-D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 endif
 endif
 
@@ -83,16 +85,41 @@ TORQUEOBJ:=$(addprefix $(OBJOUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUELIB).$(MAJORVER))
 
-# Compilation flags
+# Main compilation flags. Define with += to inherit from system-specific flags.
 IFLAGS:=-I$(SRCDIR)
 MFLAGS:=-march=$(MARCH)
 ifdef MTUNE
 MFLAGS+=-mtune=$(MTUNE)
 endif
-CFLAGS:=-std=gnu99 $(IFLAGS) $(MFLAGS)
-LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
-	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc
+WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
+        -Wstrict-prototypes -Wmissing-declarations -Wnested-externs \
+        -Wsign-compare -Wpointer-arith -Wbad-function-cast -Wcast-qual \
+        -Wdeclaration-after-statement -Wfloat-equal -Wpacked -Winvalid-pch \
+        -Wdisabled-optimization -Wcast-align -Wformat -Wformat-security \
+        -Wold-style-definition -Woverlength-strings -Wwrite-strings -Wpadded \
+	-Wstrict-aliasing=2 -Wconversion
+# We get the following from -O (taken from gcc 4.3 docs)
+# -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop -fdelayed-branch -fdse \
+# -fguess-branch-probability -fif-conversion2 -fif-conversion \
+# -finline-small-functions -fipa-pure-const -fipa-reference -fmerge-constants \
+# -fsplit-wide-types -ftree-ccp -ftree-ch -ftree-copyrename -ftree-dce \
+# -ftree-dominator-opts -ftree-dse -ftree-fre -ftree-sra -ftree-ter \
+# -funit-at-a-time, "and -fomit-frame-pointer on machines where it doesn't
+# interfere with debugging."
+# We add the following with -O2 (taken from gcc 4.3 docs)
+# -fthread-jumps -falign-functions  -falign-jumps -falign-loops -falign-labels \
+# -fcaller-saves -fcrossjumping -fcse-follow-jumps  -fcse-skip-blocks \
+# -fdelete-null-pointer-checks -fexpensive-optimizations -fgcse -fgcse-lm \
+# -foptimize-sibling-calls -fpeephole2 -fregmove -freorder-blocks \
+# -freorder-functions -frerun-cse-after-loop -fsched-interblock -fsched-spec \
+# -fschedule-insns -fschedule-insns2 -fstrict-aliasing -fstrict-overflow \
+# -ftree-pre -ftree-vrp
+OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option
 DEBUGFLAGS:=-rdynamic -g
+CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
+LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
+	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc \
+	-lpthread
 TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS)
 
