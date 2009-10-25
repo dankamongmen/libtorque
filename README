@@ -51,7 +51,7 @@ Bind libpthread references to libthr via the following /etc/libmap.conf:
 
 If using a 32-bit version of the library on a 64-bit system, place these same
 lines in /etc/libmap32.conf. The mapping may be restricted to libtorque if
-necessary (the authors recommend general use of the libthr implementation).
+necessary (this author recommends general use of the libthr implementation).
 
 By default, libtorque is built optimizing for the buildhost's µ-architecture
 and ISA, using gcc 4.3's "native" option to -march and -mtune. If you don't

@@ -64,6 +64,7 @@ TORQUE:=torque
 # paths against overlong total path names.
 OBJOUT:=.out
 SRCDIR:=src
+TOOLDIR:=tool
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
 
 # Anything that all source->object translations ought dep on. We currently
@@ -76,6 +77,7 @@ LIBOUT:=$(OBJOUT)/lib
 TORQUESO:=lib$(TORQUE).so.$(MAJORVER)
 TORQUEREAL:=$(TORQUESO).$(MINORVER).$(RELEASEVER)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
+PKGCONFIG:=$(TOOLDIR)/lib$(TORQUE).pc
 
 # We don't want to have to list all our source files, so discover them based on
 # the per-language directory specifications above.
@@ -165,12 +167,15 @@ clean:
 
 install: test unsafe-install
 
-unsafe-install: $(LIBS)
+unsafe-install: $(LIBS) $(PKGCONFIG)
 	@mkdir -p $(PREFIX)/lib
 	@$(INSTALL) $(realpath $(LIBS)) $(PREFIX)/lib
+	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
+		$(INSTALL) $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
 	@echo "Running ldconfig..." && ldconfig
 
 deinstall:
+	@rm -fv $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
 	@rm -rfv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
 	@rm -rfv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS)))
 	@echo "Running ldconfig..." && ldconfig
