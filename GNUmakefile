@@ -34,10 +34,10 @@ endif
 
 # System-specific, specification-optional variables.
 ifeq ($(UNAME),Linux)
-CC?=gcc-4.4
+CC?=$(shell which gcc-4.4 2> /dev/null || echo gcc)
 else
 ifeq ($(UNAME),FreeBSD)
-CC?=gcc44
+CC?=$(shell which gcc44 2> /dev/null || echo gcc)
 endif
 endif
 #
