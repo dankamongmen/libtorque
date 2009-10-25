@@ -8,7 +8,6 @@
 MAJORVER:=0
 MINORVER:=0
 RELEASEVER:=1
-TORQUEVER:=$(MAJORVER).$(MINORVER).$(RELEASEVER)
 
 # Don't run shell commands unnecessarily. Cache commonly-used results here.
 UNAME:=$(shell uname)
@@ -73,10 +72,10 @@ TAGS:=.tags
 GLOBOBJDEPS:=$(TAGS) $(CINC)
 
 # Simple compositions from here on out
-TORQUELIB:=lib$(TORQUE).so
-TORQUESO:=$(TORQUELIB).$(TORQUEVER)
-TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 LIBOUT:=$(OBJOUT)/lib
+TORQUESO:=lib$(TORQUE).so.$(MAJORVER)
+TORQUEREAL:=$(TORQUESO).$(MINORVER).$(RELEASEVER)
+TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 
 # We don't want to have to list all our source files, so discover them based on
 # the per-language directory specifications above.
@@ -85,8 +84,8 @@ CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OBJOUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
-LIBS:=$(addprefix $(LIBOUT)/,$(TORQUELIB).$(MAJORVER))
-REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUESO))
+LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESO))
+REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
 # Main compilation flags. Define with += to inherit from system-specific flags.
 IFLAGS:=-I$(SRCDIR)
@@ -124,7 +123,7 @@ LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc \
 	-lpthread
 TORQUECFLAGS:=$(CFLAGS) -shared
-TORQUELFLAGS:=$(LFLAGS)
+TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESO)
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
@@ -132,11 +131,11 @@ all: test
 
 test: $(LIBS)
 
-$(LIBOUT)/$(TORQUELIB).$(MAJORVER): $(LIBOUT)/$(TORQUESO)
+$(LIBOUT)/$(TORQUESO): $(LIBOUT)/$(TORQUEREAL)
 	@mkdir -p $(@D)
-	ln -fsn $(basename $<) $@
+	ln -fsn $(notdir $<) $@
 
-$(LIBOUT)/$(TORQUESO): $(TORQUEOBJ)
+$(LIBOUT)/$(TORQUEREAL): $(TORQUEOBJ)
 	@mkdir -p $(@D)
 	$(CC) $(TORQUECFLAGS) -o $@ $^ $(TORQUELFLAGS)
 
@@ -166,10 +165,12 @@ clean:
 
 install: test unsafe-install
 
-unsafe-install:
+unsafe-install: $(LIBS)
 	@mkdir -p $(PREFIX)/lib
-	@$(INSTALL) -m 0644 $(LIBS) $(REALSOS) $(PREFIX)/lib
+	@$(INSTALL) $(realpath $(LIBS)) $(PREFIX)/lib
+	@echo "Running ldconfig..." && ldconfig
 
 deinstall:
-	@rm -rfv $(PREFIX)/lib/$(basename $(LIBS))
-	@rm -rfv $(PREFIX)/lib/$(basename $(REALSOS))
+	@rm -rfv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
+	@rm -rfv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS)))
+	@echo "Running ldconfig..." && ldconfig
