@@ -45,14 +45,20 @@ On FreeBSD, only the libthr threading implementation is explicitly supported or
 recommended. If rebuilding world, ensure NO_LIBTHR is not active in make.conf.
 Bind libpthread references to libthr via the following /etc/libmap.conf:
 
-	# See libmap.conf(5)
-
 	libpthread.so.2         libthr.so.2
 	libpthread.so           libthr.so
 
 If using a 32-bit version of the library on a 64-bit system, place these same
 lines in /etc/libmap32.conf. The mapping may be restricted to libtorque if
 necessary (the authors recommend general use of the libthr implementation).
+
+By default, libtorque is built optimizing for the buildhost's µ-architecture
+and ISA, using gcc 4.3's "native" option to -march and -mtune. If you don't
+have gcc 4.3 or greater, you'll need to define appropriate march and mtune
+values for your system (see gcc's "Submodel Options" info page). Libraries
+intended to be run on arbitrary x86 hardware must be built with MARCH 
+explicitly defined as "generic", and MTUNE unset. The resulting libraries will
+be wretchedly suboptimal on the vast majority of x86 processors.
 
 From the toplevel, invoke GNU make. On Linux, 'make' is almost always GNU make.
 On FreeBSD, the devel/gmake Port supplies GNU make as 'gmake'. This will build
