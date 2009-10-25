@@ -42,9 +42,9 @@ Bind libpthread references to libthr via the following /etc/libmap.conf:
 	libpthread.so.2         libthr.so.2
 	libpthread.so           libthr.so
 
-If building a 32-bit version of the library, place these same lines in
-/etc/libmap32.conf. The mapping may be restricted to libtorque if necessary
-(the authors recommend general use of the libthr implementation).
+If using a 32-bit version of the library on a 64-bit system, place these same
+lines in /etc/libmap32.conf. The mapping may be restricted to libtorque if
+necessary (the authors recommend general use of the libthr implementation).
 
 From the toplevel, invoke GNU make. On Linux, 'make' is almost always GNU make.
 On FreeBSD, the devel/gmake Port supplies GNU make as 'gmake'. This will build
