@@ -28,9 +28,23 @@ A copy can be found in the toplevel file LICENSE.
 libtorque does not employ the GNU autoconf tools, but is reliant upon GNU Make
 and the GNU Compiler Collection. gcc is tracked quite closely, and only recent
 versions might be supported at any time; 4.3 is the minimum gcc version
-explicitly supported or recommended. On Linux, the GNU C Library is required,
-using the NPTL threading implementation. On FreeBSD, only the libthr threading
-implementation is explicitly supported or recommended.
+explicitly supported or recommended.
+
+On Linux, the GNU C Library is required, using the NPTL threading
+implementation.
+
+On FreeBSD, only the libthr threading implementation is explicitly supported or
+recommended. If rebuilding world, ensure NO_LIBTHR is not active in make.conf.
+Bind libpthread references to libthr via the following /etc/libmap.conf:
+
+	# See libmap.conf(5)
+
+	libpthread.so.2         libthr.so.2
+	libpthread.so           libthr.so
+
+If building a 32-bit version of the library, place these same lines in
+/etc/libmap32.conf. The mapping may be restricted to libtorque if necessary
+(the authors recommend general use of the libthr implementation).
 
 From the toplevel, invoke GNU make. On Linux, 'make' is almost always GNU make.
 On FreeBSD, the devel/gmake Port supplies GNU make as 'gmake'. This will build
