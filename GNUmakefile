@@ -1,3 +1,15 @@
+.DELETE_ON_ERROR:
+.PHONY: all test clean install unsafe-install deinstall
+.DEFAULT: all
+
+# Shared object versioning. MAJORVER will become 1 upon the first stable
+# release, and at that point changes only when the API changes. The minor
+# and release versions change more arbitrarily. Only MAJORVER is in the soname.
+MAJORVER:=0
+MINORVER:=0
+RELEASEVER:=1
+TORQUEVER:=$(MAJORVER).$(MINORVER).$(RELEASEVER)
+
 # Don't run shell commands unnecessarily. Cache commonly-used results here.
 UNAME:=$(shell uname)
 
@@ -35,6 +47,15 @@ endif
 
 # Unilateral definitions, shielded from the environment (save as components).
 
+# System-specific variables closed to external specification
+ifeq ($(UNAME),Linux)
+READLINK:=readlink -f
+else
+ifeq ($(UNAME),FreeBSD)
+READLINK:=realpath
+endif
+endif
+
 # Codenames are factored out, to accommodate changing them later.
 TORQUE:=torque
 
@@ -43,11 +64,6 @@ TORQUE:=torque
 OBJOUT:=.out
 SRCDIR:=src
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
-IFLAGS:=-I$(SRCDIR)
-CFLAGS:=-std=gnu99 $(IFLAGS) $(MFLAGS)
-LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
-	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc
-DEBUGFLAGS:=-rdynamic -g
 
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
@@ -55,22 +71,30 @@ GLOBOBJDEPS:=$(TAGS) $(CINC)
 
 # Simple compositions from here on out
 TORQUELIB:=lib$(TORQUE).so
-TORQUECFLAGS:=$(CFLAGS) -shared
-TORQUELFLAGS:=$(LFLAGS)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
+LIBOUT:=$(OBJOUT)/lib
 
+# We don't want to have to list all our source files, so discover them based on
+# the per-language directory specifications above.
 CSRC:=$(shell find $(CSRCDIRS) -type f -name \*.c -print)
 CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OBJOUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
-LIBS:=$(addprefix $(OBJOUT)/,$(TORQUELIB))
+LIBS:=$(addprefix $(LIBOUT)/,$(TORQUELIB).$(MAJORVER))
 
-.DELETE_ON_ERROR:
-
-.PHONY: all test clean install unsafe-install deinstall
-
-.DEFAULT: all
+# Compilation flags
+IFLAGS:=-I$(SRCDIR)
+MFLAGS:=-march=$(MARCH)
+ifdef MTUNE
+MFLAGS+=-mtune=$(MTUNE)
+endif
+CFLAGS:=-std=gnu99 $(IFLAGS) $(MFLAGS)
+LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
+	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc
+DEBUGFLAGS:=-rdynamic -g
+TORQUECFLAGS:=$(CFLAGS) -shared
+TORQUELFLAGS:=$(LFLAGS)
 
 TAGS:=.tags
 
@@ -80,7 +104,11 @@ all: test
 
 test: $(LIBS) $(TAGS)
 
-$(OBJOUT)/$(TORQUELIB): $(TORQUEOBJ)
+$(LIBOUT)/$(TORQUELIB).$(MAJORVER): $(LIBOUT)/$(TORQUELIB).$(TORQUEVER)
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	ln -fsn $(shell $(READLINK) $<) $@
+
+$(LIBOUT)/$(TORQUELIB).$(TORQUEVER): $(TORQUEOBJ)
 	@[ -d $(@D) ] || mkdir -p $(@D)
 	$(CC) $(TORQUECFLAGS) -o $@ $^ $(TORQUELFLAGS)
 
