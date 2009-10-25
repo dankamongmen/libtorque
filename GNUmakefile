@@ -8,6 +8,9 @@ UNAME:=$(shell uname)
 # specified. Provide the defaults here. Document these in the README.
 PREFIX?=/usr/local
 
+# Some systems don't install exuberant-ctags as 'ctags'. Some people use etags.
+TAGBIN?=$(shell which exctags 2> /dev/null || echo ctags)
+
 # We compile for the host µ-architecture/ISA, providing the "native" option to
 # gcc's -march and -mtune. If you don't have gcc 4.3 or greater, you'll need to
 # define appropriate march and mtune values for your system (see gcc's
@@ -30,17 +33,29 @@ endif
 # USER SPECIFICATION AREA ENDS
 ######################################################################
 
+# Unilateral definitions, shielded from the environment (save as components).
+# Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
+# paths against overlong total path names.
+OBJOUT:=.out
+
 .DELETE_ON_ERROR:
 
 .PHONY: all test clean install unsafe-install deinstall
 
 .DEFAULT: all
 
-all: test
+TAGS:=.tags
+
+all: $(TAGS) test
 
 test:
 
+$(TAGS): $(MAKEFILE_LIST)
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	$(TAGBIN) -f $@ $^
+
 clean:
+	rm -rf $(OBJOUT) $(TAGS)
 
 install: test unsafe-install
 
