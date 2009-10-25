@@ -37,6 +37,19 @@ endif
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
 # paths against overlong total path names.
 OBJOUT:=.out
+CFLAGS:=-std=gnu99 $(MFLAGS)
+LFLAGS:=--default-symver --enable-new-dtags -Wl,-z,noexecstack,--as-needed \
+	-Wl,-z,combreloc,--fatal-warnings,--warn-shared-textrel,--warn-common
+
+# Deliverable names are factored out, to accommodate changing them later.
+TORQUE:=torque
+
+# Simple compositions from here on out
+TORQUELIB:=lib$(TORQUE).so
+TORQUECFLAGS:=$(CFLAGS)
+TORQUELFLAGS:=$(LFLAGS)
+
+LIBS:=$(addprefix $(OBJOUT)/,$(TORQUELIB))
 
 .DELETE_ON_ERROR:
 
@@ -46,9 +59,15 @@ OBJOUT:=.out
 
 TAGS:=.tags
 
-all: $(TAGS) test
+# In addition to the binaries and unit tests, 'all' builds documentation,
+# packaging, graphs, and all that kind of crap.
+all: test
 
-test: $(TAGS)
+test: $(LIBS) $(TAGS)
+
+$(OBJOUT)/$(TORQUELIB): $(TORQUEOBJS)
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	$(CC) $(TORQUECFLAGS) -o $@ $(TORQUEOBJS) $(TORQUELFLAGS)
 
 $(TAGS): $(MAKEFILE_LIST)
 	@[ -d $(@D) ] || mkdir -p $(@D)
