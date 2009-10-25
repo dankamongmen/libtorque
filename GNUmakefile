@@ -34,28 +34,36 @@ endif
 ######################################################################
 
 # Unilateral definitions, shielded from the environment (save as components).
+
+# Codenames are factored out, to accommodate changing them later.
+TORQUE:=torque
+
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
 # paths against overlong total path names.
 OBJOUT:=.out
-CFLAGS:=-std=gnu99 $(MFLAGS)
+SRCDIR:=src
+CSRCDIRS:=$(wildcard $(SRCDIR)/*)
+IFLAGS:=-I$(SRCDIR)
+CFLAGS:=-std=gnu99 $(IFLAGS) $(MFLAGS)
 LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc
 DEBUGFLAGS:=-rdynamic -g
 
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
-GLOBOBJDEPS:=$(TAGS)
-
-# Deliverable names are factored out, to accommodate changing them later.
-TORQUE:=torque
+GLOBOBJDEPS:=$(TAGS) $(CINC)
 
 # Simple compositions from here on out
 TORQUELIB:=lib$(TORQUE).so
 TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS)
+TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 
-# FIXME SRC?
-# FIXME TORQUEOBJS?
+CSRC:=$(shell find $(CSRCDIRS) -type f -name \*.c -print)
+CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
+TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
+TORQUEOBJ:=$(addprefix $(OBJOUT)/,$(TORQUESRC:%.c=%.o))
+SRC:=$(CSRC)
 LIBS:=$(addprefix $(OBJOUT)/,$(TORQUELIB))
 
 .DELETE_ON_ERROR:
@@ -72,22 +80,21 @@ all: test
 
 test: $(LIBS) $(TAGS)
 
-$(OBJOUT)/$(TORQUELIB): $(TORQUEOBJS)
+$(OBJOUT)/$(TORQUELIB): $(TORQUEOBJ)
 	@[ -d $(@D) ] || mkdir -p $(@D)
-	$(CC) $(TORQUECFLAGS) -o $@ $(TORQUEOBJS) $(TORQUELFLAGS)
+	$(CC) $(TORQUECFLAGS) -o $@ $^ $(TORQUELFLAGS)
 
 $(OBJOUT)/%.o: %.c $(GLOBOBJDEPS)
-$(OBJOUT)/%.o: %.c $(INC)
 	@[ -d $(@D) ] || mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Assemble only, sometimes useful for close-in optimization
-$(OBJOUT)/%.s: %.c $(INC)
+$(OBJOUT)/%.s: %.c $(GLOBOBJDEPS)
 	@[ -d $(@D) ] || mkdir -p $(@D)
 	$(CC) $(CFLAGS) -S $< -o $@
 
 # Preprocess only, sometimes useful for debugging
-$(OBJOUT)/%.i: %.c $(INC)
+$(OBJOUT)/%.i: %.c $(GLOBOBJDEPS)
 	@[ -d $(@D) ] || mkdir -p $(@D)
 	$(CC) $(CFLAGS) -E $< -o $@
 
