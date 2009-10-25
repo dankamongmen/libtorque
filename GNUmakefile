@@ -38,7 +38,7 @@ endif
 # paths against overlong total path names.
 OBJOUT:=.out
 CFLAGS:=-std=gnu99 $(MFLAGS)
-LFLAGS:=-Wl,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
+LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc
 DEBUGFLAGS:=-rdynamic -g
 
