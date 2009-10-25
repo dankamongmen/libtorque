@@ -77,6 +77,19 @@ $(OBJOUT)/$(TORQUELIB): $(TORQUEOBJS)
 	$(CC) $(TORQUECFLAGS) -o $@ $(TORQUEOBJS) $(TORQUELFLAGS)
 
 $(OBJOUT)/%.o: %.c $(GLOBOBJDEPS)
+$(OBJOUT)/%.o: %.c $(INC)
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Assemble only, sometimes useful for close-in optimization
+$(OBJOUT)/%.s: %.c $(INC)
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	$(CC) $(CFLAGS) -S $< -o $@
+
+# Preprocess only, sometimes useful for debugging
+$(OBJOUT)/%.i: %.c $(INC)
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	$(CC) $(CFLAGS) -E $< -o $@
 
 # Having TAGS dep on the involved makefiles -- and including TAGS in
 # GLOBOBJDEPS -- means that a makefile change forces global rebuilding, which
