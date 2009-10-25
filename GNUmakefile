@@ -38,17 +38,24 @@ endif
 # paths against overlong total path names.
 OBJOUT:=.out
 CFLAGS:=-std=gnu99 $(MFLAGS)
-LFLAGS:=--default-symver --enable-new-dtags -Wl,-z,noexecstack,--as-needed \
-	-Wl,-z,combreloc,--fatal-warnings,--warn-shared-textrel,--warn-common
+LFLAGS:=-Wl,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
+	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc
+DEBUGFLAGS:=-rdynamic -g
+
+# Anything that all source->object translations ought dep on. We currently
+# include all header files in this list; it'd be nice to refine that FIXME.
+GLOBOBJDEPS:=$(TAGS)
 
 # Deliverable names are factored out, to accommodate changing them later.
 TORQUE:=torque
 
 # Simple compositions from here on out
 TORQUELIB:=lib$(TORQUE).so
-TORQUECFLAGS:=$(CFLAGS)
+TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS)
 
+# FIXME SRC?
+# FIXME TORQUEOBJS?
 LIBS:=$(addprefix $(OBJOUT)/,$(TORQUELIB))
 
 .DELETE_ON_ERROR:
@@ -69,7 +76,12 @@ $(OBJOUT)/$(TORQUELIB): $(TORQUEOBJS)
 	@[ -d $(@D) ] || mkdir -p $(@D)
 	$(CC) $(TORQUECFLAGS) -o $@ $(TORQUEOBJS) $(TORQUELFLAGS)
 
-$(TAGS): $(MAKEFILE_LIST)
+$(OBJOUT)/%.o: %.c $(GLOBOBJDEPS)
+
+# Having TAGS dep on the involved makefiles -- and including TAGS in
+# GLOBOBJDEPS -- means that a makefile change forces global rebuilding, which
+# seems a desirable goal anyway.
+$(TAGS): $(SRC) $(MAKEFILE_LIST)
 	@[ -d $(@D) ] || mkdir -p $(@D)
 	$(TAGBIN) -f $@ $^
 
