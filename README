@@ -1,13 +1,18 @@
-libtorque -- A multithreaded event-handling library for UNIX
+============================================
+libtorque, a multithreaded I/O event library
 Copyright © 2009 Nick Black <dank@qemfd.net>
-============================================================
+Render this document with fixed-width fonts.
+============================================
 
-I. Resources
+----------------------------------------------------------------libtorque-----
+-=+ I. Resources +=-
+----------------------------------------------------------------libtorque-----
 
-Git - git://github.com/dankamongmen/libtorque.git
 Wiki - http://dank.qemfd.net/dankwiki/index.php/Libtorque
 GitHub project page - http://github.com/dankamongmen/libtorque
 Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
+
+Download libtorque via 'git clone git://github.com/dankamongmen/libtorque.git'.
 
 The original proposal for libtorque is available at:
  http://dank.qemfd.net/tabpower/cse6230proposal.pdf
@@ -15,3 +20,34 @@ The original proposal for libtorque is available at:
 libtorque is licensed under version 3 of the GNU Lesser General Public License:
  http://www.gnu.org/licenses/lgpl.html
 A copy can be found in the toplevel file LICENSE.
+
+----------------------------------------------------------------libtorque-----
+-=+ II. Building libtorque +=-
+----------------------------------------------------------------libtorque-----
+
+libtorque does not employ the GNU autoconf tools, but is reliant upon GNU Make
+and the GNU Compiler Collection. gcc is tracked quite closely, and only recent
+versions might be supported at any time; 4.3 is the minimum gcc version
+explicitly supported or recommended. On Linux, the GNU C Library is required,
+using the NPTL threading implementation. On FreeBSD, only the libthr threading
+implementation is explicitly supported or recommended.
+
+From the toplevel, invoke GNU make. On Linux, 'make' is almost always GNU make.
+On FreeBSD, the devel/gmake Port supplies GNU make as 'gmake'. This will build
+the libtorque library, and run the supplied unit tests. Unit test failures are
+promoted to full build failures. The install target can then be run to install
+the library.
+
+Note: The 'install' target depends on unit testing targets, and thus will not
+install a known-unsafe library. This might be undesirable when hacking on the
+library, and testing with another application. The 'unsafe-install' target is
+provided to facilitate such operation. Its use is not typically recommended.
+
+The 'deinstall' target will remove the files installed by that version of
+libtorque (it cannot remove files installed only by previous versions). Since
+libtorque does not install any active configuration files, use of 'deinstall'
+is thus recommended prior to updating and rebuilding libtorque. Non-existence
+of files is not considered an error by the 'deinstall' target.
+
+libtorque can be brought up to date via 'git pull'. The 'clean' target should
+never be necessary to run, save when hacking on the build process itself.
