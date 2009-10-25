@@ -49,14 +49,14 @@ endif
 
 # System-specific variables closed to external specification
 ifeq ($(UNAME),Linux)
-READLINK:=readlink -f
 DFLAGS:=-D_FILE_OFFSET_BITS=64
 else
 ifeq ($(UNAME),FreeBSD)
-READLINK:=realpath
 DFLAGS:=-D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 endif
 endif
+
+INSTALL:=install -v
 
 # Codenames are factored out, to accommodate changing them later.
 TORQUE:=torque
@@ -69,10 +69,12 @@ CSRCDIRS:=$(wildcard $(SRCDIR)/*)
 
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
+TAGS:=.tags
 GLOBOBJDEPS:=$(TAGS) $(CINC)
 
 # Simple compositions from here on out
 TORQUELIB:=lib$(TORQUE).so
+TORQUESO:=$(TORQUELIB).$(TORQUEVER)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 LIBOUT:=$(OBJOUT)/lib
 
@@ -84,6 +86,7 @@ TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OBJOUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUELIB).$(MAJORVER))
+REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUESO))
 
 # Main compilation flags. Define with += to inherit from system-specific flags.
 IFLAGS:=-I$(SRCDIR)
@@ -123,48 +126,50 @@ LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS)
 
-TAGS:=.tags
-
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
 all: test
 
-test: $(LIBS) $(TAGS)
+test: $(LIBS)
 
-$(LIBOUT)/$(TORQUELIB).$(MAJORVER): $(LIBOUT)/$(TORQUELIB).$(TORQUEVER)
-	@[ -d $(@D) ] || mkdir -p $(@D)
-	ln -fsn $(shell $(READLINK) $<) $@
+$(LIBOUT)/$(TORQUELIB).$(MAJORVER): $(LIBOUT)/$(TORQUESO)
+	@mkdir -p $(@D)
+	ln -fsn $(basename $<) $@
 
-$(LIBOUT)/$(TORQUELIB).$(TORQUEVER): $(TORQUEOBJ)
-	@[ -d $(@D) ] || mkdir -p $(@D)
+$(LIBOUT)/$(TORQUESO): $(TORQUEOBJ)
+	@mkdir -p $(@D)
 	$(CC) $(TORQUECFLAGS) -o $@ $^ $(TORQUELFLAGS)
 
 $(OBJOUT)/%.o: %.c $(GLOBOBJDEPS)
-	@[ -d $(@D) ] || mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Assemble only, sometimes useful for close-in optimization
 $(OBJOUT)/%.s: %.c $(GLOBOBJDEPS)
-	@[ -d $(@D) ] || mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -S $< -o $@
 
 # Preprocess only, sometimes useful for debugging
 $(OBJOUT)/%.i: %.c $(GLOBOBJDEPS)
-	@[ -d $(@D) ] || mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -E $< -o $@
 
 # Having TAGS dep on the involved makefiles -- and including TAGS in
 # GLOBOBJDEPS -- means that a makefile change forces global rebuilding, which
 # seems a desirable goal anyway.
 $(TAGS): $(SRC) $(MAKEFILE_LIST)
-	@[ -d $(@D) ] || mkdir -p $(@D)
+	@mkdir -p $(@D)
 	$(TAGBIN) -f $@ $^
 
 clean:
-	rm -rf $(OBJOUT) $(TAGS)
+	@rm -rfv $(OBJOUT) $(TAGS)
 
 install: test unsafe-install
 
 unsafe-install:
+	@mkdir -p $(PREFIX)/lib
+	@$(INSTALL) -m 0644 $(LIBS) $(REALSOS) $(PREFIX)/lib
 
 deinstall:
+	@rm -rfv $(PREFIX)/lib/$(basename $(LIBS))
+	@rm -rfv $(PREFIX)/lib/$(basename $(REALSOS))
