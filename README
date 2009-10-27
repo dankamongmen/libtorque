@@ -25,8 +25,8 @@ Download libtorque via 'git clone git://github.com/dankamongmen/libtorque.git'.
 The original proposal for libtorque is available at:
  http://dank.qemfd.net/tabpower/cse6230proposal.pdf
 
-libtorque is licensed under version 3 of the GNU Lesser General Public License:
- http://www.gnu.org/licenses/lgpl.html
+libtorque is licensed under version 2 of the Apache License:
+ http://www.apache.org/licenses/LICENSE-2.0.html
 A copy can be found in the toplevel file LICENSE.
 
 ----------------------------------------------------------------libtorque-----
