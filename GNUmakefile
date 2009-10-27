@@ -141,7 +141,7 @@ ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 # packaging, graphs, and all that kind of crap.
 all: test
 
-test: $(LIBS) $(BINS)
+test: $(BINS) $(LIBS)
 	@echo -n "Testing $(ARCHDETECT): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $(BINOUT)/$(ARCHDETECT)
 
@@ -189,7 +189,7 @@ install: test unsafe-install
 
 unsafe-install: $(LIBS) $(PKGCONFIG)
 	@mkdir -p $(PREFIX)/lib
-	@$(INSTALL) $(realpath $(LIBS)) $(PREFIX)/lib
+	@$(INSTALL) $(realpath $(REALSOS)) $(PREFIX)/lib
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
 		$(INSTALL) $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
 	@echo "Running ldconfig..." && ldconfig
