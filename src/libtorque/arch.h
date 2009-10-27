@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));
+
 int detect_architecture(void);
 
 #ifdef __cplusplus
