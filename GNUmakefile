@@ -118,7 +118,8 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # -freorder-functions -frerun-cse-after-loop -fsched-interblock -fsched-spec \
 # -fschedule-insns -fschedule-insns2 -fstrict-aliasing -fstrict-overflow \
 # -ftree-pre -ftree-vrp
-OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option
+OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
+	-fvisibility=hidden
 DEBUGFLAGS:=-rdynamic -g
 CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \

@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-int libtorque_init(void);
+int libtorque_init(void) __attribute__ ((visibility("default")));
 
 #ifdef __cplusplus
 }
