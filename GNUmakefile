@@ -59,13 +59,16 @@ INSTALL:=install -v
 
 # Codenames are factored out, to accommodate changing them later.
 TORQUE:=torque
+ARCHDETECT:=archdetect
 
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
 # paths against overlong total path names.
 OBJOUT:=.out
 SRCDIR:=src
-TOOLDIR:=tool
+TOOLDIR:=tools
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
+TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
+ARCHDETECTDIRS:=$(SRCDIR)/$(ARCHDETECT)
 
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
@@ -74,9 +77,10 @@ GLOBOBJDEPS:=$(TAGS) $(CINC)
 
 # Simple compositions from here on out
 LIBOUT:=$(OBJOUT)/lib
-TORQUESO:=lib$(TORQUE).so.$(MAJORVER)
-TORQUEREAL:=$(TORQUESO).$(MINORVER).$(RELEASEVER)
-TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
+BINOUT:=$(OBJOUT)/bin
+TORQUESOL:=lib$(TORQUE).so
+TORQUESOR:=$(TORQUESOL).$(MAJORVER)
+TORQUEREAL:=$(TORQUESOR).$(MINORVER).$(RELEASEVER)
 PKGCONFIG:=$(TOOLDIR)/lib$(TORQUE).pc
 
 # We don't want to have to list all our source files, so discover them based on
@@ -85,8 +89,11 @@ CSRC:=$(shell find $(CSRCDIRS) -type f -name \*.c -print)
 CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OBJOUT)/,$(TORQUESRC:%.c=%.o))
+ARCHDETECTSRC:=$(foreach dir, $(ARCHDETECTDIRS), $(filter $(dir)/%, $(CSRC)))
+ARCHDETECTOBJ:=$(addprefix $(OBJOUT)/,$(ARCHDETECTSRC:%.c=%.o))
 SRC:=$(CSRC)
-LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESO))
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
+LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
 # Main compilation flags. Define with += to inherit from system-specific flags.
@@ -126,21 +133,33 @@ LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc \
 	-lpthread
 TORQUECFLAGS:=$(CFLAGS) -shared
-TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESO)
+TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR)
+ARCHDETECTCFLAGS:=$(CFLAGS)
+ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
 all: test
 
-test: $(LIBS)
+test: $(LIBS) $(BINS)
+	@echo -n "Testing $(ARCHDETECT): "
+	env LD_LIBRARY_PATH=$(LIBOUT) $(BINOUT)/$(ARCHDETECT)
 
-$(LIBOUT)/$(TORQUESO): $(LIBOUT)/$(TORQUEREAL)
+$(LIBOUT)/$(TORQUESOL): $(LIBOUT)/$(TORQUEREAL)
+	@mkdir -p $(@D)
+	ln -fsn $(notdir $<) $@
+
+$(LIBOUT)/$(TORQUESOR): $(LIBOUT)/$(TORQUEREAL)
 	@mkdir -p $(@D)
 	ln -fsn $(notdir $<) $@
 
 $(LIBOUT)/$(TORQUEREAL): $(TORQUEOBJ)
 	@mkdir -p $(@D)
 	$(CC) $(TORQUECFLAGS) -o $@ $^ $(TORQUELFLAGS)
+
+$(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
+	@mkdir -p $(@D)
+	$(CC) $(ARCHDETECTCFLAGS) -o $@ $(ARCHDETECTOBJ) $(ARCHDETECTLFLAGS)
 
 $(OBJOUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
