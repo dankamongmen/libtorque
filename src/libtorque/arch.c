@@ -20,6 +20,8 @@ static libtorque_cputype *cpudescs;
 //  - ls /dev/cpu/[0-9]* | wc -l (linux only, with cpuid driver)
 //  - mptable (freebsd only, with SMP option)
 //  - hw.ncpu, kern.smp.cpus sysctls (freebsd)
+//  - cpuset_size() (libcpuset, linux)
+//  - cpuset_getid(CPU_LEVEL_ROOT,CPU_WHICH_CPUSET) (freebsd)
 
 static int
 detect_cputypes(unsigned *cputc,libtorque_cputype **types){
