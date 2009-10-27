@@ -5,6 +5,22 @@
 static unsigned cpu_typecount;
 static libtorque_cputype *cpudescs;
 
+// Detecting the number of processing units available doesn't rely on
+// architecture (though we could, perhaps, check that for inconsistencies);
+// what's important is what the configured operating system is providing us.
+// We detect only those processing units we can *use*.
+//
+// Methods to do so include:
+//  - sysconf(_SC_NPROCESSORS_ONLN) (GNU extension: get_nprocs_conf())
+//  - sysconf(_SC_NPROCESSORS_CONF) (GNU extension: get_nprocs())
+//  - dmidecode --type 4 (Processor)
+//  - grep ^processor /proc/cpuinfo (linux only)
+//  - ls /sys/devices/system/cpu/cpu? | wc -l (linux only)
+//  - ls /dev/cpuctl* | wc -l (freebsd only, with cpuctl device)
+//  - ls /dev/cpu/[0-9]* | wc -l (linux only, with cpuid driver)
+//  - mptable (freebsd only, with SMP option)
+//  - hw.ncpu, kern.smp.cpus sysctls (freebsd)
+
 static int
 detect_cputypes(unsigned *cputc,libtorque_cputype **types){
 	// FIXME we'll want to support heterogenous setups sooner rather than
