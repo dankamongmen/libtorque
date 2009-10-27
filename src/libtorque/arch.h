@@ -10,11 +10,12 @@ typedef struct libtorque_hwcache {
 } libtorque_hwcache;
 
 typedef struct libtorque_cputype {
-	libtorque_hwcache *caches;
-	unsigned cachelevels,elements;
+	libtorque_hwcache *cachedescs;
+	unsigned caches,elements;
 } libtorque_cputype;
 
 unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));
+
 const libtorque_cputype *libtorque_cpu_getdesc(unsigned)
 	__attribute__ ((visibility("default")));
 

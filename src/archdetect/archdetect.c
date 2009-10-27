@@ -4,6 +4,17 @@
 #include <libtorque/libtorque.h>
 
 static int
+detail_processing_unit(const libtorque_cputype *pudesc){
+	if(pudesc->elements <= 0){
+		fprintf(stderr,"Error: element count of 0\n");
+		return -1;
+	}
+	printf("\t\tCount: %u\n",pudesc->elements);
+	printf("\t\tCaches: %u\n",pudesc->caches);
+	return 0;
+}
+
+static int
 detail_processing_units(unsigned cpu_typecount){
 	unsigned n;
 
@@ -15,6 +26,9 @@ detail_processing_units(unsigned cpu_typecount){
 			return EXIT_FAILURE;
 		}
 		printf("\tProcessing unit type %u:\n",n + 1);
+		if(detail_processing_unit(pudesc)){
+			return -1;
+		}
 	}
 	return 0;
 }
