@@ -22,6 +22,13 @@ static libtorque_cputype *cpudescs;
 //  - hw.ncpu, kern.smp.cpus sysctls (freebsd)
 //  - cpuset_size() (libcpuset, linux)
 //  - cpuset_getid(CPU_LEVEL_ROOT,CPU_WHICH_CPUSET) (freebsd)
+// Methods to discover processor and cache details include:
+//  - running CPUID (must be run on each processor, x86 only)
+//  - querying cpuid(4) devices (linux only, must be root, x86 only)
+//  - CPUCTL ioctl(2)s (freebsd only, with cpuctl device, x86 only)
+//  - /proc/cpuinfo (linux only)
+//  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
+// LibNUMA looks like the only real candidate for NUMA discovery (linux only)
 
 static int
 detect_cputypes(unsigned *cputc,libtorque_cputype **types){
