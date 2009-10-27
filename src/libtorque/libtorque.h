@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+int libtorque_init(void);
+
 #ifdef __cplusplus
 }
 #endif

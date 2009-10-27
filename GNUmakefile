@@ -91,7 +91,7 @@ REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
 # Main compilation flags. Define with += to inherit from system-specific flags.
 IFLAGS:=-I$(SRCDIR)
-MFLAGS:=-march=$(MARCH)
+MFLAGS:=-fpic -march=$(MARCH)
 ifdef MTUNE
 MFLAGS+=-mtune=$(MTUNE)
 endif
