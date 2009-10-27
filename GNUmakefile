@@ -139,8 +139,8 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # These require -pthread:
 # -ftree-parallelize-loops
 OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
-	-fvisibility=hidden -fipa-pta -fipa-cp -ftree-loop-linear \
-	-ftree-loop-im -ftree-loop-ivcanon
+	-fvisibility=hidden -fipa-cp -ftree-loop-linear -ftree-loop-im \
+	-ftree-loop-ivcanon
 DEBUGFLAGS:=-rdynamic -g
 CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
