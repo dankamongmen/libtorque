@@ -115,9 +115,10 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # -fguess-branch-probability -fif-conversion2 -fif-conversion \
 # -finline-small-functions -fipa-pure-const -fipa-reference -fmerge-constants \
 # -fsplit-wide-types -ftree-ccp -ftree-ch -ftree-copyrename -ftree-dce \
-# -ftree-dominator-opts -ftree-dse -ftree-fre -ftree-sra -ftree-ter \
+# -ftree-dominator-opts -ftree-dse -ftree-fre -ftree-sra -ftree-ter -ftree-sink \
 # -funit-at-a-time, "and -fomit-frame-pointer on machines where it doesn't
 # interfere with debugging."
+
 # We add the following with -O2 (taken from gcc 4.3 docs)
 # -fthread-jumps -falign-functions  -falign-jumps -falign-loops -falign-labels \
 # -fcaller-saves -fcrossjumping -fcse-follow-jumps  -fcse-skip-blocks \
@@ -125,9 +126,21 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # -foptimize-sibling-calls -fpeephole2 -fregmove -freorder-blocks \
 # -freorder-functions -frerun-cse-after-loop -fsched-interblock -fsched-spec \
 # -fschedule-insns -fschedule-insns2 -fstrict-aliasing -fstrict-overflow \
-# -ftree-pre -ftree-vrp
+# -ftree-pre -ftree-store-ccp -ftree-vrp
+
+# -O3 gets the following:
+# -finline-functions -funswitch-loops -fpredictive-commoning -ftree-vectorize \
+# -fgcse-after-reload
+
+# The following aren't bound to any -O level:
+# -fipa-pta -fipa-cp -ftree-loop-linear -ftree-loop-im -ftree-loop-ivcanon
+# The following also require profiling info:
+# -fipa-matrix-reorg
+# These require -pthread:
+# -ftree-parallelize-loops
 OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
-	-fvisibility=hidden
+	-fvisibility=hidden -fipa-pta -fipa-cp -ftree-loop-linear \
+	-ftree-loop-im -ftree-loop-ivcanon
 DEBUGFLAGS:=-rdynamic -g
 CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
