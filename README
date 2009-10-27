@@ -89,3 +89,48 @@ of files is not considered an error by the 'deinstall' target.
 libtorque can be brought up to date via 'git pull'. The 'clean' target ought
 never be necessary to run, save when hacking on the build process itself (or
 changing build parameters, as noted above).
+
+----------------------------------------------------------------libtorque-----
+-=+ III. Design Issues +=-
+----------------------------------------------------------------libtorque-----
+
+- Execution unit detection, differentiation, and effective use. This might
+  have to deal with symmetric multiprocessing, one or many multicore packages,
+  simultaneous multithreading (ie HyperThreading), heterogenous cores, limited
+  cpusets, and processors which are removed from or added to the workset at
+  runtime. Power management capabilities, functional units, memory and I/O
+  paths and interconnection properties all play roles in data placement and
+  event scheduling. Instruction set details ought not matter so much.
+
+  libtorque will initially operate as the sole user of any processing units it
+  is allocated; consideration of other processes, if it exists, is incidental.
+  Later, this might change. We might support prioritizing within a cpuset, so
+  that for instance two libtorque programs can share the entirety of a cpuset,
+  but stomp on each other minimally. It would of course generally be best to
+  combine these various components into a single libtorque program.
+
+- Memory detection, differentiation and effective use. This might have to deal
+  with unified vs split caches, n-way associativities, line sizes, total store
+  sizes, page sizes and types, prefetching, eviction policies, DMA into DRAM
+  or even cache SRAM, multiprocessor coherence and sharing, inclusive and
+  exclusive levels, bank count, and TLB sizes. It is unexpected that libtorque
+  will take into consideration memory pipelining, writethrough vs writeback,
+  memory bandwidth, or absolute latency.
+
+  libtorque will, for instance, want to generally schedule two functionally
+  pipelined gyres on a shared die, whereas functionally parallel codes might be
+  usually scheduled irrespective of die-sharing. Stacks can freely alias one
+  another across exclusive, independent caches, but ought not relative to a
+  shared cache. Meanwhile, multiple states scheduled on a given thread ought
+  not be aliasing. These issues combine in complex, interesting ways as the
+  eventspace becomes irregular, and states must be moved among processors (for
+  instance, select a processor serving no aliasing states if one's available).
+
+- Not only event-handling, but also event receipt must be scheduled. Any given
+  set of threads can invoke event discovery, on shared or distinct sets of
+  events, where shared events could employ shared or distinct kernel-side event
+  sets. Multiple listeners on an event means more flexibility, but also more
+  communication and wasted work; it is likely better to move the event.
+  If no more than one thread can wait for an event, and either one-shot
+  handling or edge-triggering is used, a majority of locking and possible
+  contention can be excised from the core.
