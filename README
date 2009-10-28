@@ -22,7 +22,7 @@ libtorque is licensed under version 2 of the Apache License:
 A copy can be found in the toplevel file LICENSE.
 
 ----------------------------------------------------------------libtorque-----
--=+ II. Building libtorque +=-
+-=+ II. Minimum requirements +=-
 ----------------------------------------------------------------libtorque-----
 
 libtorque does not employ the GNU autoconf tools, but is reliant upon GNU Make
@@ -30,17 +30,8 @@ and the GNU Compiler Collection. gcc is tracked quite closely, and only recent
 versions might be supported at any time; 4.3 is the minimum gcc version
 explicitly supported or recommended.
 
-Environment variables can affect the build by overriding defaults, including:
-
- PREFIX (Installation prefix. Default: /usr/local)
- CC (C compiler executable. Default: gcc-4.4 (Linux), gcc44 (FreeBSD))
- TAGBIN (Source tag generator. Default: exctags if on path, otherwise ctags)
-
-Changing these environment variables ought be followed by the 'clean' target;
-this is one of the very few times the 'clean' target must be used.
-
 On Linux, the GNU C Library is required, using the NPTL threading
-implementation.
+implementation. The minimum Linux kernel version supported is 2.6.32.
 
 On FreeBSD, only the libthr threading implementation is explicitly supported or
 recommended. If rebuilding world, ensure NO_LIBTHR is not active in make.conf.
@@ -52,6 +43,23 @@ Bind libpthread references to libthr via the following /etc/libmap.conf:
 If using a 32-bit version of the library on a 64-bit system, place these same
 lines in /etc/libmap32.conf. The mapping may be restricted to libtorque if
 necessary (this author recommends general use of the libthr implementation).
+The minimum FreeBSD system version supported is 7.1.
+
+Cpuset support is provided through libcpuset on Linux, and the cpuset kernel
+functionality added in 2.6.15. On FreeBSD, we use the native support of 7.1.
+
+----------------------------------------------------------------libtorque-----
+-=+ III. Building libtorque +=-
+----------------------------------------------------------------libtorque-----
+
+Environment variables can affect the build by overriding defaults, including:
+
+ PREFIX (Installation prefix. Default: /usr/local)
+ CC (C compiler executable. Default: gcc-4.4 (Linux), gcc44 (FreeBSD))
+ TAGBIN (Source tag generator. Default: exctags if on path, otherwise ctags)
+
+Changing these environment variables ought be followed by the 'clean' target;
+this is one of the very few times the 'clean' target must be used.
 
 By default, libtorque is built optimizing for the buildhost's µ-architecture
 and ISA, using gcc 4.3's "native" option to -march and -mtune. If you don't
@@ -83,7 +91,7 @@ never be necessary to run, save when hacking on the build process itself (or
 changing build parameters, as noted above).
 
 ----------------------------------------------------------------libtorque-----
--=+ III. Design Issues +=-
+-=+ IV. Design Issues +=-
 ----------------------------------------------------------------libtorque-----
 
 - Execution unit detection, differentiation, and effective use. This might
