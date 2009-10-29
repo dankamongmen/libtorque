@@ -14,7 +14,7 @@ typedef struct libtorque_cputype {
 	int family,model,stepping,extendedsig;	// x86-specific; union?
 	char *strdescription;
 	libtorque_hwmem *memdescs;
-	unsigned *apicids;
+	unsigned *apicids;			// FIXME not yet filled in
 } libtorque_cputype;
 
 unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));

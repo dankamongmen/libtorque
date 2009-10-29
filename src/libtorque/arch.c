@@ -161,6 +161,10 @@ compare_cpudetails(const libtorque_cputype * restrict a,
 			const libtorque_cputype * restrict b){
 	unsigned n;
 
+	if(a->family != b->family || a->model != b->model ||
+		a->stepping != b->stepping || a->extendedsig != b->extendedsig){
+		return -1;
+	}
 	if(a->memories != b->memories){
 		return -1;
 	}
