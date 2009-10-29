@@ -22,6 +22,12 @@ PREFIX?=/usr/local
 # Some systems don't install exuberant-ctags as 'ctags'. Some people use etags.
 TAGBIN?=$(shell which exctags 2> /dev/null || echo ctags)
 
+# We want GCC 4.3+ if we can find it. Some systems have install it as gcc-v.v,
+# some as gccv.v, some will have a suitably up-to-date default gcc...bleh.
+ifeq "$(origin CC)" "default"
+CC:=$(shell (which gcc-4.4 || which gcc44 || which gcc-4.3 || which gcc43 || echo gcc) 2>/dev/null )
+endif
+
 # We compile for the host µ-architecture/ISA, providing the "native" option to
 # gcc's -march and -mtune. If you don't have gcc 4.3 or greater, you'll need to
 # define appropriate march and mtune values for your system (see gcc's
@@ -30,15 +36,6 @@ TAGBIN?=$(shell which exctags 2> /dev/null || echo ctags)
 MARCH?=native
 ifneq ($(MARCH),generic)
 MTUNE?=native
-endif
-
-# System-specific, specification-optional variables.
-ifeq ($(UNAME),Linux)
-CC?=$(shell which gcc-4.4 2> /dev/null || echo gcc)
-else
-ifeq ($(UNAME),FreeBSD)
-CC?=$(shell which gcc44 2> /dev/null || echo gcc)
-endif
 endif
 #
 # USER SPECIFICATION AREA ENDS
