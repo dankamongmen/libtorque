@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 typedef struct libtorque_hwmem {
-	unsigned totalsize,linesize,associativity;
+	unsigned totalsize,linesize,associativity,sharedways;
 } libtorque_hwmem;
 
 typedef struct libtorque_cputype {

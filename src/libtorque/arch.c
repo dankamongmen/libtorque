@@ -1,17 +1,17 @@
 #include <errno.h>
 #include <limits.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <libtorque/arch.h>
+#include <libtorque/x86cpuid.h>
 
 #if defined(LIBTORQUE_LINUX)
 #include <cpuset.h>
 #include <sched.h>
 #elif defined(LIBTORQUE_FREEBSD)
-#include <sys/param.h>
 #include <sys/cpuset.h>
-typedef cpuset_t cpu_set_t;
+typedef cpusetid cpu_set_t;
 #endif
 
 // We dynamically determine whether or not advanced cpuset support (cgroups and
@@ -71,13 +71,12 @@ detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 #ifdef LIBTORQUE_FREEBSD
 	int cpu,count = 0;
 
-	*cpusets = 0;
-	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,(id_t)-1,
+	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 				sizeof(*mask),mask) < 0){
 		return -1;
 	}
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
-		if(CPU_ISSET(cpu,mask)){
+		if(CPU_ISSET(cpu,*mask)){
 			++count;
 		}
 	}
@@ -85,7 +84,6 @@ detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 #elif defined(LIBTORQUE_LINUX)
 	int csize;
 
-	*cpusets = 0;
 	if((csize = cpuset_size()) < 0){
 		if(errno == ENOSYS || errno == ENODEV){
 			// Cpusets aren't supported, or aren't in use
@@ -135,9 +133,9 @@ detect_cpudetails(int cpuid,libtorque_cputype *details){
 	if(pin_thread(cpuid)){
 		return -1;
 	}
-	// FIXME detect details for pinned processor, and purge this
-	memset(details,0,sizeof(*details));
-	cpuid = 0;
+	if(x86cpuid(details)){
+		return -1;
+	}
 	return 0;
 }
 
@@ -178,6 +176,7 @@ detect_cputypes(unsigned *cputc,libtorque_cputype **types,unsigned *cpusets,
 	int totalpe,z;
 
 	*cputc = 0;
+	*cpusets = 0;
 	*types = NULL;
 	CPU_ZERO(origmask);
 	if((totalpe = detect_cpucount(origmask,cpusets)) <= 0){
@@ -212,10 +211,7 @@ err:
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
 int pin_thread(int cpuid){
-#ifdef LIBTORQUE_LINUX
-	if(use_cpusets){
-		return cpuset_pin(cpuid);
-	}else{
+	if(use_cpusets == 0){
 		cpu_set_t mask;
 
 		CPU_ZERO(&mask);
@@ -225,32 +221,23 @@ int pin_thread(int cpuid){
 		}
 		return 0;
 	}
-#else
-#error "No thread-pinning support on this OS"
-	return -1;
-#endif
+	return cpuset_pin(cpuid);
 }
 
 // Undoes any prior pinning of this thread.
 int unpin_thread(void){
-#ifdef LIBTORQUE_LINUX
-	if(use_cpusets){
-		return cpuset_unpin();
+	if(use_cpusets == 0){
+		if(sched_setaffinity(0,sizeof(orig_cpumask),&orig_cpumask)){
+			return -1;
+		}
+		return 0;
 	}
-	if(sched_setaffinity(0,sizeof(orig_cpumask),&orig_cpumask)){
-		return -1;
-	}
-	return 0;
-#else
-#error "No thread-pinning support on this OS"
-	return -1;
-#endif
+	return cpuset_unpin();
 }
 
 int detect_architecture(void){
 	if(detect_cputypes(&cpu_typecount,&cpudescs,&use_cpusets,&orig_cpumask)){
-		// FIXME unpin?
-		return -1;
+		return -1; // FIXME unpin?
 	}
 	if(unpin_thread()){
 		free_architecture();
@@ -262,9 +249,11 @@ int detect_architecture(void){
 void free_architecture(void){
 	CPU_ZERO(&orig_cpumask);
 	use_cpusets = 0;
+	while(--cpu_typecount){
+		free(cpudescs[cpu_typecount].memdescs);
+	}
 	free(cpudescs);
 	cpudescs = NULL;
-	cpu_typecount = 0;
 }
 
 unsigned libtorque_cpu_typecount(void){
