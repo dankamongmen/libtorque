@@ -304,36 +304,36 @@ id_intel_caches(uint32_t maxlevel,libtorque_cputype *cpu){
 		n = 0;
 		do{
 			enum { NULLCACHE, DATACACHE, CODECACHE, UNIFIEDCACHE } cachet;
+			unsigned lev = (gpregs[0] >> 5) & 0x7; // AX[7..5]
+			libtorque_hwmem mem;
 
 			cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
 			cachet = gpregs[0] & 0x1f; // AX[4..0]
-			if(cachet == DATACACHE || cachet == UNIFIEDCACHE){
-				unsigned lev = (gpregs[0] >> 5) & 0x7; // AX[7..5]
-
-				if(lev > maxdc){
-					maxdc = lev;
-				}
-				if(lev == level){
-					libtorque_hwmem mem;
-
-					if(gotlevel){ // dup d$ descriptors?!
-						return -1;
-					}
-					gotlevel = 1;
-					// Linesize is EBX[11:0] + 1
-					mem.linesize = (gpregs[1] & 0xfff) + 1;
-					// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
-					mem.associativity = (gpregs[0] & 0x200) ? 1 :
-						(((gpregs[1] >> 22) & 0x3ff) + 1);
-					// Partitions = EBX[21:12] + 1, sets = ECX + 1
-					mem.totalsize = mem.associativity *
-						(((gpregs[1] >> 12) & 0x1ff) + 1) *
-						mem.linesize * (gpregs[2] + 1);
-					mem.sharedways = ((gpregs[0] >> 14) & 0xfff) + 1;
-					if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
-						return -1;
-					}
-				}
+			if(cachet != DATACACHE && cachet != UNIFIEDCACHE){
+				continue;
+			}
+			if(lev > maxdc){
+				maxdc = lev;
+			}
+			if(lev != level){
+				continue;
+			}
+			if(gotlevel){ // dup d$ descriptors?!
+				return -1;
+			}
+			gotlevel = 1;
+			// Linesize is EBX[11:0] + 1
+			mem.linesize = (gpregs[1] & 0xfff) + 1;
+			// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
+			mem.associativity = (gpregs[0] & 0x200) ? 1 :
+				(((gpregs[1] >> 22) & 0x3ff) + 1);
+			// Partitions = EBX[21:12] + 1, sets = ECX + 1
+			mem.totalsize = mem.associativity *
+				(((gpregs[1] >> 12) & 0x1ff) + 1) *
+				mem.linesize * (gpregs[2] + 1);
+			mem.sharedways = ((gpregs[0] >> 14) & 0xfff) + 1;
+			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
+				return -1;
 			}
 		}while(gpregs[0]);
 	}while(++level <= maxdc);
@@ -406,6 +406,21 @@ x86_getbrandname(libtorque_cputype *cpudesc){
 	return 0;
 }
 
+static int
+x86_getprocsig(uint32_t maxfunc,libtorque_cputype *cpu){
+	uint32_t gpregs[4];
+
+	if(maxfunc < CPUID_CPU_VERSION){
+		return -1;
+	}
+	cpuid(CPUID_CPU_VERSION,0,gpregs);
+	cpu->stepping = gpregs[0] & 0xf;
+	cpu->model = (gpregs[0] >> 4) & 0xf;
+	cpu->family = (gpregs[0] >> 8) & 0xf;
+	cpu->extendedsig = (gpregs[0] >> 16) & 0xfff;
+	return 0;
+}
+
 // Before this is called, verify that the CPUID instruction is available via
 // receipt of non-zero return from cpuid_available().
 int x86cpuid(libtorque_cputype *cpudesc){
@@ -419,6 +434,9 @@ int x86cpuid(libtorque_cputype *cpudesc){
 	cpudesc->family = cpudesc->stepping = -1;
 	cpudesc->extendedsig = cpudesc->model = -1;
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
+	if(x86_getprocsig(gpregs[0],cpudesc)){
+		return -1;
+	}
 	if(x86_getbrandname(cpudesc)){
 		return -1;
 	}

@@ -22,7 +22,8 @@ detail_processing_unit(const libtorque_cputype *pudesc){
 		fprintf(stderr,"Error: no extended processor signature\n");
 		return -1;
 	}
-	printf("\tExtended signature: %4d\n",pudesc->extendedsig);
+	printf("\tExtended signature: %04d (0x%08x 0x%04x)\n",pudesc->extendedsig,
+			pudesc->extendedsig & 0xff0,pudesc->extendedsig & 0xf);
 	if(pudesc->memories <= 0){
 		fprintf(stderr,"Error: memory count of 0\n");
 		return -1;
