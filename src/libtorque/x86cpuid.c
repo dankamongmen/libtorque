@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -72,38 +73,37 @@ lookup_vender(const uint32_t *vendstr){
 typedef enum {
 	CPUID_MAX_SUPPORT		=       0x00000000,
 	CPUID_CPU_VERSION		=       0x00000001,
-	CPUID_STANDARD_CACHECONF 	=       0x00000002,
-	CPUID_EXTENDED_MAX_SUPPORT      =       0x80000000,
-	CPUID_EXTENDED_CPU_VERSION      =       0x80000001,
-	CPUID_EXTENDED_CPU_NAME1	=       0x80000002,
-	CPUID_EXTENDED_CPU_NAME2	=       0x80000003,
-	CPUID_EXTENDED_CPU_NAME3	=       0x80000004,
-	CPUID_EXTENDED_L1CACHE_TLB      =       0x80000005,
-	CPUID_EXTENDED_L2CACHE	  	=       0x80000006,
+	// these are primarily Intel
+	CPUID_STANDARD_CPUCONF		=       0x00000002, // sundry cpu data
+	CPUID_STANDARD_PSNCONF		=       0x00000003, // processor serial
+	CPUID_STANDARD_CACHECONF	=       0x00000004, // cache config
+	CPUID_STANDARD_MWAIT		=       0x00000005, // MWAIT/MONITOR
+	CPUID_STANDARD_POWERMAN		=       0x00000006, // power management
+	CPUID_STANDARD_DIRECTCACHE	=       0x00000009, // DCA access setup
+	CPUID_STANDARD_PERFMON		=       0x0000000a, // performance ctrs
+	CPUID_STANDARD_TOPOLOGY		=       0x0000000b, // topology config
+	CPUID_STANDARD_XSTATE		=       0x0000000d, // XSAVE/XRSTOR
+	// these are primarily AMD
+	CPUID_EXTENDED_MAX_SUPPORT	=       0x80000000, // max ext. level
+	CPUID_EXTENDED_CPU_VERSION	=       0x80000001, // amd cpu sundries
+	CPUID_EXTENDED_CPU_NAME1	=       0x80000002, // proc name part1
+	CPUID_EXTENDED_CPU_NAME2	=       0x80000003, // proc name part2
+	CPUID_EXTENDED_CPU_NAME3	=       0x80000004, // proc name part3
+	CPUID_EXTENDED_L1CACHE_TLB	=       0x80000005, // l1 cache, tlb0
+	CPUID_EXTENDED_L23CACHE_TLB	=       0x80000006, // l2,3 cache, tlb1
+	CPUID_EXTENDED_ENHANCEDPOWER	=       0x80000006, // epm support
 } cpuid_class;
 
 // Uses all four primary general-purpose 32-bit registers (e[abcd]x), returning
-// these in gpregs[0123]. We must preserve EBX ourselves in when -fPIC is used.
+// these in gpregs[0123]. Secondary parameters are assumed to go in ECX.
 static inline void
-cpuid(cpuid_class level,uint32_t *gpregs){
-#ifdef __x86_64__
+cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 	__asm__ __volatile__(
 		"cpuid\n\t" // serializing instruction
-		: "=a" (gpregs[0]), "=b" (gpregs[1]),
-		  "=c" (gpregs[2]), "=d" (gpregs[3])
-		: "a" (level)
+		: "=&a" (gpregs[0]), "=b" (gpregs[1]),
+		  "=&c" (gpregs[2]), "=d" (gpregs[3])
+		: "0" (level), "2" (subparam)
 	);
-#else
-	__asm__ __volatile__(
-		"pushl %%ebx\n\t"
-		"cpuid\n\t" // serializing instruction
-		"movl %%ebx,%%esi\n\t"
-		"popl %%ebx\n\t"
-		: "=a" (gpregs[0]), "=S" (gpregs[1]),
-		  "=c" (gpregs[2]), "=d" (gpregs[3])
-		: "a" (level)
-	);
-#endif
 }
 
 static const known_x86_vender *
@@ -111,7 +111,7 @@ identify_extended_cpuid(uint32_t *cpuid_max){
 	const known_x86_vender *vender;
 	uint32_t gpregs[4];
 
-	cpuid(CPUID_EXTENDED_MAX_SUPPORT,gpregs);
+	cpuid(CPUID_EXTENDED_MAX_SUPPORT,0,gpregs);
 	if((vender = lookup_vender(gpregs + 1)) == NULL){
 		return NULL;
 	}
@@ -258,7 +258,7 @@ extract_intel_func2(const intel_dc_descriptor *descs,libtorque_hwmem *mem){
 	uint32_t gpregs[4],callreps;
 	int ret;
 
-	cpuid(CPUID_STANDARD_CACHECONF,gpregs);
+	cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
 	if((callreps = gpregs[0] & 0x000000ff) != 1){
 		return -1;
 	}
@@ -266,14 +266,14 @@ extract_intel_func2(const intel_dc_descriptor *descs,libtorque_hwmem *mem){
 		if(--callreps == 0){
 			break;
 		}
-		cpuid(CPUID_STANDARD_CACHECONF,gpregs);
+		cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
 	}
 	return ret;
 }
 
 static int
 id_intel_l1(uint32_t maxlevel,libtorque_hwmem *mem){
-	if(maxlevel < CPUID_STANDARD_CACHECONF){
+	if(maxlevel < CPUID_STANDARD_CPUCONF){
 		return -1;
 	}
 	memset(mem,0,sizeof(*mem));
@@ -288,17 +288,41 @@ id_intel_l1(uint32_t maxlevel,libtorque_hwmem *mem){
 
 static int
 id_intel_l2(uint32_t maxlevel,libtorque_hwmem *mem){
+	uint32_t gpregs[4];
+	unsigned n,gotl2;
+
 	if(maxlevel < CPUID_STANDARD_CACHECONF){
 		return -1;
 	}
-	memset(mem,0,sizeof(*mem));
-	if(extract_intel_func2(intel_dc2_descriptors,mem)){
-		return -1;
-	}
-	if(!mem->linesize || !mem->totalsize || !mem->associativity){
-		return -1;
-	}
-	return 0;
+	gotl2 = 0;
+	n = 0;
+	do{
+		enum { NULLCACHE, DATACACHE, CODECACHE, UNIFIEDCACHE } cachet;
+
+		cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
+		cachet = gpregs[0] & 0x1f; // AX[4..0]
+		if(cachet == DATACACHE || cachet == UNIFIEDCACHE){
+			unsigned lev = (gpregs[0] >> 5) & 0x7; // AX[7..5]
+
+			if(lev == 2){
+				if(gotl2){ // dual L2 data cache descriptors?!
+					break;
+				}
+				gotl2 = 1;
+				printf("level: %u type: %u\n",lev,cachet);
+				printf("[%u] %x %x %x %x\n",n,gpregs[0],gpregs[1],gpregs[2],gpregs[3]);
+				// Linesize is EBX[11:0] + 1
+				mem->linesize = (gpregs[1] & 0xfff) + 1;
+				// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
+				mem->associativity = (gpregs[0] & 0x200) ? 1 :
+					(((gpregs[1] >> 22) & 0x3ff) + 1);
+				printf("ls: %u asoc: %u\n",
+						mem->linesize,mem->associativity);
+				mem->totalsize = 0;
+			}
+		}
+	}while(gpregs[0]);
+	return gotl2 ? 0 : -1;
 }
 
 static int
@@ -313,7 +337,7 @@ id_amd_l1(uint32_t maxlevel __attribute__ ((unused)),libtorque_hwmem *mem){
 		return -1;
 	}
 	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
-	cpuid(CPUID_EXTENDED_L1CACHE_TLB,gpregs);
+	cpuid(CPUID_EXTENDED_L1CACHE_TLB,0,gpregs);
 	mem->linesize = gpregs[2] & 0x000000ff;
 	mem->associativity = 0; // FIXME
 	mem->totalsize = 0; // FIXME
@@ -357,7 +381,7 @@ int x86cpuid(libtorque_cputype *cpudesc){
 	cpudesc->memories = 0;
 	cpudesc->memdescs = NULL;
 	cpudesc->elements = 0;
-	cpuid(CPUID_MAX_SUPPORT,gpregs);
+	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
 	if((vender = lookup_vender(gpregs + 1)) == NULL){
 		return -1;
 	}
@@ -367,6 +391,15 @@ int x86cpuid(libtorque_cputype *cpudesc){
 	mem.sharedways = 1;		// FIXME
 	if((amem = add_hwmem(&cpudesc->memories,&cpudesc->memdescs,&mem)) == NULL){
 		return -1;
+	}
+	if(vender->l2fxn){
+		if(vender->l2fxn(gpregs[0],&mem)){
+			return -1;
+		}
+		mem.sharedways = 1;		// FIXME
+		if((amem = add_hwmem(&cpudesc->memories,&cpudesc->memdescs,&mem)) == NULL){
+			return -1;
+		}
 	}
 	return 0;
 }
