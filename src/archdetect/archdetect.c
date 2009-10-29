@@ -9,8 +9,8 @@ detail_processing_unit(const libtorque_cputype *pudesc){
 		fprintf(stderr,"Error: element count of 0\n");
 		return -1;
 	}
-	printf("\t\tCount: %u\n",pudesc->elements);
-	printf("\t\tCaches: %u\n",pudesc->caches);
+	printf("\tCount: %u\n",pudesc->elements);
+	printf("\tCaches: %u\n",pudesc->caches);
 	return 0;
 }
 
@@ -25,7 +25,7 @@ detail_processing_units(unsigned cpu_typecount){
 			fprintf(stderr,"Couldn't look up CPU type %u\n",n);
 			return EXIT_FAILURE;
 		}
-		printf("\tProcessing unit type %u:\n",n + 1);
+		printf("Processing unit type %u of %u:\n",n + 1,cpu_typecount);
 		if(detail_processing_unit(pudesc)){
 			return -1;
 		}
@@ -44,8 +44,6 @@ int main(void){
 		fprintf(stderr,"Got invalid CPU type count: %u\n",cpu_typecount);
 		return EXIT_FAILURE;
 	}
-	printf("Detected %u processing unit type%s\n",
-			cpu_typecount,cpu_typecount == 1 ? "" : "s");
 	if(detail_processing_units(cpu_typecount)){
 		return EXIT_FAILURE;
 	}
