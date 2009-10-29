@@ -48,6 +48,7 @@ static libtorque_cputype *cpudescs; // dynarray of cpu_typecount elements
 //  - cpuset_size() (libcpuset, linux)
 //  - cpuset -g (freebsd)
 //  - cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET) (freebsd)
+//  - CPUID function 0x0000_000b (x2APIC/Topology Enumeration)
 #ifdef LIBTORQUE_LINUX
 static int
 fallback_detect_cpucount(void){
