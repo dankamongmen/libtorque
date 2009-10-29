@@ -11,7 +11,7 @@ typedef struct libtorque_hwmem {
 
 typedef struct libtorque_cputype {
 	unsigned elements,memories;
-	unsigned family,model,stepping,extendedsig;	// x86-specific; union?
+	int family,model,stepping,extendedsig;	// x86-specific; union?
 	char *strdescription;
 	libtorque_hwmem *memdescs;
 	unsigned *apicids;

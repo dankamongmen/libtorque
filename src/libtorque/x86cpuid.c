@@ -416,8 +416,8 @@ int x86cpuid(libtorque_cputype *cpudesc){
 	cpudesc->memdescs = NULL;
 	cpudesc->elements = 0;
 	cpudesc->apicids = NULL;
-	cpudesc->family = cpudesc->stepping = 0;
-	cpudesc->extendedsig = cpudesc->model = 0;
+	cpudesc->family = cpudesc->stepping = -1;
+	cpudesc->extendedsig = cpudesc->model = -1;
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
 	if(x86_getbrandname(cpudesc)){
 		return -1;

@@ -7,15 +7,26 @@ static int
 detail_processing_unit(const libtorque_cputype *pudesc){
 	unsigned n;
 
-	if(pudesc->memories <= 0){
-		fprintf(stderr,"Error: memory count of 0\n");
-		return -1;
-	}
 	if(pudesc->strdescription == NULL){
 		fprintf(stderr,"Error: no string description\n");
 		return -1;
 	}
 	printf("\tBrand name: %s\n",pudesc->strdescription);
+	if(pudesc->family < 0 || pudesc->model < 0 || pudesc->stepping < 0){
+		fprintf(stderr,"Error: invalid processor signature\n");
+		return -1;
+	}
+	printf("\tFamily: %2d\tModel: %2d\tStepping: %2d\n",
+		pudesc->family,pudesc->model,pudesc->stepping);
+	if(pudesc->extendedsig < 0){
+		fprintf(stderr,"Error: no extended processor signature\n");
+		return -1;
+	}
+	printf("\tExtended signature: %4d\n",pudesc->extendedsig);
+	if(pudesc->memories <= 0){
+		fprintf(stderr,"Error: memory count of 0\n");
+		return -1;
+	}
 	for(n = 0 ; n < pudesc->memories ; ++n){
 		const libtorque_hwmem *mem = pudesc->memdescs + n;
 
