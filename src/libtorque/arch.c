@@ -10,12 +10,18 @@
 #include <sched.h>
 #elif defined(LIBTORQUE_FREEBSD)
 #include <sys/cpuset.h>
+typedef cpusetid cpu_set_t;
 #endif
 
 // We dynamically determine whether or not advanced cpuset support (cgroups and
 // the SGI libcpuset library) is available on Linux (ENOSYS or ENODEV indicate
 // nay) during CPU enumeration, and only use those methods if so.
 static unsigned use_cpusets;
+// This is only filled in if we're using the sched_{get,set}affinity API.
+static cpu_set_t orig_cpumask;
+
+// These are valid and non-zero following a successful call of
+// detect_architecture(), up until a call to free_architecture().
 static unsigned cpu_typecount;
 static libtorque_cputype *cpudescs; // dynarray of cpu_typecount elements
 
@@ -60,17 +66,16 @@ fallback_detect_cpucount(void){
 #endif
 
 static inline int
-detect_cpucount(void){
+detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 #ifdef LIBTORQUE_FREEBSD
 	int cpu,count = 0;
-	cpuset_t mask;
 
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
-				sizeof(mask),&mask) < 0){
+				sizeof(*mask),mask) < 0){
 		return -1;
 	}
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
-		if(CPU_ISSET(cpu,mask)){
+		if(CPU_ISSET(cpu,*mask)){
 			++count;
 		}
 	}
@@ -80,11 +85,9 @@ detect_cpucount(void){
 
 	if((csize = cpuset_size()) < 0){
 		if(errno == ENOSYS || errno == ENODEV){
-			cpu_set_t mask;
-
 			// Cpusets aren't supported, or aren't in use
-			if(sched_getaffinity(0,sizeof(mask),&mask) == 0){
-				int count = CPU_COUNT(&mask);
+			if(sched_getaffinity(0,sizeof(*mask),mask) == 0){
+				int count = CPU_COUNT(mask);
 
 				if(count >= 1){
 					return count;
@@ -95,7 +98,7 @@ detect_cpucount(void){
 		}
 		return -1; // otherwise libcpuset error; die out
 	}
-	use_cpusets = 1;
+	*cpusets = 1;
 	return csize;
 #else
 #error "No CPU detection method defined for this OS"
@@ -164,13 +167,18 @@ match_cputype(unsigned cputc,libtorque_cputype *types,
 	return NULL;
 }
 
+// Might leave the calling thread pinned to a particular processor; restore the
+// CPU mask if necessary after a call.
 static int
-detect_cputypes(unsigned *cputc,libtorque_cputype **types){
+detect_cputypes(unsigned *cputc,libtorque_cputype **types,unsigned *cpusets,
+			cpu_set_t *origmask){
 	int totalpe,z;
 
 	*cputc = 0;
+	*cpusets = 0;
 	*types = NULL;
-	if((totalpe = detect_cpucount()) <= 0){
+	CPU_ZERO(origmask);
+	if((totalpe = detect_cpucount(origmask,cpusets)) <= 0){
 		goto err;
 	}
 	for(z = 0 ; z < totalpe ; ++z){
@@ -189,11 +197,11 @@ detect_cputypes(unsigned *cputc,libtorque_cputype **types){
 			}
 		}
 	}
-	// FIXME at this point, we're running pinned to the last processor on
-	// which we ran detect_cpudetails(). reset our affinity mask!
 	return 0;
 
 err:
+	CPU_ZERO(origmask);
+	*cpusets = 0;
 	free(*types);
 	*types = NULL;
 	*cputc = 0;
@@ -201,33 +209,46 @@ err:
 }
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
-int pin_thread(int cpusetid){
+int pin_thread(int cpuid){
 	if(use_cpusets == 0){
 		cpu_set_t mask;
 
 		CPU_ZERO(&mask);
-		CPU_SET((unsigned)cpusetid,&mask);
+		CPU_SET((unsigned)cpuid,&mask);
 		if(sched_setaffinity(0,sizeof(mask),&mask)){
 			return -1;
 		}
-		return 0; // FIXME verify?
+		return 0;
 	}
-	return cpuset_pin(cpusetid);
+	return cpuset_pin(cpuid);
+}
+
+// Undoes any prior pinning of this thread.
+int unpin_thread(void){
+	if(use_cpusets == 0){
+		if(sched_setaffinity(0,sizeof(orig_cpumask),&orig_cpumask)){
+			return -1;
+		}
+		return 0;
+	}
+	return cpuset_unpin();
 }
 
 int detect_architecture(void){
-	libtorque_cputype *cpud;
-	unsigned cputc;
-
-	if(detect_cputypes(&cputc,&cpud)){
+	if(detect_cputypes(&cpu_typecount,&cpudescs,&use_cpusets,&orig_cpumask)){
+		// FIXME unpin?
 		return -1;
 	}
-	cpu_typecount = cputc;
-	cpudescs = cpud;
+	if(unpin_thread()){
+		free_architecture();
+		return -1;
+	}
 	return 0;
 }
 
 void free_architecture(void){
+	CPU_ZERO(&orig_cpumask);
+	use_cpusets = 0;
 	free(cpudescs);
 	cpudescs = NULL;
 	cpu_typecount = 0;

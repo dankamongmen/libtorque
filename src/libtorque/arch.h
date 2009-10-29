@@ -23,6 +23,7 @@ const libtorque_cputype *libtorque_cpu_getdesc(unsigned)
 int detect_architecture(void);
 void free_architecture(void);
 int pin_thread(int);
+int unpin_thread(void);
 
 #ifdef __cplusplus
 }
