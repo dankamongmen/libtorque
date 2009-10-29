@@ -318,7 +318,10 @@ id_intel_l2(uint32_t maxlevel,libtorque_hwmem *mem){
 					(((gpregs[1] >> 22) & 0x3ff) + 1);
 				printf("ls: %u asoc: %u\n",
 						mem->linesize,mem->associativity);
-				mem->totalsize = 0;
+				// Partitions = EBX[21:12] + 1, sets = ECX + 1
+				mem->totalsize = mem->associativity *
+					(((gpregs[1] >> 12) & 0x1ff) + 1) *
+					mem->linesize * (gpregs[2] + 1);
 			}
 		}
 	}while(gpregs[0]);
