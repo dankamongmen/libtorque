@@ -64,7 +64,11 @@ necessary (this author recommends general use of the libthr implementation).
 On Linux, the libcpuset library (http://oss.sgi.com/projects/cpusets/) is used.
 Version 1.0 has been tested. CONFIG_CGROUPS must be enabled in the kernel; if
 cpusets are properly supported, the file self/cpuset will be present in mounted
-proc filesystems. On FreeBSD, the native code added in 7.1 is used.
+proc filesystems, and a "cpuset" or "cgroups" filesystem will be mounted on
+/dev/cpuset. A root cpuset must have been created (see the Linux kernel's
+Documentation/cpusets.txt and libtorque bug #14:
+http://dank.qemfd.net/bugzilla/show_bug.cgi?id=14)). On FreeBSD, the native
+code added in 7.1 is used.
 
 ----------------------------------------------------------------libtorque-----
 -=+ III. Building libtorque +=-
