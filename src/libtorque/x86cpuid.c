@@ -388,6 +388,35 @@ id_via_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cputype *cpu)
 	return 0;
 }
 
+static int
+x86_getbrandname(libtorque_cputype *cpudesc){
+	char brandname[16 * 3 + 1]; // each _NAMEx function returns E[BCD]X
+	cpuid_class ops[] = { CPUID_EXTENDED_CPU_NAME1,
+				CPUID_EXTENDED_CPU_NAME2,
+				CPUID_EXTENDED_CPU_NAME3 };
+	uint32_t gpregs[4];
+	unsigned z;
+
+	/* FIXME need to check 8000_0000, EXTENDED_MAX
+	if(maxlevel < CPUID_EXTENDED_CPU_NAME3){
+		return -1;
+	}
+	*/
+	for(z = 0 ; z < sizeof(ops) / sizeof(*ops) ; ++z){
+		unsigned y;
+
+		cpuid(ops[z],0,gpregs);
+		for(y = 0 ; y < 4 ; ++y){
+			memcpy(&brandname[z * 16 + y * 4],&gpregs[y],sizeof(*gpregs));
+		}
+	}
+	brandname[z * 16] = '\0';
+	if((cpudesc->strdescription = strdup(brandname)) == NULL){
+		return -1;
+	}
+	return 0;
+}
+
 // Before this is called, verify that the CPUID instruction is available via
 // receipt of non-zero return from cpuid_available().
 int x86cpuid(libtorque_cputype *cpudesc){
@@ -398,6 +427,9 @@ int x86cpuid(libtorque_cputype *cpudesc){
 	cpudesc->memdescs = NULL;
 	cpudesc->elements = 0;
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
+	if(x86_getbrandname(cpudesc)){
+		return -1;
+	}
 	if((vender = lookup_vender(gpregs + 1)) == NULL){
 		return -1;
 	}

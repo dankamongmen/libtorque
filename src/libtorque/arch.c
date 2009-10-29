@@ -108,7 +108,9 @@ detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 #endif
 }
 
-// Returns the slot we just added to the end, or NULL on failure.
+// Returns the slot we just added to the end, or NULL on failure. Pointers
+// will be shallow-copied; dynamically allocate them, and do not free them
+// explicitly (they'll be handled by free_cpudetails()).
 static inline libtorque_cputype *
 add_cputype(unsigned *cputc,libtorque_cputype **types,
 		const libtorque_cputype *acpu){
@@ -123,6 +125,15 @@ add_cputype(unsigned *cputc,libtorque_cputype **types,
 	return *types + (*cputc)++;
 }
 
+static void
+free_cpudetails(libtorque_cputype *details){
+	free(details->memdescs);
+	details->memdescs = NULL;
+	free(details->strdescription);
+	details->strdescription = NULL;
+	details->elements = details->memories = 0;
+}
+
 // Methods to discover processor and cache details include:
 //  - running CPUID (must be run on each processor, x86 only)
 //  - querying cpuid(4) devices (linux only, must be root, x86 only)
@@ -135,6 +146,7 @@ detect_cpudetails(int cpuid,libtorque_cputype *details){
 		return -1;
 	}
 	if(x86cpuid(details)){
+		free_cpudetails(details);
 		return -1;
 	}
 	return 0;
@@ -146,6 +158,9 @@ compare_cpudetails(const libtorque_cputype * restrict a,
 	unsigned n;
 
 	if(a->memories != b->memories){
+		return -1;
+	}
+	if(strcmp(a->strdescription,b->strdescription)){
 		return -1;
 	}
 	for(n = 0 ; n < a->memories ; ++n){
@@ -195,6 +210,7 @@ detect_cputypes(unsigned *cputc,libtorque_cputype **types,unsigned *cpusets,
 		}else{
 			cpudetails.elements = 1;
 			if((cputype = add_cputype(cputc,types,&cpudetails)) == NULL){
+				free_cpudetails(&cpudetails);
 				goto err;
 			}
 		}
@@ -251,7 +267,7 @@ void free_architecture(void){
 	CPU_ZERO(&orig_cpumask);
 	use_cpusets = 0;
 	while(--cpu_typecount){
-		free(cpudescs[cpu_typecount].memdescs);
+		free_cpudetails(&cpudescs[cpu_typecount]);
 	}
 	free(cpudescs);
 	cpudescs = NULL;

@@ -11,6 +11,11 @@ detail_processing_unit(const libtorque_cputype *pudesc){
 		fprintf(stderr,"Error: memory count of 0\n");
 		return -1;
 	}
+	if(pudesc->strdescription == NULL){
+		fprintf(stderr,"Error: no string description\n");
+		return -1;
+	}
+	printf("\tBrand name: %s\n",pudesc->strdescription);
 	for(n = 0 ; n < pudesc->memories ; ++n){
 		const libtorque_hwmem *mem = pudesc->memdescs + n;
 

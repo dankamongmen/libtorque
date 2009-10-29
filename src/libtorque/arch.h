@@ -12,6 +12,7 @@ typedef struct libtorque_hwmem {
 typedef struct libtorque_cputype {
 	libtorque_hwmem *memdescs;
 	unsigned memories,elements;
+	char *strdescription;
 } libtorque_cputype;
 
 unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));
