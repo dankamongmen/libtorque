@@ -25,13 +25,28 @@ A copy can be found in the toplevel file LICENSE.
 -=+ II. Minimum requirements +=-
 ----------------------------------------------------------------libtorque-----
 
+--architecture requirements-------------------------------------libtorque-----
+
+Only x86 processors with the CPUID instruction are currently supported (most
+everything from the Pentium Pro onwards). Further hardware support is intended.
+
+--operating system requirements---------------------------------libtorque-----
+
+libtorque has been tested on Linux (version 2.6.32), and FreeBSD (version 7.1).
+It might work on earlier versions of Linux. Support for other operating
+systems, and earlier versions, is intended.
+
+--compiler requirements-----------------------------------------libtorque-----
+
 libtorque does not employ the GNU autoconf tools, but is reliant upon GNU Make
 and the GNU Compiler Collection. gcc is tracked quite closely, and only recent
 versions might be supported at any time; 4.3 is the minimum gcc version
 explicitly supported or recommended.
 
+--libc/pthreads requirements------------------------------------libtorque-----
+
 On Linux, the GNU C Library is required, using the NPTL threading
-implementation. The minimum Linux kernel version supported is 2.6.32.
+implementation. Version 2.9 has been tested.
 
 On FreeBSD, only the libthr threading implementation is explicitly supported or
 recommended. If rebuilding world, ensure NO_LIBTHR is not active in make.conf.
@@ -43,13 +58,13 @@ Bind libpthread references to libthr via the following /etc/libmap.conf:
 If using a 32-bit version of the library on a 64-bit system, place these same
 lines in /etc/libmap32.conf. The mapping may be restricted to libtorque if
 necessary (this author recommends general use of the libthr implementation).
-The minimum FreeBSD system version supported is 7.1.
 
-Cpuset support is provided through libcpuset on Linux, and the cpuset kernel
-functionality added in 2.6.15. On FreeBSD, we use the native support of 7.1.
+--cpuset requirements-------------------------------------------libtorque-----
 
-Only x86 processors with the CPUID instruction are currently supported (most
-everything from the Pentium Pro onwards). Further hardware support is intended.
+On Linux, the libcpuset library (http://oss.sgi.com/projects/cpusets/) is used.
+Version 1.0 has been tested. CONFIG_CGROUPS must be enabled in the kernel; if
+cpusets are properly supported, the file self/cpuset will be present in mounted
+proc filesystems. On FreeBSD, the native code added in 7.1 is used.
 
 ----------------------------------------------------------------libtorque-----
 -=+ III. Building libtorque +=-
