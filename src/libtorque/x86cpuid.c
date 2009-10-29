@@ -100,17 +100,12 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 	);
 }
 
-static const known_x86_vender *
-identify_extended_cpuid(uint32_t *cpuid_max){
-	const known_x86_vender *vender;
+static inline uint32_t
+identify_extended_cpuid(void){
 	uint32_t gpregs[4];
 
 	cpuid(CPUID_EXTENDED_MAX_SUPPORT,0,gpregs);
-	if((vender = lookup_vender(gpregs + 1)) == NULL){
-		return NULL;
-	}
-	*cpuid_max = gpregs[0];
-	return vender;
+	return gpregs[0];
 }
 
 /*typedef struct intel_dc_descriptor {
@@ -348,13 +343,9 @@ id_intel_caches(uint32_t maxlevel,libtorque_cputype *cpu){
 static int
 id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cputype *cpud){
 	uint32_t maxexlevel,gpregs[4];
-	const known_x86_vender *cpu;
 	libtorque_hwmem l1amd;
 
-	if((cpu = identify_extended_cpuid(&maxexlevel)) == NULL){
-		return -1;
-	}
-	if(maxexlevel < CPUID_EXTENDED_L1CACHE_TLB){
+	if((maxexlevel = identify_extended_cpuid()) < CPUID_EXTENDED_L1CACHE_TLB){
 		return -1;
 	}
 	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
@@ -394,14 +385,12 @@ x86_getbrandname(libtorque_cputype *cpudesc){
 	cpuid_class ops[] = { CPUID_EXTENDED_CPU_NAME1,
 				CPUID_EXTENDED_CPU_NAME2,
 				CPUID_EXTENDED_CPU_NAME3 };
-	uint32_t gpregs[4];
+	uint32_t gpregs[4],maxlevel;
 	unsigned z;
 
-	/* FIXME need to check 8000_0000, EXTENDED_MAX
-	if(maxlevel < CPUID_EXTENDED_CPU_NAME3){
+	if((maxlevel = identify_extended_cpuid()) < CPUID_EXTENDED_CPU_NAME3){
 		return -1;
 	}
-	*/
 	for(z = 0 ; z < sizeof(ops) / sizeof(*ops) ; ++z){
 		unsigned y;
 
