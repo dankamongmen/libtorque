@@ -48,7 +48,7 @@ endif
 
 # System-specific variables closed to external specification
 ifeq ($(UNAME),Linux)
-DFLAGS:=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64
+DFLAGS:=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 LFLAGS:=-Wl,--warn-shared-textrel
 LIBFLAGS:=-lcpuset
 else
@@ -98,6 +98,9 @@ BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
+# Debugging flags. These aren't normally used.
+DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
+
 # Main compilation flags. Define with += to inherit from system-specific flags.
 IFLAGS:=-I$(SRCDIR)
 MFLAGS:=-fpic -march=$(MARCH)
@@ -142,7 +145,6 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
 	-fvisibility=hidden -fipa-cp -ftree-loop-linear -ftree-loop-im \
 	-ftree-loop-ivcanon
-DEBUGFLAGS:=-rdynamic -g
 CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 LIBFLAGS+=-lpthread
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
