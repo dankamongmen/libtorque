@@ -6,8 +6,9 @@
 #include <libtorque/arch.h>
 
 #if defined(LIBTORQUE_LINUX)
-#include <stdio.h>
 #include <cpuset.h>
+#elif defined(LIBTORQUE_FREEBSD)
+#include <sys/cpuset.h>
 #endif
 
 static unsigned cpu_typecount;
@@ -34,7 +35,8 @@ static libtorque_cputype *cpudescs;
 //  - hw.ncpu, kern.smp.cpus sysctls (freebsd)
 //  - cpuset_size() (libcpuset, linux)
 //  - cpuset -g (freebsd)
-//  - cpuset_getid(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET) (freebsd)
+//  - cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET) (freebsd)
+#ifdef LIBTORQUE_LINUX
 static int
 fallback_detect_cpucount(void){
 	long sysonln;
@@ -51,24 +53,34 @@ fallback_detect_cpucount(void){
 	}
 	return (int)sysonln;
 }
+#endif
 
 static inline int
 detect_cpucount(void){
 #ifdef LIBTORQUE_FREEBSD
 #error "No CPU detection method defined for this OS"
-	return -1;
+	int cpu,count = 0;
+	cpuset_t mask;
+
+	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
+				sizeof(mask),&mask) < 0){
+		return -1;
+	}
+	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
+		if(CPU_ISSET(cpu,mask)){
+			++count;
+		}
+	}
+	return count;
 #elif defined(LIBTORQUE_LINUX)
 	int csize;
 
-	if((csize = cpuset_size()) <= 0){
-		if(csize < 0){
-			if(errno == ENOSYS || errno == ENODEV){
-				// Cpusets aren't supported, or aren't in use
-				return fallback_detect_cpucount();
-			}
+	if((csize = cpuset_size()) < 0){
+		if(errno == ENOSYS || errno == ENODEV){
+			// Cpusets aren't supported, or aren't in use
+			return fallback_detect_cpucount();
 		}
-		// Anything else indicates libcpuset error; die out
-		return -1;
+		return -1; // otherwise libcpuset error; die out
 	}
 	return csize;
 #else
