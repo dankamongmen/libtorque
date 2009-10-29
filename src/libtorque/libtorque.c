@@ -7,3 +7,8 @@ int libtorque_init(void){
 	}
 	return 0;
 }
+
+int libtorque_stop(void){
+	free_architecture();
+	return 0;
+}
