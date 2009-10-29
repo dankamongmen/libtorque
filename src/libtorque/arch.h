@@ -19,7 +19,9 @@ unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));
 const libtorque_cputype *libtorque_cpu_getdesc(unsigned)
 	__attribute__ ((visibility("default")));
 
+// Remaining declarations are internal to libtorque via -fvisibility=hidden
 int detect_architecture(void);
+void free_architecture(void);
 
 #ifdef __cplusplus
 }

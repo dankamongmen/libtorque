@@ -193,7 +193,11 @@ int detect_architecture(void){
 	return 0;
 }
 
-// FIXME ought provide for cleaning up the detection state!
+void free_architecture(void){
+	free(cpudescs);
+	cpudescs = NULL;
+	cpu_typecount = 0;
+}
 
 unsigned libtorque_cpu_typecount(void){
 	return cpu_typecount;
