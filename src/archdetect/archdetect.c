@@ -14,6 +14,22 @@ detail_processing_unit(const libtorque_cputype *pudesc){
 	for(n = 0 ; n < pudesc->memories ; ++n){
 		const libtorque_hwmem *mem = pudesc->memdescs + n;
 
+		if(mem->totalsize <= 0){
+			fprintf(stderr,"Error: memory total size of 0\n");
+			return -1;
+		}
+		if(mem->linesize <= 0){
+			fprintf(stderr,"Error: memory linesize of 0\n");
+			return -1;
+		}
+		if(mem->associativity <= 0){
+			fprintf(stderr,"Error: memory associativity of 0\n");
+			return -1;
+		}
+		if(mem->sharedways <= 0){
+			fprintf(stderr,"Error: memory sharedways of 0\n");
+			return -1;
+		}
 		printf("\tMemory type %u of %u: %ub total, %ub line, "
 			"%ub assoc, %u-shared\n",n + 1,
 			pudesc->memories,mem->totalsize,mem->linesize,
@@ -48,6 +64,7 @@ detail_processing_units(unsigned cpu_typecount){
 
 int main(void){
 	unsigned cpu_typecount;
+	int ret = EXIT_FAILURE;
 
 	if(libtorque_init()){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
@@ -55,16 +72,17 @@ int main(void){
 	}
 	if((cpu_typecount = libtorque_cpu_typecount()) <= 0){
 		fprintf(stderr,"Got invalid CPU type count: %u\n",cpu_typecount);
-		goto err;
+		goto done;
 	}
 	if(detail_processing_units(cpu_typecount)){
-		goto err;
+		goto done;
 	}
+	ret = EXIT_SUCCESS;
 
-err:
+done:
 	if(libtorque_stop()){
 		fprintf(stderr,"Couldn't destroy libtorque\n");
 		return EXIT_FAILURE;
 	}
-	return EXIT_SUCCESS;
+	return ret;
 }
