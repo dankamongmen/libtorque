@@ -46,9 +46,15 @@ int main(void){
 	}
 	if((cpu_typecount = libtorque_cpu_typecount()) <= 0){
 		fprintf(stderr,"Got invalid CPU type count: %u\n",cpu_typecount);
-		return EXIT_FAILURE;
+		goto err;
 	}
 	if(detail_processing_units(cpu_typecount)){
+		goto err;
+	}
+
+err:
+	if(libtorque_stop()){
+		fprintf(stderr,"Couldn't destroy libtorque\n");
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
