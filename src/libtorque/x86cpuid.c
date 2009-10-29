@@ -249,9 +249,9 @@ id_amd_cache(uint32_t maxlevel __attribute__ ((unused)),unsigned *clineb){
 
 static int
 id_via_cache(uint32_t maxlevel __attribute__ ((unused)),unsigned *clineb){
-	// XXX What a cheap piece of garbage, yeargh! VIA doesn't supply cache
-	// line info via CPUID. VIA C3 Antaur/Centaur both use 32b. The proof
-	// is by method of esoteric reference:
+	// FIXME What a cheap piece of garbage, yeargh! VIA doesn't supply
+	// cache line info via CPUID. VIA C3 Antaur/Centaur both use 32b. The
+	// proof is by method of esoteric reference:
 	// http://www.digit-life.com/articles2/rmma/rmma-via-c3.html
 	*clineb = 32;
 	return 0;
