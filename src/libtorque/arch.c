@@ -41,10 +41,7 @@ static int
 fallback_detect_cpucount(void){
 	long sysonln;
 
-	// FIXME not the most robust method -- we'd rather use cpuset functions
-	// directly. freebsd's cpuset doesn't give us such a function; we must
-	// test each possible processor for membership in the set(!); see
-	// /usr.bin/cpuset/cpuset.c in a 7.2 checkout.
+	// not the most robust method -- we prefer cpuset functions
 	if((sysonln = sysconf(_SC_NPROCESSORS_ONLN)) <= 0){
 		return -1;
 	}
