@@ -4,10 +4,6 @@ Copyright © 2009 Nick Black <dank@qemfd.net>
 Render this document with fixed-width fonts.
 ============================================
 
-----------------------------------------------------------------libtorque-----
--=+ I. Resources +=-
-----------------------------------------------------------------libtorque-----
-
 Wiki - http://dank.qemfd.net/dankwiki/index.php/Libtorque
 GitHub project page - http://github.com/dankamongmen/libtorque
 Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
@@ -21,8 +17,17 @@ libtorque is licensed under version 2 of the Apache License:
  http://www.apache.org/licenses/LICENSE-2.0.html
 A copy can be found in the toplevel file LICENSE.
 
+___________________________________________________________________
+888 ,e, 888        d8           "...tear the roof off the sucka..."
+888  "  888 88e   d88    e88 88e  888,8,  e88 888 8888 8888  ,e e,
+888 888 888 888b d88888 d888 888b 888 "  d888 888 8888 8888 d88 88b
+888 888 888 888P  888   Y888 888P 888    Y888 888 Y888 888P 888   ,
+888 888 888 88"   888    "88 88"  888     "88 888  "88 88"   "YeeP"
+_____________________________________________ 888 _________________
+continuation-based unix i/o for manycore numa\888/© nick black 2009
+
 ----------------------------------------------------------------libtorque-----
--=+ II. Minimum requirements +=-
+-=+ I. Minimum requirements +=-
 ----------------------------------------------------------------libtorque-----
 
 --architecture requirements-------------------------------------libtorque-----
@@ -71,7 +76,7 @@ http://dank.qemfd.net/bugzilla/show_bug.cgi?id=14)). On FreeBSD, the native
 code added in 7.1 is used.
 
 ----------------------------------------------------------------libtorque-----
--=+ III. Building libtorque +=-
+-=+ II. Building libtorque +=-
 ----------------------------------------------------------------libtorque-----
 
 Environment variables can affect the build by overriding defaults, including:
@@ -113,7 +118,7 @@ never be necessary to run, save when hacking on the build process itself (or
 changing build parameters, as noted above).
 
 ----------------------------------------------------------------libtorque-----
--=+ IV. Design Issues +=-
+-=+ III. Design Issues +=-
 ----------------------------------------------------------------libtorque-----
 
 - Execution unit detection, differentiation, and effective use. This might
@@ -156,12 +161,3 @@ changing build parameters, as noted above).
   If no more than one thread can wait for an event, and either one-shot
   handling or edge-triggering is used, a majority of locking and possible
   contention can be excised from the core.
-
-___________________________________________________________________
-888 ,e, 888        d8           "...tear the roof off the sucka..."
-888  "  888 88e   d88    e88 88e  888,8,  e88 888 8888 8888  ,e e,
-888 888 888 888b d88888 d888 888b 888 "  d888 888 8888 8888 d88 88b
-888 888 888 888P  888   Y888 888P 888    Y888 888 Y888 888P 888   ,
-888 888 888 88"   888    "88 88"  888     "88 888  "88 88"   "YeeP"
-_____________________________________________ 888 _________________
-continuation-based unix i/o for manycore numa\888/© nick black 2009
