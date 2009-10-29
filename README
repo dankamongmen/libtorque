@@ -9,14 +9,6 @@ GitHub project page - http://github.com/dankamongmen/libtorque
 Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
 
 Download libtorque via 'git clone git://github.com/dankamongmen/libtorque.git'.
-
-The original proposal for libtorque is available at:
- http://dank.qemfd.net/tabpower/cse6230proposal.pdf
-
-libtorque is licensed under version 2 of the Apache License:
- http://www.apache.org/licenses/LICENSE-2.0.html
-A copy can be found in the toplevel file LICENSE.
-
 ___________________________________________________________________
 888 ,e, 888        d8           "...tear the roof off the sucka..."
 888  "  888 88e   d88    e88 88e  888,8,  e88 888 8888 8888  ,e e,
@@ -27,7 +19,24 @@ _____________________________________________ 888 _________________
 continuation-based unix i/o for manycore numa\888/© nick black 2009
 
 ----------------------------------------------------------------libtorque-----
--=+ I. Minimum requirements +=-
+-=+ I. History and licensing +=-
+----------------------------------------------------------------libtorque-----
+
+libtorque was conceived as a proposal for Dr. Richard Vuduc's Fall 2009
+"CSE 6230: Tools and Applications for High Performance Computing" at the
+Georgia Institute of Technology. The original proposal for libtorque is
+available at:
+
+	http://dank.qemfd.net/tabpower/cse6230proposal.pdf
+
+libtorque is licensed under version 2 of the Apache License:
+
+	http://www.apache.org/licenses/LICENSE-2.0.html
+
+A copy can be found in the toplevel file LICENSE.
+
+----------------------------------------------------------------libtorque-----
+-=+ II. Minimum requirements +=-
 ----------------------------------------------------------------libtorque-----
 
 --architecture requirements-------------------------------------libtorque-----
@@ -76,7 +85,7 @@ http://dank.qemfd.net/bugzilla/show_bug.cgi?id=14)). On FreeBSD, the native
 code added in 7.1 is used.
 
 ----------------------------------------------------------------libtorque-----
--=+ II. Building libtorque +=-
+-=+ III. Building libtorque +=-
 ----------------------------------------------------------------libtorque-----
 
 Environment variables can affect the build by overriding defaults, including:
@@ -118,7 +127,7 @@ never be necessary to run, save when hacking on the build process itself (or
 changing build parameters, as noted above).
 
 ----------------------------------------------------------------libtorque-----
--=+ III. Design Issues +=-
+-=+ IV. Design Issues +=-
 ----------------------------------------------------------------libtorque-----
 
 - Execution unit detection, differentiation, and effective use. This might
