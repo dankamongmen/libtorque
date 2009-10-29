@@ -49,6 +49,7 @@ endif
 # System-specific variables closed to external specification
 ifeq ($(UNAME),Linux)
 DFLAGS:=-D_FILE_OFFSET_BITS=64
+LFLAGS:=-Wl,--warn-shared-textrel
 else
 ifeq ($(UNAME),FreeBSD)
 DFLAGS:=-D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
@@ -129,9 +130,8 @@ OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
 	-fvisibility=hidden
 DEBUGFLAGS:=-rdynamic -g
 CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
-LFLAGS:=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
-	-Wl,--fatal-warnings,--warn-shared-textrel,-z,noexecstack,-z,combreloc \
-	-lpthread
+LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
+	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc -lpthread
 TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR)
 ARCHDETECTCFLAGS:=$(CFLAGS)
