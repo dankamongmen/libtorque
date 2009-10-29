@@ -48,6 +48,9 @@ The minimum FreeBSD system version supported is 7.1.
 Cpuset support is provided through libcpuset on Linux, and the cpuset kernel
 functionality added in 2.6.15. On FreeBSD, we use the native support of 7.1.
 
+Only x86 processors with the CPUID instruction are currently supported (most
+everything from the Pentium Pro onwards). Further hardware support is intended.
+
 ----------------------------------------------------------------libtorque-----
 -=+ III. Building libtorque +=-
 ----------------------------------------------------------------libtorque-----
