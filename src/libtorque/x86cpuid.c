@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -27,30 +26,25 @@ int cpuid_available(void){
 
 typedef struct known_x86_vender {
 	const char *signet;
-	int (*l1fxn)(uint32_t,libtorque_hwmem *);
-	int (*l2fxn)(uint32_t,libtorque_hwmem *);
+	int (*memfxn)(uint32_t,libtorque_cputype *);
 } known_x86_vender;
 
-static int id_amd_l1(uint32_t,libtorque_hwmem *);
-static int id_via_l1(uint32_t,libtorque_hwmem *);
-static int id_intel_l1(uint32_t,libtorque_hwmem *);
-static int id_intel_l2(uint32_t,libtorque_hwmem *);
+static int id_amd_caches(uint32_t,libtorque_cputype *);
+static int id_via_caches(uint32_t,libtorque_cputype *);
+static int id_intel_caches(uint32_t,libtorque_cputype *);
 
 // There's also: (Collect them all! Impress your friends!)
 //      " UMC UMC UMC" "CyriteadxIns" "NexGivenenDr"
 //      "RiseRiseRise" "GenuMx86ineT" "Geod NSCe by"
 static const known_x86_vender venders[] = {
 	{       .signet = "GenuntelineI",
-		.l1fxn = id_intel_l1,
-		.l2fxn = id_intel_l2,
+		.memfxn = id_intel_caches,
 	},
 	{       .signet = "AuthcAMDenti",
-		.l1fxn = id_amd_l1,
-		// FIXME .l2fxn = ?,
+		.memfxn = id_amd_caches,
 	},
 	{       .signet = "CentaulsaurH",
-		.l1fxn = id_via_l1,
-		// FIXME .l2fxn = ?,
+		.memfxn = id_via_caches,
 	},
 };
 
@@ -119,7 +113,7 @@ identify_extended_cpuid(uint32_t *cpuid_max){
 	return vender;
 }
 
-typedef struct intel_dc_descriptor {
+/*typedef struct intel_dc_descriptor {
 	unsigned descriptor;
 	unsigned linesize;
 	unsigned totalsize;
@@ -272,7 +266,7 @@ extract_intel_func2(const intel_dc_descriptor *descs,libtorque_hwmem *mem){
 }
 
 static int
-id_intel_l1(uint32_t maxlevel,libtorque_hwmem *mem){
+id_intel_caches(uint32_t maxlevel,libtorque_hwmem *mem){
 	if(maxlevel < CPUID_STANDARD_CPUCONF){
 		return -1;
 	}
@@ -284,81 +278,7 @@ id_intel_l1(uint32_t maxlevel,libtorque_hwmem *mem){
 		return -1;
 	}
 	return 0;
-}
-
-static int
-id_intel_l2(uint32_t maxlevel,libtorque_hwmem *mem){
-	uint32_t gpregs[4];
-	unsigned n,gotl2;
-
-	if(maxlevel < CPUID_STANDARD_CACHECONF){
-		return -1;
-	}
-	gotl2 = 0;
-	n = 0;
-	do{
-		enum { NULLCACHE, DATACACHE, CODECACHE, UNIFIEDCACHE } cachet;
-
-		cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
-		cachet = gpregs[0] & 0x1f; // AX[4..0]
-		if(cachet == DATACACHE || cachet == UNIFIEDCACHE){
-			unsigned lev = (gpregs[0] >> 5) & 0x7; // AX[7..5]
-
-			if(lev == 2){
-				if(gotl2){ // dual L2 data cache descriptors?!
-					break;
-				}
-				gotl2 = 1;
-				printf("level: %u type: %u\n",lev,cachet);
-				printf("[%u] %x %x %x %x\n",n,gpregs[0],gpregs[1],gpregs[2],gpregs[3]);
-				// Linesize is EBX[11:0] + 1
-				mem->linesize = (gpregs[1] & 0xfff) + 1;
-				// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
-				mem->associativity = (gpregs[0] & 0x200) ? 1 :
-					(((gpregs[1] >> 22) & 0x3ff) + 1);
-				printf("ls: %u asoc: %u\n",
-						mem->linesize,mem->associativity);
-				// Partitions = EBX[21:12] + 1, sets = ECX + 1
-				mem->totalsize = mem->associativity *
-					(((gpregs[1] >> 12) & 0x1ff) + 1) *
-					mem->linesize * (gpregs[2] + 1);
-				mem->sharedways = ((gpregs[0] >> 14) & 0xfff) + 1;
-			}
-		}
-	}while(gpregs[0]);
-	return gotl2 ? 0 : -1;
-}
-
-static int
-id_amd_l1(uint32_t maxlevel __attribute__ ((unused)),libtorque_hwmem *mem){
-	uint32_t maxexlevel,gpregs[4];
-	const known_x86_vender *cpu;
-
-	if((cpu = identify_extended_cpuid(&maxexlevel)) == NULL){
-		return -1;
-	}
-	if(maxexlevel < CPUID_EXTENDED_L1CACHE_TLB){
-		return -1;
-	}
-	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
-	cpuid(CPUID_EXTENDED_L1CACHE_TLB,0,gpregs);
-	mem->linesize = gpregs[2] & 0x000000ff;
-	mem->associativity = 0; // FIXME
-	mem->totalsize = 0; // FIXME
-	return 0;
-}
-
-static int
-id_via_l1(uint32_t maxlevel __attribute__ ((unused)),libtorque_hwmem *mem){
-	// FIXME What a cheap piece of garbage, yeargh! VIA doesn't supply
-	// cache line info via CPUID. VIA C3 Antaur/Centaur both use 32b. The
-	// proof is by method of esoteric reference:
-	// http://www.digit-life.com/articles2/rmma/rmma-via-c3.html
-	mem->linesize = 32;
-	mem->associativity = 0; // FIXME
-	mem->totalsize = 0; // FIXME
-	return 0;
-}
+}*/
 
 // Returns the slot we just added to the end, or NULL on failure.
 static inline libtorque_hwmem *
@@ -375,11 +295,103 @@ add_hwmem(unsigned *memories,libtorque_hwmem **mems,
 	return *mems + (*memories)++;
 }
 
+static int
+id_intel_caches(uint32_t maxlevel,libtorque_cputype *cpu){
+	unsigned n,gotlevel,level,maxdc;
+	uint32_t gpregs[4];
+
+	if(maxlevel < CPUID_STANDARD_CACHECONF){
+		return -1; // FIXME fall back to CPUID_STANDARD_CPUCONF
+	}
+	maxdc = level = 0;
+	do{
+		gotlevel = 0;
+		n = 0;
+		do{
+			enum { NULLCACHE, DATACACHE, CODECACHE, UNIFIEDCACHE } cachet;
+
+			cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
+			cachet = gpregs[0] & 0x1f; // AX[4..0]
+			if(cachet == DATACACHE || cachet == UNIFIEDCACHE){
+				unsigned lev = (gpregs[0] >> 5) & 0x7; // AX[7..5]
+
+				if(lev > maxdc){
+					maxdc = lev;
+				}
+				if(lev == level){
+					libtorque_hwmem mem;
+
+					if(gotlevel){ // dup d$ descriptors?!
+						return -1;
+					}
+					gotlevel = 1;
+					// Linesize is EBX[11:0] + 1
+					mem.linesize = (gpregs[1] & 0xfff) + 1;
+					// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
+					mem.associativity = (gpregs[0] & 0x200) ? 1 :
+						(((gpregs[1] >> 22) & 0x3ff) + 1);
+					// Partitions = EBX[21:12] + 1, sets = ECX + 1
+					mem.totalsize = mem.associativity *
+						(((gpregs[1] >> 12) & 0x1ff) + 1) *
+						mem.linesize * (gpregs[2] + 1);
+					mem.sharedways = ((gpregs[0] >> 14) & 0xfff) + 1;
+					if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
+						return -1;
+					}
+				}
+			}
+		}while(gpregs[0]);
+	}while(++level <= maxdc);
+	return level ? 0 : -1;
+}
+
+static int
+id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cputype *cpud){
+	uint32_t maxexlevel,gpregs[4];
+	const known_x86_vender *cpu;
+	libtorque_hwmem l1amd;
+
+	if((cpu = identify_extended_cpuid(&maxexlevel)) == NULL){
+		return -1;
+	}
+	if(maxexlevel < CPUID_EXTENDED_L1CACHE_TLB){
+		return -1;
+	}
+	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
+	cpuid(CPUID_EXTENDED_L1CACHE_TLB,0,gpregs);
+	l1amd.linesize = gpregs[2] & 0x000000ff;
+	l1amd.associativity = 0; // FIXME
+	l1amd.totalsize = 0;	// FIXME
+	l1amd.sharedways = 0;	// FIXME
+	// FIXME handle other cache levels
+	if(add_hwmem(&cpud->memories,&cpud->memdescs,&l1amd) == NULL){
+		return -1;
+	}
+	return 0;
+}
+
+static int
+id_via_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cputype *cpu){
+	// FIXME What a cheap piece of garbage, yeargh! VIA doesn't supply
+	// cache line info via CPUID. VIA C3 Antaur/Centaur both use 32b. The
+	// proof is by method of esoteric reference:
+	// http://www.digit-life.com/articles2/rmma/rmma-via-c3.html
+	libtorque_hwmem l1via = {
+		.linesize = 32,		// FIXME
+		.associativity = 0,	// FIXME
+		.totalsize = 0,		// FIXME
+		.sharedways = 0,	// FIXME
+	}; // FIXME handle other levels of cache
+	if(add_hwmem(&cpu->memories,&cpu->memdescs,&l1via) == NULL){
+		return -1;
+	}
+	return 0;
+}
+
 // Before this is called, verify that the CPUID instruction is available via
 // receipt of non-zero return from cpuid_available().
 int x86cpuid(libtorque_cputype *cpudesc){
 	const known_x86_vender *vender;
-	libtorque_hwmem mem,*amem;
 	uint32_t gpregs[4];
 
 	cpudesc->memories = 0;
@@ -389,20 +401,8 @@ int x86cpuid(libtorque_cputype *cpudesc){
 	if((vender = lookup_vender(gpregs + 1)) == NULL){
 		return -1;
 	}
-	if(vender->l1fxn(gpregs[0],&mem)){
+	if(vender->memfxn(gpregs[0],cpudesc)){
 		return -1;
-	}
-	mem.sharedways = 1;		// FIXME
-	if((amem = add_hwmem(&cpudesc->memories,&cpudesc->memdescs,&mem)) == NULL){
-		return -1;
-	}
-	if(vender->l2fxn){
-		if(vender->l2fxn(gpregs[0],&mem)){
-			return -1;
-		}
-		if((amem = add_hwmem(&cpudesc->memories,&cpudesc->memdescs,&mem)) == NULL){
-			return -1;
-		}
 	}
 	return 0;
 }
