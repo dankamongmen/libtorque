@@ -127,11 +127,15 @@ add_cputype(unsigned *cputc,libtorque_cputype **types,
 
 static void
 free_cpudetails(libtorque_cputype *details){
+	free(details->apicids);
+	details->apicids = NULL;
 	free(details->memdescs);
 	details->memdescs = NULL;
 	free(details->strdescription);
 	details->strdescription = NULL;
+	details->stepping = details->model = 0;
 	details->elements = details->memories = 0;
+	details->extendedsig = details->family = 0;
 }
 
 // Methods to discover processor and cache details include:
