@@ -46,19 +46,19 @@ detect_cpucount(void){
 	return (int)sysonln;
 }
 
-static inline int
+// Returns the slot we just added to the end, or NULL on failure.
+static inline libtorque_cputype *
 add_cputype(unsigned *cputc,libtorque_cputype **types,
 		const libtorque_cputype *acpu){
 	size_t s = (*cputc + 1) * sizeof(**types);
 	typeof(**types) *tmp;
 
 	if((tmp = realloc(*types,s)) == NULL){
-		return -1;
+		return NULL;
 	}
 	*types = tmp;
-	// FIXME likely need better assignment than this
-	(*types)[(*cputc)++] = *acpu;
-	return 0;
+	(*types)[*cputc] = *acpu;
+	return *types + (*cputc)++;
 }
 
 // Methods to discover processor and cache details include:
@@ -75,14 +75,30 @@ detect_cpudetails(int cpuid,libtorque_cputype *details){
 	return 0;
 }
 
-static const libtorque_cputype *
-match_cputype(unsigned cputc,const libtorque_cputype *types,
+static int
+compare_cpudetails(const libtorque_cputype * restrict a,
+			const libtorque_cputype * restrict b){
+	unsigned n;
+
+	if(a->caches != b->caches){
+		return -1;
+	}
+	for(n = 0 ; n < a->caches ; ++n){
+		if(memcmp(a->cachedescs + n,b->cachedescs + n,
+				sizeof(*a->cachedescs))){
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static libtorque_cputype *
+match_cputype(unsigned cputc,libtorque_cputype *types,
 		const libtorque_cputype *acpu){
 	unsigned n;
 
 	for(n = 0 ; n < cputc ; ++n){
-		// FIXME need better comparison than this
-		if(memcmp(types + n,acpu,sizeof(*acpu)) == 0){
+		if(compare_cpudetails(types + n,acpu) == 0){
 			return types + n;
 		}
 	}
@@ -100,12 +116,16 @@ detect_cputypes(unsigned *cputc,libtorque_cputype **types){
 	}
 	for(z = 0 ; z < totalpe ; ++z){
 		libtorque_cputype cpudetails;
+		typeof(*types) cputype;
 
 		if(detect_cpudetails(z,&cpudetails)){
 			goto err;
 		}
-		if(match_cputype(*cputc,*types,&cpudetails) == NULL){
-			if(add_cputype(cputc,types,&cpudetails)){
+		if( (cputype = match_cputype(*cputc,*types,&cpudetails)) ){
+			++cputype->elements;
+		}else{
+			cpudetails.elements = 1;
+			if((cputype = add_cputype(cputc,types,&cpudetails)) == NULL){
 				goto err;
 			}
 		}
