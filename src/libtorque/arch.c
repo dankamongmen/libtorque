@@ -41,7 +41,9 @@ static int
 fallback_detect_cpucount(void){
 	long sysonln;
 
-	// not the most robust method -- we prefer cpuset functions
+	// Not the most robust method -- we prefer cpuset functions -- but it's
+	// supported just about everywhere (x86info uses this method). See:
+	// http://lists.openwall.net/linux-kernel/2007/04/04/183
 	if((sysonln = sysconf(_SC_NPROCESSORS_ONLN)) <= 0){
 		return -1;
 	}
