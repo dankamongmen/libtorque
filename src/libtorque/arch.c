@@ -109,7 +109,10 @@ add_cputype(unsigned *cputc,libtorque_cputype **types,
 //  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
 static int
 detect_cpudetails(int cpuid,libtorque_cputype *details){
-	// FIXME schedule ourselves on this PE and detect details, purge this
+	if(cpuset_pin(cpuid)){
+		return -1;
+	}
+	// FIXME detect details for pinned processor, and purge this
 	memset(details,0,sizeof(*details));
 	cpuid = 0;
 	return 0;
@@ -169,6 +172,8 @@ detect_cputypes(unsigned *cputc,libtorque_cputype **types){
 			}
 		}
 	}
+	// FIXME at this point, we're running pinned to the last processor on
+	// which we ran detect_cpudetails(). reset our affinity mask!
 	return 0;
 
 err:
@@ -176,6 +181,11 @@ err:
 	*types = NULL;
 	*cputc = 0;
 	return -1;
+}
+
+// Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
+int pin_thread(int cpusetid){
+	return cpuset_pin(cpusetid);
 }
 
 int detect_architecture(void){
