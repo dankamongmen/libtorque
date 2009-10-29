@@ -322,6 +322,7 @@ id_intel_l2(uint32_t maxlevel,libtorque_hwmem *mem){
 				mem->totalsize = mem->associativity *
 					(((gpregs[1] >> 12) & 0x1ff) + 1) *
 					mem->linesize * (gpregs[2] + 1);
+				mem->sharedways = ((gpregs[0] >> 14) & 0xfff) + 1;
 			}
 		}
 	}while(gpregs[0]);
@@ -399,7 +400,6 @@ int x86cpuid(libtorque_cputype *cpudesc){
 		if(vender->l2fxn(gpregs[0],&mem)){
 			return -1;
 		}
-		mem.sharedways = 1;		// FIXME
 		if((amem = add_hwmem(&cpudesc->memories,&cpudesc->memdescs,&mem)) == NULL){
 			return -1;
 		}
