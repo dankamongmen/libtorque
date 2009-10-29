@@ -7,12 +7,17 @@
 
 #if defined(LIBTORQUE_LINUX)
 #include <cpuset.h>
+#include <sched.h>
 #elif defined(LIBTORQUE_FREEBSD)
 #include <sys/cpuset.h>
 #endif
 
+// We dynamically determine whether or not advanced cpuset support (cgroups and
+// the SGI libcpuset library) is available on Linux (ENOSYS or ENODEV indicate
+// nay) during CPU enumeration, and only use those methods if so.
+static unsigned use_cpusets;
 static unsigned cpu_typecount;
-static libtorque_cputype *cpudescs;
+static libtorque_cputype *cpudescs; // dynarray of cpu_typecount elements
 
 // LibNUMA looks like the only real candidate for NUMA discovery (linux only)
 
@@ -57,7 +62,6 @@ fallback_detect_cpucount(void){
 static inline int
 detect_cpucount(void){
 #ifdef LIBTORQUE_FREEBSD
-#error "No CPU detection method defined for this OS"
 	int cpu,count = 0;
 	cpuset_t mask;
 
@@ -76,11 +80,22 @@ detect_cpucount(void){
 
 	if((csize = cpuset_size()) < 0){
 		if(errno == ENOSYS || errno == ENODEV){
+			cpu_set_t mask;
+
 			// Cpusets aren't supported, or aren't in use
-			return fallback_detect_cpucount();
+			if(sched_getaffinity(0,sizeof(mask),&mask) == 0){
+				int count = CPU_COUNT(&mask);
+
+				if(count >= 1){
+					return count;
+				}
+				return -1; // broken affinity library?
+			}
+			return fallback_detect_cpucount(); // pre-affinity?
 		}
 		return -1; // otherwise libcpuset error; die out
 	}
+	use_cpusets = 1;
 	return csize;
 #else
 #error "No CPU detection method defined for this OS"
@@ -111,7 +126,7 @@ add_cputype(unsigned *cputc,libtorque_cputype **types,
 //  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
 static int
 detect_cpudetails(int cpuid,libtorque_cputype *details){
-	if(cpuset_pin(cpuid)){
+	if(pin_thread(cpuid)){
 		return -1;
 	}
 	// FIXME detect details for pinned processor, and purge this
@@ -187,6 +202,16 @@ err:
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
 int pin_thread(int cpusetid){
+	if(use_cpusets == 0){
+		cpu_set_t mask;
+
+		CPU_ZERO(&mask);
+		CPU_SET((unsigned)cpusetid,&mask);
+		if(sched_setaffinity(0,sizeof(mask),&mask)){
+			return -1;
+		}
+		return 0; // FIXME verify?
+	}
 	return cpuset_pin(cpusetid);
 }
 
