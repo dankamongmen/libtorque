@@ -191,7 +191,7 @@ $(OBJOUT)/%.i: %.c $(GLOBOBJDEPS)
 # Having TAGS dep on the involved makefiles -- and including TAGS in
 # GLOBOBJDEPS -- means that a makefile change forces global rebuilding, which
 # seems a desirable goal anyway.
-$(TAGS): $(SRC) $(MAKEFILE_LIST)
+$(TAGS): $(SRC) $(CINC) $(MAKEFILE_LIST)
 	@mkdir -p $(@D)
 	$(TAGBIN) -f $@ $^
 
