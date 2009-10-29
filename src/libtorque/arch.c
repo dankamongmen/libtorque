@@ -207,6 +207,7 @@ detect_cputypes(unsigned *cputc,libtorque_cputype **types,unsigned *cpusets,
 		}
 		if( (cputype = match_cputype(*cputc,*types,&cpudetails)) ){
 			++cputype->elements;
+			free_cpudetails(&cpudetails);
 		}else{
 			cpudetails.elements = 1;
 			if((cputype = add_cputype(cputc,types,&cpudetails)) == NULL){
