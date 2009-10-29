@@ -5,16 +5,20 @@
 
 static int
 detail_processing_unit(const libtorque_cputype *pudesc){
-	if(pudesc->elements <= 0){
-		fprintf(stderr,"Error: element count of 0\n");
-		return -1;
-	}
+	unsigned n;
+
 	if(pudesc->memories <= 0){
 		fprintf(stderr,"Error: memory count of 0\n");
 		return -1;
 	}
-	printf("\tCount: %u\n",pudesc->elements);
-	printf("\tMemories: %u\n",pudesc->memories);
+	for(n = 0 ; n < pudesc->memories ; ++n){
+		const libtorque_hwmem *mem = pudesc->memdescs + n;
+
+		printf("\tMemory type %u of %u: %ub total, %ub line, "
+			"%ub assoc, %u-shared\n",n + 1,
+			pudesc->memories,mem->totalsize,mem->linesize,
+			mem->associativity,mem->sharedways);
+	}
 	return 0;
 }
 
@@ -29,7 +33,12 @@ detail_processing_units(unsigned cpu_typecount){
 			fprintf(stderr,"Couldn't look up CPU type %u\n",n);
 			return EXIT_FAILURE;
 		}
-		printf("Processing unit type %u of %u:\n",n + 1,cpu_typecount);
+		if(pudesc->elements <= 0){
+			fprintf(stderr,"Error: element count of 0\n");
+			return -1;
+		}
+		printf("Processing unit type %u of %u (count: %u):\n",
+				n + 1,cpu_typecount,pudesc->elements);
 		if(detail_processing_unit(pudesc)){
 			return -1;
 		}
