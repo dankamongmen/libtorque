@@ -9,8 +9,9 @@
 #include <cpuset.h>
 #include <sched.h>
 #elif defined(LIBTORQUE_FREEBSD)
+#include <sys/param.h>
 #include <sys/cpuset.h>
-typedef cpusetid cpu_set_t;
+typedef cpuset_t cpu_set_t;
 #endif
 
 // We dynamically determine whether or not advanced cpuset support (cgroups and
@@ -70,12 +71,13 @@ detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 #ifdef LIBTORQUE_FREEBSD
 	int cpu,count = 0;
 
-	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
+	*cpusets = 0;
+	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,(id_t)-1,
 				sizeof(*mask),mask) < 0){
 		return -1;
 	}
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
-		if(CPU_ISSET(cpu,*mask)){
+		if(CPU_ISSET(cpu,mask)){
 			++count;
 		}
 	}
@@ -83,6 +85,7 @@ detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 #elif defined(LIBTORQUE_LINUX)
 	int csize;
 
+	*cpusets = 0;
 	if((csize = cpuset_size()) < 0){
 		if(errno == ENOSYS || errno == ENODEV){
 			// Cpusets aren't supported, or aren't in use
@@ -175,7 +178,6 @@ detect_cputypes(unsigned *cputc,libtorque_cputype **types,unsigned *cpusets,
 	int totalpe,z;
 
 	*cputc = 0;
-	*cpusets = 0;
 	*types = NULL;
 	CPU_ZERO(origmask);
 	if((totalpe = detect_cpucount(origmask,cpusets)) <= 0){
@@ -210,7 +212,10 @@ err:
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
 int pin_thread(int cpuid){
-	if(use_cpusets == 0){
+#ifdef LIBTORQUE_LINUX
+	if(use_cpusets){
+		return cpuset_pin(cpuid);
+	}else{
 		cpu_set_t mask;
 
 		CPU_ZERO(&mask);
@@ -220,18 +225,26 @@ int pin_thread(int cpuid){
 		}
 		return 0;
 	}
-	return cpuset_pin(cpuid);
+#else
+#error "No thread-pinning support on this OS"
+	return -1;
+#endif
 }
 
 // Undoes any prior pinning of this thread.
 int unpin_thread(void){
-	if(use_cpusets == 0){
-		if(sched_setaffinity(0,sizeof(orig_cpumask),&orig_cpumask)){
-			return -1;
-		}
-		return 0;
+#ifdef LIBTORQUE_LINUX
+	if(use_cpusets){
+		return cpuset_unpin();
 	}
-	return cpuset_unpin();
+	if(sched_setaffinity(0,sizeof(orig_cpumask),&orig_cpumask)){
+		return -1;
+	}
+	return 0;
+#else
+#error "No thread-pinning support on this OS"
+	return -1;
+#endif
 }
 
 int detect_architecture(void){
