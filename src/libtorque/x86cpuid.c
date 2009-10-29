@@ -26,14 +26,14 @@ int cpuid_available(void){
 
 typedef struct known_x86_vender {
 	const char *signet;
-	int (*l1fxn)(uint32_t,unsigned *,unsigned *);
-	int (*l2fxn)(uint32_t,unsigned *,unsigned *);
+	int (*l1fxn)(uint32_t,libtorque_hwmem *);
+	int (*l2fxn)(uint32_t,libtorque_hwmem *);
 } known_x86_vender;
 
-static int id_amd_l1(uint32_t,unsigned *,unsigned *);
-static int id_via_l1(uint32_t,unsigned *,unsigned *);
-static int id_intel_l1(uint32_t,unsigned *,unsigned *);
-static int id_intel_l2(uint32_t,unsigned *,unsigned *);
+static int id_amd_l1(uint32_t,libtorque_hwmem *);
+static int id_via_l1(uint32_t,libtorque_hwmem *);
+static int id_intel_l1(uint32_t,libtorque_hwmem *);
+static int id_intel_l2(uint32_t,libtorque_hwmem *);
 
 // There's also: (Collect them all! Impress your friends!)
 //      " UMC UMC UMC" "CyriteadxIns" "NexGivenenDr"
@@ -122,45 +122,85 @@ identify_extended_cpuid(uint32_t *cpuid_max){
 typedef struct intel_dc_descriptor {
 	unsigned descriptor;
 	unsigned linesize;
+	unsigned totalsize;
+	unsigned associativity;
 } intel_dc_descriptor;
 
 static const intel_dc_descriptor intel_dc1_descriptors[] = {
 	{       .descriptor = 0x0a,
 		.linesize = 32,
+		.totalsize = 8 * 1024,
+		.associativity = 2,
 	},
 	{       .descriptor = 0x0c,
 		.linesize = 32,
+		.totalsize = 16 * 1024,
+		.associativity = 4,
 	},
 	{       .descriptor = 0x2c,
 		.linesize = 64,
+		.totalsize = 32 * 1024,
+		.associativity = 8,
 	},
 	{       .descriptor = 0x60,
 		.linesize = 64,
+		.totalsize = 16 * 1024,
+		.associativity = 8,
 	},
 	{       .descriptor = 0x66,
 		.linesize = 64,
+		.totalsize = 8 * 1024,
+		.associativity = 4,
 	},
 	{       .descriptor = 0x67,
 		.linesize = 64,
+		.totalsize = 16 * 1024,
+		.associativity = 4,
 	},
 	{       .descriptor = 0x68,
 		.linesize = 64,
+		.totalsize = 32 * 1024,
+		.associativity = 4,
 	},
 	{       .descriptor = 0,
 		.linesize = 0,
+		.associativity = 0,
+		.totalsize = 0,
 	}
 };
 
 static const intel_dc_descriptor intel_dc2_descriptors[] = {
-	// FIXME
+	{       .descriptor = 0x1a,
+		.linesize = 64,
+		.totalsize = 96 * 1024,
+		.associativity = 6,
+	},
+	{       .descriptor = 0x39,
+		.linesize = 64,
+		.totalsize = 128 * 1024,
+		.associativity = 4,
+	},
+	{       .descriptor = 0x3a,
+		.linesize = 64,
+		.totalsize = 192 * 1024,
+		.associativity = 6,
+	},
+	{       .descriptor = 0x3b,
+		.linesize = 64,
+		.totalsize = 128 * 1024,
+		.associativity = 2,
+	},
+	// FIXME many more still
 	{       .descriptor = 0,
 		.linesize = 0,
+		.associativity = 0,
+		.totalsize = 0,
 	}
 };
 
 static int
 get_intel_clineb(const intel_dc_descriptor *descs,unsigned descriptor,
-				unsigned *clineb){
+				libtorque_hwmem *mem){
 	const intel_dc_descriptor *id;
 
 	for(id = descs ; id->descriptor ; ++id){
@@ -171,16 +211,18 @@ get_intel_clineb(const intel_dc_descriptor *descs,unsigned descriptor,
 	if(id->descriptor == 0){ // Must keep descriptor tables up to date :/
 		return 0;
 	}
-	if(*clineb){
+	if(mem->linesize || mem->totalsize || mem->associativity){
 		return -1;
 	}
-	*clineb = id->linesize;
+	mem->linesize = id->linesize;
+	mem->totalsize = id->totalsize;
+	mem->associativity = id->associativity;
 	return 0;
 }
 
 static int
 decode_intel_func2(const intel_dc_descriptor *descs,uint32_t *gpregs,
-				unsigned *clineb){
+				libtorque_hwmem *mem){
 	uint32_t mask;
 	unsigned z;
 
@@ -197,7 +239,7 @@ decode_intel_func2(const intel_dc_descriptor *descs,uint32_t *gpregs,
 			unsigned descriptor;
 
 			if( (descriptor = (gpregs[z] & mask) >> ((3 - y) * 8)) ){
-				if(get_intel_clineb(descs,descriptor,clineb)){
+				if(get_intel_clineb(descs,descriptor,mem)){
 					return -1;
 				}
 			}
@@ -212,7 +254,7 @@ decode_intel_func2(const intel_dc_descriptor *descs,uint32_t *gpregs,
 
 // Function 2 of Intel's CPUID -- See 3.1.3 of the CPUID Application Note
 static int
-extract_intel_func2(const intel_dc_descriptor *descs,unsigned *clineb){
+extract_intel_func2(const intel_dc_descriptor *descs,libtorque_hwmem *mem){
 	uint32_t gpregs[4],callreps;
 	int ret;
 
@@ -220,7 +262,7 @@ extract_intel_func2(const intel_dc_descriptor *descs,unsigned *clineb){
 	if((callreps = gpregs[0] & 0x000000ff) != 1){
 		return -1;
 	}
-	while((ret = decode_intel_func2(descs,gpregs,clineb)) == 0){
+	while((ret = decode_intel_func2(descs,gpregs,mem)) == 0){
 		if(--callreps == 0){
 			break;
 		}
@@ -230,39 +272,37 @@ extract_intel_func2(const intel_dc_descriptor *descs,unsigned *clineb){
 }
 
 static int
-id_intel_l1(uint32_t maxlevel,unsigned *clineb,unsigned *totb){
+id_intel_l1(uint32_t maxlevel,libtorque_hwmem *mem){
 	if(maxlevel < CPUID_STANDARD_CACHECONF){
 		return -1;
 	}
-	*clineb = 0;
-	if(extract_intel_func2(intel_dc1_descriptors,clineb)){
+	memset(mem,0,sizeof(*mem));
+	if(extract_intel_func2(intel_dc1_descriptors,mem)){
 		return -1;
 	}
-	if(*clineb == 0){
+	if(!mem->linesize || !mem->totalsize || !mem->associativity){
 		return -1;
 	}
-	*totb = 1; // FIXME
 	return 0;
 }
 
 static int
-id_intel_l2(uint32_t maxlevel,unsigned *clineb,unsigned *totb){
+id_intel_l2(uint32_t maxlevel,libtorque_hwmem *mem){
 	if(maxlevel < CPUID_STANDARD_CACHECONF){
 		return -1;
 	}
-	*clineb = 0;
-	if(extract_intel_func2(intel_dc2_descriptors,clineb)){
+	memset(mem,0,sizeof(*mem));
+	if(extract_intel_func2(intel_dc2_descriptors,mem)){
 		return -1;
 	}
-	if(*clineb == 0){
+	if(!mem->linesize || !mem->totalsize || !mem->associativity){
 		return -1;
 	}
-	*totb = 0; // FIXME
 	return 0;
 }
 
 static int
-id_amd_l1(uint32_t maxlevel __attribute__ ((unused)),unsigned *clineb,unsigned *totb){
+id_amd_l1(uint32_t maxlevel __attribute__ ((unused)),libtorque_hwmem *mem){
 	uint32_t maxexlevel,gpregs[4];
 	const known_x86_vender *cpu;
 
@@ -274,19 +314,21 @@ id_amd_l1(uint32_t maxlevel __attribute__ ((unused)),unsigned *clineb,unsigned *
 	}
 	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
 	cpuid(CPUID_EXTENDED_L1CACHE_TLB,gpregs);
-	*clineb = gpregs[2] & 0x000000ff;
-	*totb = 0; // FIXME
+	mem->linesize = gpregs[2] & 0x000000ff;
+	mem->associativity = 0; // FIXME
+	mem->totalsize = 0; // FIXME
 	return 0;
 }
 
 static int
-id_via_l1(uint32_t maxlevel __attribute__ ((unused)),unsigned *clineb,unsigned *totb){
+id_via_l1(uint32_t maxlevel __attribute__ ((unused)),libtorque_hwmem *mem){
 	// FIXME What a cheap piece of garbage, yeargh! VIA doesn't supply
 	// cache line info via CPUID. VIA C3 Antaur/Centaur both use 32b. The
 	// proof is by method of esoteric reference:
 	// http://www.digit-life.com/articles2/rmma/rmma-via-c3.html
-	*clineb = 32;
-	*totb = 0; // FIXME
+	mem->linesize = 32;
+	mem->associativity = 0; // FIXME
+	mem->totalsize = 0; // FIXME
 	return 0;
 }
 
@@ -319,11 +361,10 @@ int x86cpuid(libtorque_cputype *cpudesc){
 	if((vender = lookup_vender(gpregs + 1)) == NULL){
 		return -1;
 	}
-	if(vender->l1fxn(gpregs[0],&mem.linesize,&mem.totalsize)){
+	if(vender->l1fxn(gpregs[0],&mem)){
 		return -1;
 	}
-	mem.sharedways = 0;		// FIXME
-	mem.associativity = 0;		// FIXME
+	mem.sharedways = 1;		// FIXME
 	if((amem = add_hwmem(&cpudesc->memories,&cpudesc->memdescs,&mem)) == NULL){
 		return -1;
 	}
