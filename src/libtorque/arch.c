@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <libtorque/arch.h>
 
+#if defined(LIBTORQUE_LINUX)
+#include <cpuset.h>
+#endif
+
 static unsigned cpu_typecount;
 static libtorque_cputype *cpudescs;
 
@@ -31,6 +35,7 @@ static libtorque_cputype *cpudescs;
 //  - cpuset_getid(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET) (freebsd)
 static inline int
 detect_cpucount(void){
+#ifdef LIBTORQUE_FREEBSD
 	long sysonln;
 
 	// FIXME not the most robust method -- we'd rather use cpuset functions
@@ -44,6 +49,12 @@ detect_cpucount(void){
 		return -1;
 	}
 	return (int)sysonln;
+#elif defined(LIBTORQUE_LINUX)
+	return cpuset_size();
+#else
+#error "No CPU detection method defined for this OS"
+	return -1;
+#endif
 }
 
 // Returns the slot we just added to the end, or NULL on failure.
