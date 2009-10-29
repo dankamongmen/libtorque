@@ -48,7 +48,7 @@ detail_processing_unit(const libtorque_cputype *pudesc){
 			return -1;
 		}
 		printf("\tMemory type %u of %u: %ub total, %ub line, "
-			"%ub assoc, %u-shared\n",n + 1,
+			"%u-assoc, %u-shared\n",n + 1,
 			pudesc->memories,mem->totalsize,mem->linesize,
 			mem->associativity,mem->sharedways);
 	}
