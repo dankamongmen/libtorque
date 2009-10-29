@@ -80,12 +80,11 @@ compare_cpudetails(const libtorque_cputype * restrict a,
 			const libtorque_cputype * restrict b){
 	unsigned n;
 
-	if(a->caches != b->caches){
+	if(a->memories != b->memories){
 		return -1;
 	}
-	for(n = 0 ; n < a->caches ; ++n){
-		if(memcmp(a->cachedescs + n,b->cachedescs + n,
-				sizeof(*a->cachedescs))){
+	for(n = 0 ; n < a->memories ; ++n){
+		if(memcmp(a->memdescs + n,b->memdescs + n,sizeof(*a->memdescs))){
 			return -1;
 		}
 	}

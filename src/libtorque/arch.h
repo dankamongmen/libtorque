@@ -5,13 +5,13 @@
 extern "C" {
 #endif
 
-typedef struct libtorque_hwcache {
+typedef struct libtorque_hwmem {
 	unsigned totalsize,linesize,associativity;
-} libtorque_hwcache;
+} libtorque_hwmem;
 
 typedef struct libtorque_cputype {
-	libtorque_hwcache *cachedescs;
-	unsigned caches,elements;
+	libtorque_hwmem *memdescs;
+	unsigned memories,elements;
 } libtorque_cputype;
 
 unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));

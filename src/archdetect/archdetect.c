@@ -9,8 +9,12 @@ detail_processing_unit(const libtorque_cputype *pudesc){
 		fprintf(stderr,"Error: element count of 0\n");
 		return -1;
 	}
+	if(pudesc->memories <= 0){
+		fprintf(stderr,"Error: memory count of 0\n");
+		return -1;
+	}
 	printf("\tCount: %u\n",pudesc->elements);
-	printf("\tCaches: %u\n",pudesc->caches);
+	printf("\tMemories: %u\n",pudesc->memories);
 	return 0;
 }
 
