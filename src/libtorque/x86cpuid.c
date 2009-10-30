@@ -62,9 +62,10 @@ lookup_vender(const uint32_t *vendstr){
 	return NULL;
 }
 
-// By far, the best reference here is the IA-32 Intel Architecture Software
-// Developer's Manual. http://faydoc.tripod.com/cpu/cpuid.htm isn't bad, nor
-// is http://www.ee.nuigalway.ie/mirrors/www.sandpile.org/ia32/cpuid.htm.
+// By far, the best reference here is Intel Application Note 845 (the CPUID
+// guide). Also useful are the Intel and AMD Architecture Software Developer's
+// Manuals. http://faydoc.tripod.com/cpu/cpuid.htm is pretty useful, as is
+// http://www.ee.nuigalway.ie/mirrors/www.sandpile.org/ia32/cpuid.htm.
 typedef enum {
 	CPUID_MAX_SUPPORT		=       0x00000000,
 	CPUID_CPU_VERSION		=       0x00000001,
