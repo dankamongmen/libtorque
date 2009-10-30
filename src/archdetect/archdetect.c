@@ -7,7 +7,7 @@ static const char *
 memory_type(int mtype){
 	switch(mtype){
 		case MEMTYPE_DATA: return "Data";
-		case MEMTYPE_CODE: return "Instructions";
+		case MEMTYPE_CODE: return "Code";
 		case MEMTYPE_UNIFIED: return "Unified";
 		default: return NULL;
 	}
