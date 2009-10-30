@@ -8,7 +8,6 @@ extern "C" {
 #include <libtorque/arch.h>
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int cpuid_available(void);
 int x86cpuid(libtorque_cputype *);
 
 #ifdef __cplusplus

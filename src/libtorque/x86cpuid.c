@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <libtorque/x86cpuid.h>
 
-int cpuid_available(void){
+static int
+cpuid_available(void){
 	const unsigned long flag = 0x200000;
 	unsigned long f1, f2;
 
@@ -451,6 +452,9 @@ int x86cpuid(libtorque_cputype *cpudesc){
 	const known_x86_vender *vender;
 	uint32_t gpregs[4];
 
+	if(!cpuid_available()){
+		return -1;
+	}
 	cpudesc->memories = 0;
 	cpudesc->memdescs = NULL;
 	cpudesc->elements = 0;
