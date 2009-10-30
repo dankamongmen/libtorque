@@ -4,7 +4,7 @@
 #include <libtorque/libtorque.h>
 
 static int
-detail_processing_unit(const libtorque_cputype *pudesc){
+detail_processing_unit(const libtorque_cput *pudesc){
 	unsigned n;
 
 	if(pudesc->strdescription == NULL){
@@ -29,7 +29,7 @@ detail_processing_unit(const libtorque_cputype *pudesc){
 		return -1;
 	}
 	for(n = 0 ; n < pudesc->memories ; ++n){
-		const libtorque_hwmem *mem = pudesc->memdescs + n;
+		const libtorque_memt *mem = pudesc->memdescs + n;
 
 		if(mem->totalsize <= 0){
 			fprintf(stderr,"Error: memory total size of 0\n");
@@ -60,7 +60,7 @@ detail_processing_units(unsigned cpu_typecount){
 	unsigned n;
 
 	for(n = 0 ; n < cpu_typecount ; ++n){
-		const libtorque_cputype *pudesc;
+		const libtorque_cput *pudesc;
 
 		if((pudesc = libtorque_cpu_getdesc(n)) == NULL){
 			fprintf(stderr,"Couldn't look up CPU type %u\n",n);

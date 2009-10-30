@@ -24,7 +24,7 @@ static cpu_set_t orig_cpumask;
 // These are valid and non-zero following a successful call of
 // detect_architecture(), up until a call to free_architecture().
 static unsigned cpu_typecount;
-static libtorque_cputype *cpudescs; // dynarray of cpu_typecount elements
+static libtorque_cput *cpudescs; // dynarray of cpu_typecount elements
 
 // LibNUMA looks like the only real candidate for NUMA discovery (linux only)
 
@@ -111,9 +111,9 @@ detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 // Returns the slot we just added to the end, or NULL on failure. Pointers
 // will be shallow-copied; dynamically allocate them, and do not free them
 // explicitly (they'll be handled by free_cpudetails()).
-static inline libtorque_cputype *
-add_cputype(unsigned *cputc,libtorque_cputype **types,
-		const libtorque_cputype *acpu){
+static inline libtorque_cput *
+add_cputype(unsigned *cputc,libtorque_cput **types,
+		const libtorque_cput *acpu){
 	size_t s = (*cputc + 1) * sizeof(**types);
 	typeof(**types) *tmp;
 
@@ -126,7 +126,7 @@ add_cputype(unsigned *cputc,libtorque_cputype **types,
 }
 
 static void
-free_cpudetails(libtorque_cputype *details){
+free_cpudetails(libtorque_cput *details){
 	free(details->apicids);
 	details->apicids = NULL;
 	free(details->memdescs);
@@ -145,7 +145,7 @@ free_cpudetails(libtorque_cputype *details){
 //  - /proc/cpuinfo (linux only)
 //  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
 static int
-detect_cpudetails(int cpuid,libtorque_cputype *details){
+detect_cpudetails(int cpuid,libtorque_cput *details){
 	if(pin_thread(cpuid)){
 		return -1;
 	}
@@ -157,8 +157,8 @@ detect_cpudetails(int cpuid,libtorque_cputype *details){
 }
 
 static int
-compare_cpudetails(const libtorque_cputype * restrict a,
-			const libtorque_cputype * restrict b){
+compare_cpudetails(const libtorque_cput * restrict a,
+			const libtorque_cput * restrict b){
 	unsigned n;
 
 	if(a->family != b->family || a->model != b->model ||
@@ -179,9 +179,9 @@ compare_cpudetails(const libtorque_cputype * restrict a,
 	return 0;
 }
 
-static libtorque_cputype *
-match_cputype(unsigned cputc,libtorque_cputype *types,
-		const libtorque_cputype *acpu){
+static libtorque_cput *
+match_cputype(unsigned cputc,libtorque_cput *types,
+		const libtorque_cput *acpu){
 	unsigned n;
 
 	for(n = 0 ; n < cputc ; ++n){
@@ -195,7 +195,7 @@ match_cputype(unsigned cputc,libtorque_cputype *types,
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
 static int
-detect_cputypes(unsigned *cputc,libtorque_cputype **types,unsigned *cpusets,
+detect_cputypes(unsigned *cputc,libtorque_cput **types,unsigned *cpusets,
 			cpu_set_t *origmask){
 	int totalpe,z;
 
@@ -207,7 +207,7 @@ detect_cputypes(unsigned *cputc,libtorque_cputype **types,unsigned *cpusets,
 		goto err;
 	}
 	for(z = 0 ; z < totalpe ; ++z){
-		libtorque_cputype cpudetails;
+		libtorque_cput cpudetails;
 		typeof(*types) cputype;
 
 		if(detect_cpudetails(z,&cpudetails)){
@@ -286,7 +286,7 @@ unsigned libtorque_cpu_typecount(void){
 	return cpu_typecount;
 }
 
-const libtorque_cputype *libtorque_cpu_getdesc(unsigned n){
+const libtorque_cput *libtorque_cpu_getdesc(unsigned n){
 	if(n >= cpu_typecount){
 		return NULL;
 	}

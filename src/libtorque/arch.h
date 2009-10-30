@@ -5,21 +5,24 @@
 extern "C" {
 #endif
 
-typedef struct libtorque_hwmem {
-	unsigned totalsize,linesize,associativity,sharedways;
-} libtorque_hwmem;
+typedef struct libtorque_tlbtype {
+} libtorque_tlbtype;
 
-typedef struct libtorque_cputype {
+typedef struct libtorque_memt {
+	unsigned totalsize,linesize,associativity,sharedways;
+} libtorque_memt;
+
+typedef struct libtorque_cput {
 	unsigned elements,memories;
 	int family,model,stepping,extendedsig;	// x86-specific; union?
 	char *strdescription;
-	libtorque_hwmem *memdescs;
+	libtorque_memt *memdescs;
 	unsigned *apicids;			// FIXME not yet filled in
-} libtorque_cputype;
+} libtorque_cput;
 
 unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));
 
-const libtorque_cputype *libtorque_cpu_getdesc(unsigned)
+const libtorque_cput *libtorque_cpu_getdesc(unsigned)
 	__attribute__ ((visibility("default")));
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden

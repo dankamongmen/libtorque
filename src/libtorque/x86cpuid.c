@@ -27,12 +27,12 @@ cpuid_available(void){
 
 typedef struct known_x86_vender {
 	const char *signet;
-	int (*memfxn)(uint32_t,libtorque_cputype *);
+	int (*memfxn)(uint32_t,libtorque_cput *);
 } known_x86_vender;
 
-static int id_amd_caches(uint32_t,libtorque_cputype *);
-static int id_via_caches(uint32_t,libtorque_cputype *);
-static int id_intel_caches(uint32_t,libtorque_cputype *);
+static int id_amd_caches(uint32_t,libtorque_cput *);
+static int id_via_caches(uint32_t,libtorque_cput *);
+static int id_intel_caches(uint32_t,libtorque_cput *);
 
 // There's also: (Collect them all! Impress your friends!)
 //      " UMC UMC UMC" "CyriteadxIns" "NexGivenenDr"
@@ -201,7 +201,7 @@ static const intel_dc_descriptor intel_dc2_descriptors[] = {
 
 static int
 get_intel_clineb(const intel_dc_descriptor *descs,unsigned descriptor,
-				libtorque_hwmem *mem){
+				libtorque_memt *mem){
 	const intel_dc_descriptor *id;
 
 	for(id = descs ; id->descriptor ; ++id){
@@ -223,7 +223,7 @@ get_intel_clineb(const intel_dc_descriptor *descs,unsigned descriptor,
 
 static int
 decode_intel_func2(const intel_dc_descriptor *descs,uint32_t *gpregs,
-				libtorque_hwmem *mem){
+				libtorque_memt *mem){
 	uint32_t mask;
 	unsigned z;
 
@@ -255,7 +255,7 @@ decode_intel_func2(const intel_dc_descriptor *descs,uint32_t *gpregs,
 
 // Function 2 of Intel's CPUID -- See 3.1.3 of the CPUID Application Note
 static int
-extract_intel_func2(const intel_dc_descriptor *descs,libtorque_hwmem *mem){
+extract_intel_func2(const intel_dc_descriptor *descs,libtorque_memt *mem){
 	uint32_t gpregs[4],callreps;
 	int ret;
 
@@ -273,9 +273,9 @@ extract_intel_func2(const intel_dc_descriptor *descs,libtorque_hwmem *mem){
 }
 
 // Returns the slot we just added to the end, or NULL on failure.
-static inline libtorque_hwmem *
-add_hwmem(unsigned *memories,libtorque_hwmem **mems,
-		const libtorque_hwmem *amem){
+static inline libtorque_memt *
+add_hwmem(unsigned *memories,libtorque_memt **mems,
+		const libtorque_memt *amem){
 	size_t s = (*memories + 1) * sizeof(**mems);
 	typeof(**mems) *tmp;
 
@@ -288,8 +288,8 @@ add_hwmem(unsigned *memories,libtorque_hwmem **mems,
 }
 
 static int
-id_intel_caches_old(uint32_t maxlevel,libtorque_cputype *cpu){
-	libtorque_hwmem mem;
+id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
+	libtorque_memt mem;
 
 	if(maxlevel < CPUID_STANDARD_CPUCONF){
 		return -1;
@@ -310,7 +310,7 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cputype *cpu){
 }
 
 static int
-id_intel_caches(uint32_t maxlevel,libtorque_cputype *cpu){
+id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 	unsigned n,gotlevel,level,maxdc;
 	uint32_t gpregs[4];
 
@@ -324,7 +324,7 @@ id_intel_caches(uint32_t maxlevel,libtorque_cputype *cpu){
 		do{
 			enum { NULLCACHE, DATACACHE, CODECACHE, UNIFIEDCACHE } cachet;
 			unsigned lev = (gpregs[0] >> 5) & 0x7; // AX[7..5]
-			libtorque_hwmem mem;
+			libtorque_memt mem;
 
 			cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
 			cachet = gpregs[0] & 0x1f; // AX[4..0]
@@ -360,9 +360,9 @@ id_intel_caches(uint32_t maxlevel,libtorque_cputype *cpu){
 }
 
 static int
-id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cputype *cpud){
+id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
 	uint32_t maxexlevel,gpregs[4];
-	libtorque_hwmem l1amd;
+	libtorque_memt l1amd;
 
 	if((maxexlevel = identify_extended_cpuid()) < CPUID_EXTENDED_L1CACHE_TLB){
 		return -1;
@@ -381,12 +381,12 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cputype *cpud
 }
 
 static int
-id_via_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cputype *cpu){
+id_via_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpu){
 	// FIXME What a cheap piece of garbage, yeargh! VIA doesn't supply
 	// cache line info via CPUID. VIA C3 Antaur/Centaur both use 32b. The
 	// proof is by method of esoteric reference:
 	// http://www.digit-life.com/articles2/rmma/rmma-via-c3.html
-	libtorque_hwmem l1via = {
+	libtorque_memt l1via = {
 		.linesize = 32,		// FIXME
 		.associativity = 0,	// FIXME
 		.totalsize = 0,		// FIXME
@@ -399,7 +399,7 @@ id_via_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cputype *cpu)
 }
 
 static int
-x86_getbrandname(libtorque_cputype *cpudesc){
+x86_getbrandname(libtorque_cput *cpudesc){
 	char brandname[16 * 3 + 1]; // each _NAMEx function returns E[BCD]X
 	cpuid_class ops[] = { CPUID_EXTENDED_CPU_NAME1,
 				CPUID_EXTENDED_CPU_NAME2,
@@ -433,7 +433,7 @@ x86_getbrandname(libtorque_cputype *cpudesc){
 }
 
 static int
-x86_getprocsig(uint32_t maxfunc,libtorque_cputype *cpu){
+x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	uint32_t gpregs[4];
 
 	if(maxfunc < CPUID_CPU_VERSION){
@@ -449,7 +449,7 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cputype *cpu){
 
 // Before this is called, verify that the CPUID instruction is available via
 // receipt of non-zero return from cpuid_available().
-int x86cpuid(libtorque_cputype *cpudesc){
+int x86cpuid(libtorque_cput *cpudesc){
 	const known_x86_vender *vender;
 	uint32_t gpregs[4];
 
