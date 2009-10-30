@@ -21,7 +21,7 @@ continuation-based unix i/o for manycore numa\888/© nick black 2009
 -=+ I. History and licensing +=-
 ----------------------------------------------------------------libtorque-----
 
-libtorque was conceived as a proposal for Dr. Richard Vuduc's Fall 2009
+libtorque was conceived as a project for Professor Richard Vuduc's Fall 2009
 "CSE 6230: Tools and Applications for High Performance Computing" at the
 Georgia Institute of Technology. The original proposal for libtorque is
 available at:
