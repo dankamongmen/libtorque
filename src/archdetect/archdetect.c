@@ -13,15 +13,30 @@ memory_type(int mtype){
 	}
 }
 
+static const char *
+x86_type(int x86type){
+	switch(x86type){
+		case PROCESSOR_X86_OEM: return "OEM";
+		case PROCESSOR_X86_OVERDRIVE: return "OverDrive"; // FIXME: TM!
+		case PROCESSOR_X86_DUAL: return "MP";
+		default: return NULL;
+	}
+}
+
 static int
 detail_processing_unit(const libtorque_cput *pudesc){
+	const char *x86type;
 	unsigned n;
 
 	if(pudesc->strdescription == NULL){
 		fprintf(stderr,"Error: no string description\n");
 		return -1;
 	}
-	printf("\tBrand name: %s\n",pudesc->strdescription);
+	if((x86type = x86_type(pudesc->x86type)) == NULL){
+		fprintf(stderr,"Error: invalid x86 type information\n");
+		return -1;
+	}
+	printf("\tBrand name: %s (%s)\n",pudesc->strdescription,x86type);
 	if(pudesc->family == 0){
 		fprintf(stderr,"Error: invalid processor family\n");
 		return -1;
