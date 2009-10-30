@@ -118,7 +118,7 @@ identify_extended_cpuid(void){
 	return gpregs[0];
 }
 
-/*typedef struct intel_dc_descriptor {
+typedef struct intel_dc_descriptor {
 	unsigned descriptor;
 	unsigned linesize;
 	unsigned totalsize;
@@ -270,21 +270,6 @@ extract_intel_func2(const intel_dc_descriptor *descs,libtorque_hwmem *mem){
 	return ret;
 }
 
-static int
-id_intel_caches(uint32_t maxlevel,libtorque_hwmem *mem){
-	if(maxlevel < CPUID_STANDARD_CPUCONF){
-		return -1;
-	}
-	memset(mem,0,sizeof(*mem));
-	if(extract_intel_func2(intel_dc1_descriptors,mem)){
-		return -1;
-	}
-	if(!mem->linesize || !mem->totalsize || !mem->associativity){
-		return -1;
-	}
-	return 0;
-}*/
-
 // Returns the slot we just added to the end, or NULL on failure.
 static inline libtorque_hwmem *
 add_hwmem(unsigned *memories,libtorque_hwmem **mems,
@@ -301,12 +286,34 @@ add_hwmem(unsigned *memories,libtorque_hwmem **mems,
 }
 
 static int
+id_intel_caches_old(uint32_t maxlevel,libtorque_cputype *cpu){
+	libtorque_hwmem mem;
+
+	if(maxlevel < CPUID_STANDARD_CPUCONF){
+		return -1;
+	}
+	memset(&mem,0,sizeof(mem));
+	if(extract_intel_func2(intel_dc1_descriptors,&mem)){
+		return -1;
+	}
+	if(!mem.linesize || !mem.totalsize || !mem.associativity){
+		return -1;
+	}
+	// FIXME need to get all of them; this just gets L1!
+	// FIXME also must determine sharing!
+	if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
+		return -1;
+	}
+	return 0;
+}
+
+static int
 id_intel_caches(uint32_t maxlevel,libtorque_cputype *cpu){
 	unsigned n,gotlevel,level,maxdc;
 	uint32_t gpregs[4];
 
 	if(maxlevel < CPUID_STANDARD_CACHECONF){
-		return -1; // FIXME fall back to CPUID_STANDARD_CPUCONF
+		return id_intel_caches_old(maxlevel,cpu);
 	}
 	maxdc = level = 0;
 	do{
@@ -444,13 +451,13 @@ int x86cpuid(libtorque_cputype *cpudesc){
 	cpudesc->family = cpudesc->stepping = -1;
 	cpudesc->extendedsig = cpudesc->model = -1;
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
+	if((vender = lookup_vender(gpregs + 1)) == NULL){
+		return -1;
+	}
 	if(x86_getprocsig(gpregs[0],cpudesc)){
 		return -1;
 	}
 	if(x86_getbrandname(cpudesc)){
-		return -1;
-	}
-	if((vender = lookup_vender(gpregs + 1)) == NULL){
 		return -1;
 	}
 	if(vender->memfxn(gpregs[0],cpudesc)){
