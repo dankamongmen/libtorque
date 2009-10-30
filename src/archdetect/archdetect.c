@@ -3,6 +3,16 @@
 #include <libtorque/arch.h>
 #include <libtorque/libtorque.h>
 
+static const char *
+memory_type(int mtype){
+	switch(mtype){
+		case MEMTYPE_DATA: return "Data";
+		case MEMTYPE_CODE: return "Instructions";
+		case MEMTYPE_UNIFIED: return "Unified";
+		default: return NULL;
+	}
+}
+
 static int
 detail_processing_unit(const libtorque_cput *pudesc){
 	unsigned n;
@@ -30,7 +40,12 @@ detail_processing_unit(const libtorque_cput *pudesc){
 	}
 	for(n = 0 ; n < pudesc->memories ; ++n){
 		const libtorque_memt *mem = pudesc->memdescs + n;
+		const char *memt;
 
+		if((memt = memory_type(mem->memtype)) == NULL){
+			fprintf(stderr,"Error: invalid or unknown memory type\n");
+			return -1;
+		}
 		if(mem->totalsize <= 0){
 			fprintf(stderr,"Error: memory total size of 0\n");
 			return -1;
@@ -48,9 +63,9 @@ detail_processing_unit(const libtorque_cput *pudesc){
 			return -1;
 		}
 		printf("\tMemory type %u of %u: %ub total, %ub line, "
-			"%u-assoc, %u-shared\n",n + 1,
+			"%u-assoc, %u-shared (%s)\n",n + 1,
 			pudesc->memories,mem->totalsize,mem->linesize,
-			mem->associativity,mem->sharedways);
+			mem->associativity,mem->sharedways,memt);
 	}
 	return 0;
 }

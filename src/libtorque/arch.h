@@ -14,7 +14,7 @@ typedef struct libtorque_memt {
 	enum {
 		MEMTYPE_UNKNOWN,
 		MEMTYPE_DATA,
-		MEMTYPE_INSTRUCTION,
+		MEMTYPE_CODE,
 		MEMTYPE_UNIFIED
 	} memtype;
 	unsigned tlbs;			// Number of TLB levels for this mem
