@@ -403,6 +403,7 @@ x86_getbrandname(libtorque_cputype *cpudesc){
 				CPUID_EXTENDED_CPU_NAME2,
 				CPUID_EXTENDED_CPU_NAME3 };
 	uint32_t gpregs[4],maxlevel;
+	const char *aname;
 	unsigned z;
 
 	if((maxlevel = identify_extended_cpuid()) < CPUID_EXTENDED_CPU_NAME3){
@@ -417,7 +418,13 @@ x86_getbrandname(libtorque_cputype *cpudesc){
 		}
 	}
 	brandname[z * 16] = '\0';
-	if((cpudesc->strdescription = strdup(brandname)) == NULL){
+	aname = brandname;
+	// we do *NOT* want a localized match here; we want ASCII 0x20 (SP). do
+	// *not* use isspace() or its ilk.
+	while(*aname == ' '){
+		++aname;
+	}
+	if((cpudesc->strdescription = strdup(aname)) == NULL){
 		return -1;
 	}
 	return 0;
