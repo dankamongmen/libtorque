@@ -62,10 +62,15 @@ detail_processing_unit(const libtorque_cput *pudesc){
 			fprintf(stderr,"Error: memory sharedways of 0\n");
 			return -1;
 		}
-		printf("\tMemory %u of %u: %ub total, %ub line, "
-			"%u-assoc, %u-shared (%s)\n",n + 1,
-			pudesc->memories,mem->totalsize,mem->linesize,
-			mem->associativity,mem->sharedways,memt);
+		printf("\tMemory %u of %u: %ub total, %ub line, %u-assoc, ",
+			n + 1,pudesc->memories,mem->totalsize,mem->linesize,
+			mem->associativity);
+		if(mem->sharedways == 1){
+			printf("unshared ");
+		}else{
+			printf("%u-shared ",mem->sharedways);
+		}
+		printf("(%s)\n",memt);
 	}
 	return 0;
 }
