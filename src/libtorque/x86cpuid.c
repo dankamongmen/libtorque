@@ -451,6 +451,7 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	}
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
 	cpu->stepping = gpregs[0] & 0xfu; // Stepping: EAX[3..0]
+	cpu->x86type = (gpregs[0] >> 12) & 0x2u; // Processor type: EAX[13..12]
 	// Extended model is EAX[19..16]. Model is EAX[7..4].
 	cpu->model = ((gpregs[0] >> 12) & 0xf0u) | ((gpregs[0] >> 4) & 0xfu);
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
