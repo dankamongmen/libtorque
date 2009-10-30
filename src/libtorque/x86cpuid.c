@@ -351,6 +351,9 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 				(((gpregs[1] >> 12) & 0x1ff) + 1) *
 				mem.linesize * (gpregs[2] + 1);
 			mem.sharedways = ((gpregs[0] >> 14) & 0xfff) + 1;
+			mem.memtype = MEMTYPE_UNKNOWN;
+			mem.tlbdescs = NULL;
+			mem.tlbs = 0;
 			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
 				return -1;
 			}

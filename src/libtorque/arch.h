@@ -6,18 +6,28 @@ extern "C" {
 #endif
 
 typedef struct libtorque_tlbtype {
+	unsigned totalsize,pagesize;
 } libtorque_tlbtype;
 
 typedef struct libtorque_memt {
 	unsigned totalsize,linesize,associativity,sharedways;
+	enum {
+		MEMTYPE_UNKNOWN,
+		MEMTYPE_DATA,
+		MEMTYPE_INSTRUCTION,
+		MEMTYPE_UNIFIED
+	} memtype;
+	unsigned tlbs;			// Number of TLB levels for this mem
+	libtorque_tlbtype *tlbdescs;	// TLB descriptors, NULL if tlbs == 0
 } libtorque_memt;
 
 typedef struct libtorque_cput {
-	unsigned elements,memories;
+	unsigned elements;		// Usable processors of this type
+	unsigned memories;		// Number of memories for this type
 	int family,model,stepping,extendedsig;	// x86-specific; union?
-	char *strdescription;
-	libtorque_memt *memdescs;
-	unsigned *apicids;			// FIXME not yet filled in
+	char *strdescription;		// Vender-specific string description
+	libtorque_memt *memdescs;	// Memory descriptors, never NULL
+	unsigned *apicids;		// FIXME not yet filled in
 } libtorque_cput;
 
 unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));
