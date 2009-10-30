@@ -232,14 +232,14 @@ decode_intel_func2(const intel_dc_descriptor *descs,uint32_t *gpregs,
 	for(z = 0 ; z < 4 ; ++z){
 		unsigned y;
 
-		if(gpregs[z] & 0x80000000){
+		if(gpregs[z] & 0x80000000u){
 			continue;
 		}
 		mask = 0xff000000;
 		for(y = 0 ; y < 4 ; ++y){
 			unsigned descriptor;
 
-			if( (descriptor = (gpregs[z] & mask) >> ((3 - y) * 8)) ){
+			if( (descriptor = (gpregs[z] & mask) >> ((3 - y) * 8u)) ){
 				if(get_intel_clineb(descs,descriptor,mem)){
 					return -1;
 				}
@@ -260,7 +260,7 @@ extract_intel_func2(const intel_dc_descriptor *descs,libtorque_memt *mem){
 	int ret;
 
 	cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
-	if((callreps = gpregs[0] & 0x000000ff) != 1){
+	if((callreps = gpregs[0] & 0x000000ffu) != 1){
 		return -1;
 	}
 	while((ret = decode_intel_func2(descs,gpregs,mem)) == 0){
@@ -327,11 +327,11 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 		} cachet;
 		n = 0;
 		do{
-			unsigned lev = (gpregs[0] >> 5) & 0x7; // AX[7..5]
+			unsigned lev = (gpregs[0] >> 5) & 0x7u; // AX[7..5]
 			libtorque_memt mem;
 
 			cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
-			cachet = gpregs[0] & 0x1f; // AX[4..0]
+			cachet = gpregs[0] & 0x1fu; // AX[4..0]
 			if(cachet == DATACACHE){ // Memory type is in AX[4..0]
 				mem.memtype = MEMTYPE_DATA;
 			}else if(cachet == CODECACHE){
@@ -350,15 +350,15 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 				continue;
 			}
 			// Linesize is EBX[11:0] + 1
-			mem.linesize = (gpregs[1] & 0xfff) + 1;
+			mem.linesize = (gpregs[1] & 0xfffu) + 1;
 			// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
-			mem.associativity = (gpregs[0] & 0x200) ? 1 :
-				(((gpregs[1] >> 22) & 0x3ff) + 1);
+			mem.associativity = (gpregs[0] & 0x200u) ? 1 :
+				(((gpregs[1] >> 22) & 0x3ffu) + 1);
 			// Partitions = EBX[21:12] + 1, sets = ECX + 1
 			mem.totalsize = mem.associativity *
-				(((gpregs[1] >> 12) & 0x1ff) + 1) *
+				(((gpregs[1] >> 12) & 0x1ffu) + 1) *
 				mem.linesize * (gpregs[2] + 1);
-			mem.sharedways = ((gpregs[0] >> 14) & 0xfff) + 1;
+			mem.sharedways = ((gpregs[0] >> 14) & 0xfffu) + 1;
 			mem.tlbdescs = NULL;
 			mem.tlbs = 0;
 			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
@@ -379,7 +379,7 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
 	}
 	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
 	cpuid(CPUID_EXTENDED_L1CACHE_TLB,0,gpregs);
-	l1amd.linesize = gpregs[2] & 0x000000ff;
+	l1amd.linesize = gpregs[2] & 0x000000ffu;
 	l1amd.associativity = 0; // FIXME
 	l1amd.totalsize = 0;	// FIXME
 	l1amd.sharedways = 0;	// FIXME
@@ -450,10 +450,11 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 		return -1;
 	}
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
-	cpu->stepping = gpregs[0] & 0xf;
-	cpu->model = (gpregs[0] >> 4) & 0xf;
-	cpu->family = (gpregs[0] >> 8) & 0xf;
-	cpu->extendedsig = (gpregs[0] >> 16) & 0xfff;
+	cpu->stepping = gpregs[0] & 0xfu; // Stepping: EAX[3..0]
+	// Extended model is EAX[19..16]. Model is EAX[7..4].
+	cpu->model = ((gpregs[0] >> 12) & 0xf0u) | ((gpregs[0] >> 4) & 0xfu);
+	// Extended family is EAX[27..20]. Family is EAX[11..8].
+	cpu->family = ((gpregs[0] >> 17) & 0x7f8u) | ((gpregs[0] >> 8) & 0xfu);
 	return 0;
 }
 
@@ -469,9 +470,9 @@ int x86cpuid(libtorque_cput *cpudesc){
 	cpudesc->memories = 0;
 	cpudesc->memdescs = NULL;
 	cpudesc->elements = 0;
-	cpudesc->apicids = NULL;
-	cpudesc->family = cpudesc->stepping = -1;
-	cpudesc->extendedsig = cpudesc->model = -1;
+	// cpudesc->apicids = NULL;
+	cpudesc->x86type = PROCESSOR_X86_UNKNOWN;
+	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
 	if((vender = lookup_vender(gpregs + 1)) == NULL){
 		return -1;

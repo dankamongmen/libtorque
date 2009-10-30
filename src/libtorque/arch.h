@@ -24,10 +24,18 @@ typedef struct libtorque_memt {
 typedef struct libtorque_cput {
 	unsigned elements;		// Usable processors of this type
 	unsigned memories;		// Number of memories for this type
-	int family,model,stepping,extendedsig;	// x86-specific; union?
+	enum {				// Table 2.1, Intel IAN 845
+		PROCESSOR_X86_OEM = 0,
+		PROCESSOR_X86_OVERDRIVE = 1,
+		PROCESSOR_X86_DUAL = 2,
+		PROCESSOR_X86_UNKNOWN
+	} x86type;
+	unsigned family,model,stepping;	// x86-specific; perhaps use a union?
+					// family and model include the
+					// extended family and model bits
 	char *strdescription;		// Vender-specific string description
 	libtorque_memt *memdescs;	// Memory descriptors, never NULL
-	unsigned *apicids;		// FIXME not yet filled in
+	// unsigned *apicids;		// FIXME not yet filled in
 } libtorque_cput;
 
 unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));

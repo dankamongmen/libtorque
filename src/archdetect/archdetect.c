@@ -22,18 +22,12 @@ detail_processing_unit(const libtorque_cput *pudesc){
 		return -1;
 	}
 	printf("\tBrand name: %s\n",pudesc->strdescription);
-	if(pudesc->family < 0 || pudesc->model < 0 || pudesc->stepping < 0){
-		fprintf(stderr,"Error: invalid processor signature\n");
+	if(pudesc->family == 0){
+		fprintf(stderr,"Error: invalid processor family\n");
 		return -1;
 	}
-	printf("\tFamily: %2d\tModel: %2d\tStepping: %2d\n",
-		pudesc->family,pudesc->model,pudesc->stepping);
-	if(pudesc->extendedsig < 0){
-		fprintf(stderr,"Error: no extended processor signature\n");
-		return -1;
-	}
-	printf("\tExtended signature: %04d (0x%08x 0x%04x)\n",pudesc->extendedsig,
-			pudesc->extendedsig & 0xff0,pudesc->extendedsig & 0xf);
+	printf("\tFamily: 0x%03x (%d)\tModel: 0x%02x (%d)\tStepping: %2d\n",
+		pudesc->family,pudesc->family,pudesc->model,pudesc->model,pudesc->stepping);
 	if(pudesc->memories <= 0){
 		fprintf(stderr,"Error: memory count of 0\n");
 		return -1;

@@ -127,15 +127,15 @@ add_cputype(unsigned *cputc,libtorque_cput **types,
 
 static void
 free_cpudetails(libtorque_cput *details){
-	free(details->apicids);
-	details->apicids = NULL;
+	// free(details->apicids);
+	// details->apicids = NULL;
 	free(details->memdescs);
 	details->memdescs = NULL;
 	free(details->strdescription);
 	details->strdescription = NULL;
-	details->stepping = details->model = 0;
+	details->stepping = details->model = details->family = 0;
+	details->x86type = PROCESSOR_X86_UNKNOWN;
 	details->elements = details->memories = 0;
-	details->extendedsig = details->family = 0;
 }
 
 // Methods to discover processor and cache details include:
@@ -162,7 +162,7 @@ compare_cpudetails(const libtorque_cput * restrict a,
 	unsigned n;
 
 	if(a->family != b->family || a->model != b->model ||
-		a->stepping != b->stepping || a->extendedsig != b->extendedsig){
+		a->stepping != b->stepping || a->x86type != b->x86type){
 		return -1;
 	}
 	if(a->memories != b->memories){
