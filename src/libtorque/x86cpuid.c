@@ -311,25 +311,37 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 
 static int
 id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
-	unsigned n,gotlevel,level,maxdc;
+	unsigned n,level,maxdc;
 	uint32_t gpregs[4];
 
 	if(maxlevel < CPUID_STANDARD_CACHECONF){
 		return id_intel_caches_old(maxlevel,cpu);
 	}
-	maxdc = level = 0;
+	maxdc = level = 1;
 	do{
-		gotlevel = 0;
+		enum { // Table 2.9, IAN 845
+			NULLCACHE = 0,
+			DATACACHE = 1,
+			CODECACHE = 2,
+			UNIFIEDCACHE = 3,
+		} cachet;
 		n = 0;
 		do{
-			enum { NULLCACHE, DATACACHE, CODECACHE, UNIFIEDCACHE } cachet;
 			unsigned lev = (gpregs[0] >> 5) & 0x7; // AX[7..5]
 			libtorque_memt mem;
 
 			cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
 			cachet = gpregs[0] & 0x1f; // AX[4..0]
-			if(cachet != DATACACHE && cachet != UNIFIEDCACHE){
+			if(cachet == DATACACHE){ // Memory type is in AX[4..0]
+				mem.memtype = MEMTYPE_DATA;
+			}else if(cachet == CODECACHE){
+				mem.memtype = MEMTYPE_CODE;
+			}else if(cachet == UNIFIEDCACHE){
+				mem.memtype = MEMTYPE_UNIFIED;
+			}else if(cachet == NULLCACHE){
 				continue;
+			}else{
+				return -1;
 			}
 			if(lev > maxdc){
 				maxdc = lev;
@@ -337,10 +349,6 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			if(lev != level){
 				continue;
 			}
-			if(gotlevel){ // dup d$ descriptors?!
-				return -1;
-			}
-			gotlevel = 1;
 			// Linesize is EBX[11:0] + 1
 			mem.linesize = (gpregs[1] & 0xfff) + 1;
 			// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
@@ -351,13 +359,12 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 				(((gpregs[1] >> 12) & 0x1ff) + 1) *
 				mem.linesize * (gpregs[2] + 1);
 			mem.sharedways = ((gpregs[0] >> 14) & 0xfff) + 1;
-			mem.memtype = MEMTYPE_UNKNOWN;
 			mem.tlbdescs = NULL;
 			mem.tlbs = 0;
 			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
 				return -1;
 			}
-		}while(gpregs[0]);
+		}while(cachet != NULLCACHE);
 	}while(++level <= maxdc);
 	return level ? 0 : -1;
 }
