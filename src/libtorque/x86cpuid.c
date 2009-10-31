@@ -264,9 +264,6 @@ static const intel_cache_descriptor intel_cache_descriptors[] = {
 		.level = 2,
 		.memtype = MEMTYPE_UNIFIED, // sectored
 	},
-	{       .descriptor = 0x40,
-		// Means "no higher-level cache". Special case? // FIXME
-	},
 	{       .descriptor = 0x41,
 		.linesize = 32,
 		.totalsize = 128 * 1024,
@@ -417,6 +414,34 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 		.level = 2,
 		.tlbtype = MEMTYPE_DATA,
 	},
+	{	.descriptor = 0x50,
+		.pagesize = 4 * 1024 * 1024,	// FIXME 4K, 2M or 4M
+		.entries = 64,
+		.associativity = 64,
+		.level = 1,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0x51,
+		.pagesize = 4 * 1024,		// FIXME 4K, 2M or 4M
+		.entries = 128,
+		.associativity = 128,
+		.level = 1,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0x52,
+		.pagesize = 4 * 1024 * 1024,	// FIXME 4K, 2M or 4M
+		.entries = 256,
+		.associativity = 256,
+		.level = 1,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0x55,
+		.pagesize = 4 * 1024,		// FIXME 2M or 4M
+		.entries = 7,
+		.associativity = 64,
+		.level = 2,
+		.tlbtype = MEMTYPE_CODE,
+	},
 	{	.descriptor = 0x56,
 		.pagesize = 4 * 1024 * 1024,
 		.entries = 16,
@@ -429,6 +454,34 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 		.entries = 16,
 		.associativity = 4,
 		.level = 1,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0x5a,		// FIXME two interpretations!
+		.pagesize = 4 * 1024 * 1024,
+		.entries = 32,
+		.associativity = 4,
+		.level = 1,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0x5b,
+		.pagesize = 4 * 1024,		// FIXME 4k or 4M
+		.entries = 64,
+		.associativity = 64,
+		.level = 2,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0x5c,
+		.pagesize = 4 * 1024,		// FIXME 4k or 4M
+		.entries = 128,
+		.associativity = 128,
+		.level = 2,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0x5d,
+		.pagesize = 4 * 1024,		// FIXME 4k or 4M
+		.entries = 256,
+		.associativity = 256,
+		.level = 2,
 		.tlbtype = MEMTYPE_DATA,
 	},
 	{	.descriptor = 0xb0,
@@ -466,6 +519,13 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 		.level = 2,
 		.tlbtype = MEMTYPE_DATA,
 	},
+};
+
+static const unsigned intel_trace_descriptors[] = {
+	0x70, // 12k uops, 8-way
+	0x71, // 16k uops, 8-way
+	0x72, // 32k uops, 8-way
+	0x73, // 64K uops, 8-way
 };
 
 // Returns the slot we just added to the end, or NULL on failure.
@@ -527,6 +587,19 @@ get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb){
 }
 
 static int
+get_intel_trace(unsigned descriptor){
+	unsigned n;
+
+	for(n = 0 ; n < sizeof(intel_trace_descriptors) / sizeof(*intel_trace_descriptors) ; ++n){
+		if(intel_trace_descriptors[n] == descriptor){
+			return 0;
+		}
+	}
+	printf("unknown trace descriptor %x\n",descriptor);
+	return -1;
+}
+
+static int
 decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 	uint32_t mask;
 	unsigned z;
@@ -553,10 +626,14 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 					}
 				}else if(get_intel_tlb(descriptor,&tlb) == 0){
 					printf("grokked tlb %x\n",descriptor); // FIXME
+				}else if(get_intel_trace(descriptor) == 0){
+					// no one cares
 				}else if(descriptor == 0xf0){
 					// FIXME 64-byte prefetching
 				}else if(descriptor == 0xf1){
 					// FIXME 128-byte prefetching
+				}else if(descriptor == 0x40){
+					// Means "no higher(?)-level cache"
 				}else{
 					return -1;
 				}
