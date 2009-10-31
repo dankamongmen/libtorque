@@ -409,6 +409,16 @@ typedef struct intel_tlb_descriptor {
 	int tlbtype;
 } intel_tlb_descriptor;
 
+static const intel_tlb_descriptor intel_tlb_descriptors[] = {
+	{	.descriptor = 0,
+		.pagesize = 0,
+		.totalsize = 0,
+		.associativity = 0,
+		.level = 0,
+		.tlbtype = MEMTYPE_UNKNOWN,
+	}
+};
+
 // Returns the slot we just added to the end, or NULL on failure.
 static inline libtorque_memt *
 add_hwmem(unsigned *memories,libtorque_memt **mems,
@@ -428,6 +438,7 @@ static int
 get_intel_cache(unsigned descriptor,libtorque_memt *mem){
 	const intel_cache_descriptor *desc = intel_cache_descriptors;
 
+	// FIXME convert this to a table indexed by (8-bit) descriptor
 	while(desc->descriptor){
 		if(desc->descriptor == descriptor){
 			break;
@@ -435,36 +446,36 @@ get_intel_cache(unsigned descriptor,libtorque_memt *mem){
 		++desc;
 	}
 	if(desc->descriptor == 0){ // Must keep descriptor tables up to date :/
-		printf("unknown descriptor %x\n",descriptor);
-		return 0;
+		printf("unknown cache descriptor %x\n",descriptor);
+		return -1;
 	}
 	mem->memtype = desc->memtype;
 	mem->linesize = desc->linesize;
 	mem->totalsize = desc->totalsize;
 	mem->associativity = desc->associativity;
+	mem->sharedways = 1;		// FIXME
+	mem->tlbdescs = NULL;
+	mem->tlbs = 0;
 	return 0;
 }
 
 static int
-get_intel_tlb(const intel_tlb_descriptor *,unsigned,libtorque_tlbt *)
-	__attribute__ ((unused)); // FIXME
+get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb){
+	const intel_tlb_descriptor *desc = intel_tlb_descriptors;
 
-static int
-get_intel_tlb(const intel_tlb_descriptor *descs,unsigned descriptor,
-				libtorque_tlbt *tlb){
-	while(descs->descriptor){
-		if(descs->descriptor == descriptor){
+	while(desc->descriptor){
+		if(desc->descriptor == descriptor){
 			break;
 		}
-		++descs;
+		++desc;
 	}
-	if(descs->descriptor == 0){ // Must keep descriptor tables up to date :/
-		printf("unknown descriptor %x\n",descriptor);
-		return 0;
+	if(desc->descriptor == 0){ // Must keep descriptor tables up to date :/
+		printf("unknown tlb descriptor %x\n",descriptor);
+		return -1;
 	}
-	tlb->pagesize = descs->pagesize;
-	tlb->totalsize = descs->totalsize;
-	tlb->associativity = descs->associativity;
+	tlb->pagesize = desc->pagesize;
+	tlb->totalsize = desc->totalsize;
+	tlb->associativity = desc->associativity;
 	tlb->sharedways = 0; // FIXME
 	// FIXME need to check tlbtype to ensure it's applicable
 	return 0;
@@ -489,15 +500,17 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 
 			if( (descriptor = (gpregs[z] & mask) >> ((3 - y) * 8u)) ){
 				libtorque_memt mem;
+				libtorque_tlbt tlb;
 
-				memset(&mem,0,sizeof(mem));
-				if(get_intel_cache(descriptor,&mem)){
-					return -1;
-				}
-				mem.sharedways = 1; // FIXME also must determine sharing!
-				if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
-					return -1;
-				}
+				if(get_intel_cache(descriptor,&mem) == 0){
+					printf("grokked cache %x\n",descriptor);
+					if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
+						return -1;
+					}
+				}else if(get_intel_tlb(descriptor,&tlb) == 0){
+					printf("grokked tlb %x\n",descriptor);
+					// FIXME
+				} // FIXME else unknown entirely...
 			}
 			// Don't interpret bits 0..7 of EAX (AL in old notation)
 			if((mask >>= 8) == 0x000000ff && z == 0){
@@ -590,9 +603,7 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			}
 		}while(cachet != NULLCACHE);
 	}while(++level <= maxdc);
-	return 0;
-	// FIXME need to call 0x0000_0002 for TLB's
-	// return id_intel_caches_old(maxlevel,cpu);
+	return id_intel_caches_old(maxlevel,cpu);
 }
 
 static int
