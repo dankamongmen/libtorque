@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <libtorque/arch.h>
 #include <libtorque/libtorque.h>
 
@@ -21,6 +22,22 @@ x86_type(int x86type){
 		case PROCESSOR_X86_DUAL: return "MP";
 		default: return NULL;
 	}
+}
+
+static int
+fprintf_bunit(FILE *fp,uintmax_t val){
+	const char units[] = "KMGTPE",*unit = units;
+	const uintmax_t SCALE = 1024;
+
+	if(val < SCALE){
+		return fprintf(fp,"%jub",val);
+	}
+	while((val /= 1024) > SCALE && (val % SCALE == 0)){
+		if(!*++unit){
+			return -1;
+		}
+	}
+	return fprintf(fp,"%ju%cb",val,*unit);
 }
 
 static int
@@ -71,9 +88,11 @@ detail_processing_unit(const libtorque_cput *pudesc){
 			fprintf(stderr,"Error: memory sharedways of 0\n");
 			return -1;
 		}
-		printf("\tMemory %u of %u: %ub total, %ub line, %u-assoc, ",
-			n + 1,pudesc->memories,mem->totalsize,mem->linesize,
-			mem->associativity);
+		printf("\tMemory %u of %u: ",n + 1,pudesc->memories);
+		fprintf_bunit(stdout,mem->totalsize);
+		printf(" total, ");
+		fprintf_bunit(stdout,mem->linesize);
+		printf(" line, %u-assoc, ",mem->associativity);
 		if(mem->sharedways == 1){
 			printf("unshared ");
 		}else{
