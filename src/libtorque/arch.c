@@ -74,7 +74,8 @@ static inline int portable_cpuset_count(cpu_set_t *) __attribute__ ((unused));
 
 static inline int
 portable_cpuset_count(cpu_set_t *mask){
-	int count = 0,cpu;
+	int count = 0;
+	unsigned cpu;
 
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
 #ifdef LIBTORQUE_LINUX
