@@ -104,9 +104,9 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 #else
 		"pushl %%ebx\n\t"
 		"cpuid\n\t" // serializing instruction
-		"movl %%ebx,%%esi\n\t"
+		"movl %%ebx,%[spill]\n\t"
 		"popl %%ebx\n\t"
-		: "=&a" (gpregs[0]), "=S" (gpregs[1]),
+		: "=&a" (gpregs[0]), [spill] "=r" (gpregs[1]),
 		  "=&c" (gpregs[2]), "=d" (gpregs[3])
 		: "0" (level), "2" (subparam)
 #endif
