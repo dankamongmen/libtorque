@@ -390,11 +390,6 @@ static const intel_cache_descriptor intel_cache_descriptors[] = {
 		.level = 1,
 		.memtype = MEMTYPE_DATA,
 	},
-	{       .descriptor = 0,
-		.linesize = 0,
-		.associativity = 0,
-		.totalsize = 0,
-	}
 };
 
 typedef struct intel_tlb_descriptor {
@@ -545,27 +540,22 @@ add_hwmem(unsigned *memories,libtorque_memt **mems,
 
 static int
 get_intel_cache(unsigned descriptor,libtorque_memt *mem){
-	const intel_cache_descriptor *desc = intel_cache_descriptors;
+	unsigned n;
 
 	// FIXME convert this to a table indexed by (8-bit) descriptor
-	while(desc->descriptor){
-		if(desc->descriptor == descriptor){
-			break;
+	for(n = 0 ; n < sizeof(intel_cache_descriptors) / sizeof(*intel_cache_descriptors) ; ++n){
+		if(intel_cache_descriptors[n].descriptor == descriptor){
+			mem->memtype = intel_cache_descriptors[n].memtype;
+			mem->linesize = intel_cache_descriptors[n].linesize;
+			mem->totalsize = intel_cache_descriptors[n].totalsize;
+			mem->associativity = intel_cache_descriptors[n].associativity;
+			mem->sharedways = 1;		// FIXME
+			mem->tlbdescs = NULL;
+			mem->tlbs = 0;
+			return 0;
 		}
-		++desc;
 	}
-	if(desc->descriptor == 0){ // Must keep descriptor tables up to date :/
-		printf("unknown cache descriptor %x\n",descriptor);
-		return -1;
-	}
-	mem->memtype = desc->memtype;
-	mem->linesize = desc->linesize;
-	mem->totalsize = desc->totalsize;
-	mem->associativity = desc->associativity;
-	mem->sharedways = 1;		// FIXME
-	mem->tlbdescs = NULL;
-	mem->tlbs = 0;
-	return 0;
+	return -1;
 }
 
 static int
@@ -582,7 +572,6 @@ get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb){
 			return 0;
 		}
 	}
-	printf("unknown tlb descriptor %x\n",descriptor);
 	return -1;
 }
 
@@ -595,8 +584,13 @@ get_intel_trace(unsigned descriptor){
 			return 0;
 		}
 	}
-	printf("unknown trace descriptor %x\n",descriptor);
 	return -1;
+}
+
+static int
+add_tlb(libtorque_cput *cpu,const libtorque_tlbt *tlb){
+	printf("need add %p to %p\n",tlb,cpu);
+	return 0; // FIXME
 }
 
 static int
@@ -625,7 +619,9 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 						return -1;
 					}
 				}else if(get_intel_tlb(descriptor,&tlb) == 0){
-					printf("grokked tlb %x\n",descriptor); // FIXME
+					if(add_tlb(cpu,&tlb)){
+						return -1;
+					}
 				}else if(get_intel_trace(descriptor) == 0){
 					// no one cares
 				}else if(descriptor == 0xf0){
