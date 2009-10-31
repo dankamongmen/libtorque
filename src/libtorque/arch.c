@@ -52,7 +52,6 @@ static libtorque_cput *cpudescs; // dynarray of cpu_typecount elements
 //  - taskset -c (linux)
 //  - cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET) (freebsd)
 //  - CPUID function 0x0000_000b (x2APIC/Topology Enumeration)
-#ifdef LIBTORQUE_LINUX
 static int
 fallback_detect_cpucount(void){
 	long sysonln;
@@ -68,21 +67,39 @@ fallback_detect_cpucount(void){
 	}
 	return (int)sysonln;
 }
+
+// FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
+// setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
+static inline unsigned
+portable_cpuset_count(cpu_set_t *mask) __attribute__ ((unused));
+
+static inline unsigned
+portable_cpuset_count(cpu_set_t *mask){
+	unsigned count = 0,cpu;
+
+	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
+#ifdef LIBTORQUE_LINUX
+		if(CPU_ISSET(cpu,mask)){
+#else
+		if(CPU_ISSET(cpu,*mask)){
 #endif
+			++count;
+		}
+	}
+	return count;
+}
 
 static inline int
 detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 #ifdef LIBTORQUE_FREEBSD
-	int cpu,count = 0;
+	int count;
 
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 				sizeof(*mask),mask) < 0){
 		return -1;
 	}
-	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
-		if(CPU_ISSET(cpu,*mask)){
-			++count;
-		}
+	if((count = portable_cpuset_count(mask)) <= 0){ // broken cpusets...?
+		return fallback_detect_cpucount();
 	}
 	return count;
 #elif defined(LIBTORQUE_LINUX)
@@ -94,7 +111,11 @@ detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 			// Cpusets aren't supported, or aren't in use
 #endif
 			if(sched_getaffinity(0,sizeof(*mask),mask) == 0){
+#ifdef CPU_COUNT // FIXME what if CPU_COUNT is a function, not a macro?
 				int count = CPU_COUNT(mask);
+#else
+				int count = portable_cpuset_count(mask);
+#endif
 
 				if(count >= 1){
 					return count;
