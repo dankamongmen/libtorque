@@ -70,12 +70,11 @@ fallback_detect_cpucount(void){
 
 // FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
 // setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
-static inline unsigned
-portable_cpuset_count(cpu_set_t *mask) __attribute__ ((unused));
+static inline int portable_cpuset_count(cpu_set_t *) __attribute__ ((unused));
 
-static inline unsigned
+static inline int
 portable_cpuset_count(cpu_set_t *mask){
-	unsigned count = 0,cpu;
+	int count = 0,cpu;
 
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
 #ifdef LIBTORQUE_LINUX
