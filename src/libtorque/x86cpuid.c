@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -586,10 +585,43 @@ get_intel_trace(unsigned descriptor){
 	return -1;
 }
 
-static int
-add_tlb(libtorque_cput *cpu,const libtorque_tlbt *tlb){
-	printf("need add %p to %p\n",tlb,cpu);
-	return 0; // FIXME
+static libtorque_tlbt *
+add_tlb(unsigned *tlbs,libtorque_tlbt **tlbdescs,const libtorque_tlbt *tlb){
+	size_t s = (*tlbs + 1) * sizeof(**tlbdescs);
+	typeof(**tlbdescs) *tmp;
+
+	if((tmp = realloc(*tlbdescs,s)) == NULL){
+		return NULL;
+	}
+	*tlbdescs = tmp;
+	(*tlbdescs)[*tlbs] = *tlb;
+	return *tlbdescs + (*tlbs)++;
+}
+
+static inline int
+compare_memdetails(const libtorque_memt * restrict a,
+			const libtorque_memt * restrict b){
+	// See match_memtype(); do not evaluate sharing for equality!
+	if(a->totalsize != b->totalsize || a->associativity != b->associativity ||
+			a->level != b->level || a->linesize != b->linesize){
+		return -1;
+	}
+	return 0;
+}
+
+// *DOES NOT* compare sharing values, since that isn't yet generally detected
+// at memory detection time.
+static libtorque_memt *
+match_memtype(unsigned memtc,libtorque_memt *types,
+		const libtorque_memt *amem){
+	unsigned n;
+
+	for(n = 0 ; n < memtc ; ++n){
+		if(compare_memdetails(types + n,amem) == 0){
+			return types + n;
+		}
+	}
+	return NULL;
 }
 
 static int
@@ -614,11 +646,14 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 				libtorque_tlbt tlb;
 
 				if(get_intel_cache(descriptor,&mem) == 0){
-					if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
-						return -1;
+					// Don't add duplicates from CPUID Fxn4
+					if(!match_memtype(cpu->memories,cpu->memdescs,&mem)){
+						if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
+							return -1;
+						}
 					}
 				}else if(get_intel_tlb(descriptor,&tlb) == 0){
-					if(add_tlb(cpu,&tlb)){
+					if(add_tlb(&cpu->tlbs,&cpu->tlbdescs,&tlb) == NULL){
 						return -1;
 					}
 				}else if(get_intel_trace(descriptor) == 0){
@@ -655,9 +690,6 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 	if((callreps = gpregs[0] & 0x000000ffu) != 1){
 		return -1;
 	}
-	// FIXME if we already used 0x0000_0004, check for consistency among
-	// cache sets, and just add TLBs. if not, add all memories, sort them,
-	// then add tlbs to memories
 	while(!(ret = decode_intel_func2(cpu,gpregs))){
 		if(--callreps == 0){
 			break;
@@ -708,7 +740,6 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			if(lev != level){
 				continue;
 			}
-			printf("USING LEV %u %u MAXDC %u\n",lev,level,maxdc);
 			// Linesize is EBX[11:0] + 1
 			mem.linesize = (gpregs[1] & 0xfffu) + 1;
 			// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
