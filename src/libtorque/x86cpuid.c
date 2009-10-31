@@ -506,6 +506,34 @@ typedef struct intel_tlb_descriptor {
 } intel_tlb_descriptor;
 
 static const intel_tlb_descriptor intel_tlb_descriptors[] = {
+	{	.descriptor = 0x01,
+		.pagesize = 4 * 1024,
+		.entries = 32,
+		.associativity = 4,
+		.level = 2,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0x02,
+		.pagesize = 4 * 1024 * 1024,
+		.entries = 2,
+		.associativity = 2,
+		.level = 2,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0x03,
+		.pagesize = 4 * 1024,
+		.entries = 64,
+		.associativity = 4,
+		.level = 2,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0x04,
+		.pagesize = 4 * 1024 * 1024,
+		.entries = 8,
+		.associativity = 4,
+		.level = 2,
+		.tlbtype = MEMTYPE_DATA,
+	},
 	{	.descriptor = 0x05,
 		.pagesize = 4 * 1024 * 1024,
 		.entries = 32,
@@ -970,6 +998,7 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 int x86cpuid(libtorque_cput *cpudesc){
 	const known_x86_vender *vender;
 	uint32_t gpregs[4];
+	unsigned maxlevel;
 
 	if(!cpuid_available()){
 		return -1;
@@ -980,19 +1009,21 @@ int x86cpuid(libtorque_cput *cpudesc){
 	cpudesc->memdescs = NULL;
 	cpudesc->elements = 0;
 	// cpudesc->apicids = NULL;
+	cpudesc->strdescription = NULL;
 	cpudesc->x86type = PROCESSOR_X86_UNKNOWN;
 	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
+	maxlevel = gpregs[0];
 	if((vender = lookup_vender(gpregs + 1)) == NULL){
 		return -1;
 	}
-	if(x86_getprocsig(gpregs[0],cpudesc)){
+	if(x86_getprocsig(maxlevel,cpudesc)){
 		return -1;
 	}
 	if(x86_getbrandname(cpudesc)){
 		return -1;
 	}
-	if(vender->memfxn(gpregs[0],cpudesc)){
+	if(vender->memfxn(maxlevel,cpudesc)){
 		return -1;
 	}
 	return 0;
