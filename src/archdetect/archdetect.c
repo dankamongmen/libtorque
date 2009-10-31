@@ -29,10 +29,12 @@ fprintf_bunit(FILE *fp,uintmax_t val){
 	const char units[] = "KMGTPE",*unit = units;
 	const uintmax_t SCALE = 1024;
 
-	if(val < SCALE){
+	if(val < SCALE || (val % SCALE)){
 		return fprintf(fp,"%jub",val);
 	}
-	while((val /= 1024) > SCALE && (val % SCALE == 0)){
+	val /= SCALE;
+	while(val >= SCALE && (val % SCALE == 0)){
+		val /= SCALE;
 		if(!*++unit){
 			return -1;
 		}
@@ -89,9 +91,13 @@ detail_processing_unit(const libtorque_cput *pudesc){
 			return -1;
 		}
 		printf("\tMemory %u of %u: ",n + 1,pudesc->memories);
-		fprintf_bunit(stdout,mem->totalsize);
+		if(fprintf_bunit(stdout,mem->totalsize) < 0){
+			return -1;
+		}
 		printf(" total, ");
-		fprintf_bunit(stdout,mem->linesize);
+		if(fprintf_bunit(stdout,mem->linesize) < 0){
+			return -1;
+		}
 		printf(" line, %u-assoc, ",mem->associativity);
 		if(mem->sharedways == 1){
 			printf("unshared ");
