@@ -417,6 +417,55 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 		.level = 2,
 		.tlbtype = MEMTYPE_DATA,
 	},
+	{	.descriptor = 0x56,
+		.pagesize = 4 * 1024 * 1024,
+		.entries = 16,
+		.associativity = 4,
+		.level = 1,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0x57,
+		.pagesize = 4 * 1024,
+		.entries = 16,
+		.associativity = 4,
+		.level = 1,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0xb0,
+		.pagesize = 4 * 1024,
+		.entries = 128,
+		.associativity = 4,
+		.level = 1,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0xb1,		// FIXME two interpretations!
+		.pagesize = 2 * 1024 * 1024,
+		.entries = 8,
+		.associativity = 4,
+		.level = 1,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0xb2,
+		.pagesize = 4 * 1024,
+		.entries = 64,
+		.associativity = 4,
+		.level = 1,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0xb3,
+		.pagesize = 4 * 1024,
+		.entries = 128,
+		.associativity = 4,
+		.level = 2,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0xb4,
+		.pagesize = 4 * 1024,
+		.entries = 256,
+		.associativity = 4,
+		.level = 2,
+		.tlbtype = MEMTYPE_DATA,
+	},
 };
 
 // Returns the slot we just added to the end, or NULL on failure.
@@ -499,13 +548,15 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 				libtorque_tlbt tlb;
 
 				if(get_intel_cache(descriptor,&mem) == 0){
-					printf("grokked cache %x\n",descriptor);
 					if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
 						return -1;
 					}
 				}else if(get_intel_tlb(descriptor,&tlb) == 0){
-					printf("grokked tlb %x\n",descriptor);
-					// FIXME
+					printf("grokked tlb %x\n",descriptor); // FIXME
+				}else if(descriptor == 0xf0){
+					// FIXME 64-byte prefetching
+				}else if(descriptor == 0xf1){
+					// FIXME 128-byte prefetching
 				}else{
 					return -1;
 				}
