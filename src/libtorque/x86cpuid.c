@@ -102,7 +102,7 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 		  "=&c" (gpregs[2]), "=d" (gpregs[3])
 		: "0" (level), "2" (subparam)
 #else
-		"pushl %%ebx\n\t"
+		"pushl %%ebx\n\t" // can't assume use of ebx on 32-bit
 		"cpuid\n\t" // serializing instruction
 		"movl %%ebx,%[spill]\n\t"
 		"popl %%ebx\n\t"
@@ -425,22 +425,23 @@ add_hwmem(unsigned *memories,libtorque_memt **mems,
 }
 
 static int
-get_intel_cache(const intel_cache_descriptor *descs,unsigned descriptor,
-				libtorque_memt *mem){
-	while(descs->descriptor){
-		if(descs->descriptor == descriptor){
+get_intel_cache(unsigned descriptor,libtorque_memt *mem){
+	const intel_cache_descriptor *desc = intel_cache_descriptors;
+
+	while(desc->descriptor){
+		if(desc->descriptor == descriptor){
 			break;
 		}
-		++descs;
+		++desc;
 	}
-	if(descs->descriptor == 0){ // Must keep descriptor tables up to date :/
+	if(desc->descriptor == 0){ // Must keep descriptor tables up to date :/
 		printf("unknown descriptor %x\n",descriptor);
 		return 0;
 	}
-	mem->memtype = descs->memtype;
-	mem->linesize = descs->linesize;
-	mem->totalsize = descs->totalsize;
-	mem->associativity = descs->associativity;
+	mem->memtype = desc->memtype;
+	mem->linesize = desc->linesize;
+	mem->totalsize = desc->totalsize;
+	mem->associativity = desc->associativity;
 	return 0;
 }
 
@@ -470,8 +471,7 @@ get_intel_tlb(const intel_tlb_descriptor *descs,unsigned descriptor,
 }
 
 static int
-decode_intel_func2(const intel_cache_descriptor *descs,uint32_t *gpregs,
-				libtorque_memt *mem){
+decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 	uint32_t mask;
 	unsigned z;
 
@@ -488,7 +488,14 @@ decode_intel_func2(const intel_cache_descriptor *descs,uint32_t *gpregs,
 			unsigned descriptor;
 
 			if( (descriptor = (gpregs[z] & mask) >> ((3 - y) * 8u)) ){
-				if(get_intel_cache(descs,descriptor,mem)){
+				libtorque_memt mem;
+
+				memset(&mem,0,sizeof(mem));
+				if(get_intel_cache(descriptor,&mem)){
+					return -1;
+				}
+				mem.sharedways = 1; // FIXME also must determine sharing!
+				if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
 					return -1;
 				}
 			}
@@ -505,7 +512,6 @@ decode_intel_func2(const intel_cache_descriptor *descs,uint32_t *gpregs,
 static int
 id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 	uint32_t gpregs[4],callreps;
-	libtorque_memt mem;
 	int ret;
 
 	if(maxlevel < CPUID_STANDARD_CPUCONF){
@@ -515,19 +521,13 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 	if((callreps = gpregs[0] & 0x000000ffu) != 1){
 		return -1;
 	}
-	memset(&mem,0,sizeof(mem));
 	// FIXME if we already used 0x0000_0004, check for consistency among
 	// cache sets, and just add TLBs. if not, add all memories, sort them,
 	// then add tlbs to memories
-	while(!(ret = decode_intel_func2(intel_cache_descriptors,gpregs,&mem))){
-		mem.sharedways = 1; // FIXME also must determine sharing!
-		if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
-			return -1;
-		}
+	while(!(ret = decode_intel_func2(cpu,gpregs))){
 		if(--callreps == 0){
 			break;
 		}
-		memset(&mem,0,sizeof(mem));
 		cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
 	}
 	return ret;
@@ -609,6 +609,7 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
 	l1amd.associativity = 0; // FIXME
 	l1amd.totalsize = 0;	// FIXME
 	l1amd.sharedways = 0;	// FIXME
+	l1amd.tlbdescs = 0;	// FIXME
 	// FIXME handle other cache levels
 	if(add_hwmem(&cpud->memories,&cpud->memdescs,&l1amd) == NULL){
 		return -1;
@@ -627,6 +628,7 @@ id_via_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpu){
 		.associativity = 0,	// FIXME
 		.totalsize = 0,		// FIXME
 		.sharedways = 0,	// FIXME
+		.tlbdescs = 0,		// FIXME
 	}; // FIXME handle other levels of cache
 	if(add_hwmem(&cpu->memories,&cpu->memdescs,&l1via) == NULL){
 		return -1;
