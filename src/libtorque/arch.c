@@ -6,8 +6,10 @@
 #include <libtorque/arch.h>
 #include <libtorque/x86cpuid.h>
 
-#if defined(LIBTORQUE_LINUX)
+#if defined(LIBTORQUE_WITH_CPUSET)
 #include <cpuset.h>
+#endif
+#if defined(LIBTORQUE_LINUX)
 #include <sched.h>
 #elif defined(LIBTORQUE_FREEBSD)
 #include <sys/cpuset.h>
@@ -85,9 +87,11 @@ detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 #elif defined(LIBTORQUE_LINUX)
 	int csize;
 
+#ifdef LIBTORQUE_WITH_CPUSET
 	if((csize = cpuset_size()) < 0){
 		if(errno == ENOSYS || errno == ENODEV){
 			// Cpusets aren't supported, or aren't in use
+#endif
 			if(sched_getaffinity(0,sizeof(*mask),mask) == 0){
 				int count = CPU_COUNT(mask);
 
@@ -97,9 +101,11 @@ detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
 				return -1; // broken affinity library?
 			}
 			return fallback_detect_cpucount(); // pre-affinity?
+#ifdef LIBTORQUE_WITH_CPUSET
 		}
 		return -1; // otherwise libcpuset error; die out
 	}
+#endif
 	*cpusets = 1;
 	return csize;
 #else
@@ -254,7 +260,11 @@ int pin_thread(int cpuid){
 		}
 		return 0;
 	}
+#ifdef LIBTORQUE_WITH_CPUSET
 	return cpuset_pin(cpuid);
+#else
+	return -1;
+#endif
 }
 
 // Undoes any prior pinning of this thread.
@@ -265,7 +275,11 @@ int unpin_thread(void){
 		}
 		return 0;
 	}
+#ifdef LIBTORQUE_WITH_CPUSET
 	return cpuset_unpin();
+#else
+	return -1;
+#endif
 }
 
 int detect_architecture(void){
