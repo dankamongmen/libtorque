@@ -17,8 +17,7 @@ typedef struct libtorque_memt {
 		MEMTYPE_CODE,
 		MEMTYPE_UNIFIED
 	} memtype;
-	unsigned tlbs;			// Number of TLB levels for this mem
-	libtorque_tlbt *tlbdescs;	// TLB descriptors, NULL if tlbs == 0
+	unsigned level;
 } libtorque_memt;
 
 typedef struct libtorque_cput {
@@ -33,6 +32,9 @@ typedef struct libtorque_cput {
 	unsigned family,model,stepping;	// x86-specific; perhaps use a union?
 					// family and model include the
 					// extended family and model bits
+	unsigned padding;		// FIXME
+	unsigned tlbs;			// Number of TLBs (per-mem?)
+	libtorque_tlbt *tlbdescs;	// TLB descriptors, NULL if tlbs == 0
 	char *strdescription;		// Vender-specific string description
 	libtorque_memt *memdescs;	// Memory descriptors, never NULL
 	// unsigned *apicids;		// FIXME not yet filled in

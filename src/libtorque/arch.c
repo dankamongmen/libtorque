@@ -129,13 +129,15 @@ static void
 free_cpudetails(libtorque_cput *details){
 	// free(details->apicids);
 	// details->apicids = NULL;
+	free(details->tlbdescs);
+	details->tlbdescs = NULL;
 	free(details->memdescs);
 	details->memdescs = NULL;
 	free(details->strdescription);
 	details->strdescription = NULL;
 	details->stepping = details->model = details->family = 0;
+	details->tlbs = details->elements = details->memories = 0;
 	details->x86type = PROCESSOR_X86_UNKNOWN;
-	details->elements = details->memories = 0;
 }
 
 // Methods to discover processor and cache details include:
@@ -165,11 +167,16 @@ compare_cpudetails(const libtorque_cput * restrict a,
 		a->stepping != b->stepping || a->x86type != b->x86type){
 		return -1;
 	}
-	if(a->memories != b->memories){
+	if(a->memories != b->memories || a->tlbs != b->tlbs){
 		return -1;
 	}
 	if(strcmp(a->strdescription,b->strdescription)){
 		return -1;
+	}
+	for(n = 0 ; n < a->tlbs ; ++n){
+		if(memcmp(a->tlbdescs + n,b->tlbdescs + n,sizeof(*a->tlbdescs))){
+			return -1;
+		}
 	}
 	for(n = 0 ; n < a->memories ; ++n){
 		if(memcmp(a->memdescs + n,b->memdescs + n,sizeof(*a->memdescs))){

@@ -213,7 +213,7 @@ static const intel_cache_descriptor intel_cache_descriptors[] = {
 		.totalsize = 32 * 1024,
 		.associativity = 8,
 		.level = 1,
-		.memtype = MEMTYPE_UNIFIED, // sectored
+		.memtype = MEMTYPE_DATA, // sectored
 	},
 	{       .descriptor = 0x30,
 		.linesize = 64,
@@ -549,9 +549,8 @@ get_intel_cache(unsigned descriptor,libtorque_memt *mem){
 			mem->linesize = intel_cache_descriptors[n].linesize;
 			mem->totalsize = intel_cache_descriptors[n].totalsize;
 			mem->associativity = intel_cache_descriptors[n].associativity;
+			mem->level = intel_cache_descriptors[n].level;
 			mem->sharedways = 1;		// FIXME
-			mem->tlbdescs = NULL;
-			mem->tlbs = 0;
 			return 0;
 		}
 	}
@@ -686,10 +685,11 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 		} cachet;
 		n = 0;
 		do{
-			unsigned lev = (gpregs[0] >> 5) & 0x7u; // AX[7..5]
 			libtorque_memt mem;
+			unsigned lev;
 
 			cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
+			lev = (gpregs[0] >> 5) & 0x7u; // AX[7..5]
 			cachet = gpregs[0] & 0x1fu; // AX[4..0]
 			if(cachet == DATACACHE){ // Memory type is in AX[4..0]
 				mem.memtype = MEMTYPE_DATA;
@@ -708,6 +708,7 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			if(lev != level){
 				continue;
 			}
+			printf("USING LEV %u %u MAXDC %u\n",lev,level,maxdc);
 			// Linesize is EBX[11:0] + 1
 			mem.linesize = (gpregs[1] & 0xfffu) + 1;
 			// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
@@ -718,8 +719,7 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 				(((gpregs[1] >> 12) & 0x1ffu) + 1) *
 				mem.linesize * (gpregs[2] + 1);
 			mem.sharedways = ((gpregs[0] >> 14) & 0xfffu) + 1;
-			mem.tlbdescs = NULL;
-			mem.tlbs = 0;
+			mem.level = lev;
 			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
 				return -1;
 			}
@@ -739,10 +739,11 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
 	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
 	cpuid(CPUID_EXTENDED_L1CACHE_TLB,0,gpregs);
 	l1amd.linesize = gpregs[2] & 0x000000ffu;
-	l1amd.associativity = 0; // FIXME
-	l1amd.totalsize = 0;	// FIXME
-	l1amd.sharedways = 0;	// FIXME
-	l1amd.tlbdescs = 0;	// FIXME
+	l1amd.associativity = 0;		// FIXME
+	l1amd.totalsize = 0;			// FIXME
+	l1amd.sharedways = 0;			// FIXME
+	l1amd.memtype = MEMTYPE_UNKNOWN;	// FIXME
+	l1amd.level = 1;
 	// FIXME handle other cache levels
 	if(add_hwmem(&cpud->memories,&cpud->memdescs,&l1amd) == NULL){
 		return -1;
@@ -757,11 +758,12 @@ id_via_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpu){
 	// proof is by method of esoteric reference:
 	// http://www.digit-life.com/articles2/rmma/rmma-via-c3.html
 	libtorque_memt l1via = {
-		.linesize = 32,		// FIXME
-		.associativity = 0,	// FIXME
-		.totalsize = 0,		// FIXME
-		.sharedways = 0,	// FIXME
-		.tlbdescs = 0,		// FIXME
+		.level = 1,
+		.linesize = 32,			// FIXME
+		.associativity = 0,		// FIXME
+		.totalsize = 0,			// FIXME
+		.sharedways = 0,		// FIXME
+		.memtype = MEMTYPE_UNKNOWN,	// FIXME
 	}; // FIXME handle other levels of cache
 	if(add_hwmem(&cpu->memories,&cpu->memdescs,&l1via) == NULL){
 		return -1;
@@ -829,6 +831,8 @@ int x86cpuid(libtorque_cput *cpudesc){
 	if(!cpuid_available()){
 		return -1;
 	}
+	cpudesc->tlbdescs = NULL;
+	cpudesc->tlbs = 0;
 	cpudesc->memories = 0;
 	cpudesc->memdescs = NULL;
 	cpudesc->elements = 0;
