@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -408,7 +409,21 @@ typedef struct intel_tlb_descriptor {
 	int tlbtype;
 } intel_tlb_descriptor;
 
-#include <stdio.h>
+// Returns the slot we just added to the end, or NULL on failure.
+static inline libtorque_memt *
+add_hwmem(unsigned *memories,libtorque_memt **mems,
+		const libtorque_memt *amem){
+	size_t s = (*memories + 1) * sizeof(**mems);
+	typeof(**mems) *tmp;
+
+	if((tmp = realloc(*mems,s)) == NULL){
+		return NULL;
+	}
+	*mems = tmp;
+	(*mems)[*memories] = *amem;
+	return *mems + (*memories)++;
+}
+
 static int
 get_intel_cache(const intel_cache_descriptor *descs,unsigned descriptor,
 				libtorque_memt *mem){
@@ -488,59 +503,34 @@ decode_intel_func2(const intel_cache_descriptor *descs,uint32_t *gpregs,
 
 // Function 2 of Intel's CPUID -- See 3.1.3 of the CPUID Application Note
 static int
-extract_intel_func2(const intel_cache_descriptor *descs,libtorque_memt *mem){
-	uint32_t gpregs[4],callreps;
-	int ret;
-
-	cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
-	if((callreps = gpregs[0] & 0x000000ffu) != 1){
-		return -1;
-	}
-	while((ret = decode_intel_func2(descs,gpregs,mem)) == 0){
-		if(--callreps == 0){
-			break;
-		}
-		cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
-	}
-	return ret;
-}
-
-// Returns the slot we just added to the end, or NULL on failure.
-static inline libtorque_memt *
-add_hwmem(unsigned *memories,libtorque_memt **mems,
-		const libtorque_memt *amem){
-	size_t s = (*memories + 1) * sizeof(**mems);
-	typeof(**mems) *tmp;
-
-	if((tmp = realloc(*mems,s)) == NULL){
-		return NULL;
-	}
-	*mems = tmp;
-	(*mems)[*memories] = *amem;
-	return *mems + (*memories)++;
-}
-
-static int
 id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
+	uint32_t gpregs[4],callreps;
 	libtorque_memt mem;
+	int ret;
 
 	if(maxlevel < CPUID_STANDARD_CPUCONF){
 		return -1;
 	}
+	cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
+	if((callreps = gpregs[0] & 0x000000ffu) != 1){
+		return -1;
+	}
 	memset(&mem,0,sizeof(mem));
-	if(extract_intel_func2(intel_cache_descriptors,&mem)){
-		return -1;
+	// FIXME if we already used 0x0000_0004, check for consistency among
+	// cache sets, and just add TLBs. if not, add all memories, sort them,
+	// then add tlbs to memories
+	while(!(ret = decode_intel_func2(intel_cache_descriptors,gpregs,&mem))){
+		mem.sharedways = 1; // FIXME also must determine sharing!
+		if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
+			return -1;
+		}
+		if(--callreps == 0){
+			break;
+		}
+		memset(&mem,0,sizeof(mem));
+		cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
 	}
-	if(!mem.linesize || !mem.totalsize || !mem.associativity){
-		return -1;
-	}
-	mem.sharedways = 1; // FIXME also must determine sharing!
-	// FIXME need to get all of them; this only handles 1!
-	// FIXME adds duplicate entries if we already used 0x0000_0004!
-	if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
-		return -1;
-	}
-	return 0;
+	return ret;
 }
 
 static int
