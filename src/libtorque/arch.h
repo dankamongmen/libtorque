@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 typedef struct libtorque_tlbt {
-	unsigned totalsize,pagesize,associativity,sharedways;
+	unsigned entries,pagesize,associativity,sharedways;
 } libtorque_tlbt;
 
 typedef struct libtorque_memt {

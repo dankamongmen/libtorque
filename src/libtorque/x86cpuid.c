@@ -403,20 +403,20 @@ static const intel_cache_descriptor intel_cache_descriptors[] = {
 typedef struct intel_tlb_descriptor {
 	unsigned descriptor;
 	unsigned pagesize;
-	unsigned totalsize;
+	unsigned entries;
 	unsigned associativity;
 	unsigned level;
 	int tlbtype;
 } intel_tlb_descriptor;
 
 static const intel_tlb_descriptor intel_tlb_descriptors[] = {
-	{	.descriptor = 0,
-		.pagesize = 0,
-		.totalsize = 0,
-		.associativity = 0,
-		.level = 0,
-		.tlbtype = MEMTYPE_UNKNOWN,
-	}
+	{	.descriptor = 0x05,
+		.pagesize = 4 * 1024 * 1024,
+		.entries = 32,
+		.associativity = 4,
+		.level = 2,
+		.tlbtype = MEMTYPE_DATA,
+	},
 };
 
 // Returns the slot we just added to the end, or NULL on failure.
@@ -461,24 +461,20 @@ get_intel_cache(unsigned descriptor,libtorque_memt *mem){
 
 static int
 get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb){
-	const intel_tlb_descriptor *desc = intel_tlb_descriptors;
+	unsigned n;
 
-	while(desc->descriptor){
-		if(desc->descriptor == descriptor){
-			break;
+	for(n = 0 ; n < sizeof(intel_tlb_descriptors) / sizeof(*intel_tlb_descriptors) ; ++n){
+		if(intel_tlb_descriptors[n].descriptor == descriptor){
+			// FIXME need to check tlbtype, ensure it's applicable
+			tlb->pagesize = intel_tlb_descriptors[n].pagesize;
+			tlb->entries = intel_tlb_descriptors[n].entries;
+			tlb->associativity = intel_tlb_descriptors[n].associativity;
+			tlb->sharedways = 0; // FIXME
+			return 0;
 		}
-		++desc;
 	}
-	if(desc->descriptor == 0){ // Must keep descriptor tables up to date :/
-		printf("unknown tlb descriptor %x\n",descriptor);
-		return -1;
-	}
-	tlb->pagesize = desc->pagesize;
-	tlb->totalsize = desc->totalsize;
-	tlb->associativity = desc->associativity;
-	tlb->sharedways = 0; // FIXME
-	// FIXME need to check tlbtype to ensure it's applicable
-	return 0;
+	printf("unknown tlb descriptor %x\n",descriptor);
+	return -1;
 }
 
 static int
@@ -510,7 +506,9 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 				}else if(get_intel_tlb(descriptor,&tlb) == 0){
 					printf("grokked tlb %x\n",descriptor);
 					// FIXME
-				} // FIXME else unknown entirely...
+				}else{
+					return -1;
+				}
 			}
 			// Don't interpret bits 0..7 of EAX (AL in old notation)
 			if((mask >>= 8) == 0x000000ff && z == 0){
