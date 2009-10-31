@@ -34,6 +34,10 @@ libtorque is licensed under version 2 of the Apache License:
 
 A copy can be found in the toplevel file LICENSE.
 
+Development of libtorque would have been impossible without the extraordinary
+grace, patience and benevolence of management at McAfee Research, particularly
+Dmitri Alperovitch and Dr. Sven Krasser.
+
 ----------------------------------------------------------------libtorque-----
 -=+ II. Minimum requirements +=-
 ----------------------------------------------------------------libtorque-----
