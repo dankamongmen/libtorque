@@ -5,9 +5,9 @@
 extern "C" {
 #endif
 
-typedef struct libtorque_tlbtype {
-	unsigned totalsize,pagesize;
-} libtorque_tlbtype;
+typedef struct libtorque_tlbt {
+	unsigned totalsize,pagesize,associativity,sharedways;
+} libtorque_tlbt;
 
 typedef struct libtorque_memt {
 	unsigned totalsize,linesize,associativity,sharedways;
@@ -18,7 +18,7 @@ typedef struct libtorque_memt {
 		MEMTYPE_UNIFIED
 	} memtype;
 	unsigned tlbs;			// Number of TLB levels for this mem
-	libtorque_tlbtype *tlbdescs;	// TLB descriptors, NULL if tlbs == 0
+	libtorque_tlbt *tlbdescs;	// TLB descriptors, NULL if tlbs == 0
 } libtorque_memt;
 
 typedef struct libtorque_cput {

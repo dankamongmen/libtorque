@@ -120,78 +120,278 @@ identify_extended_cpuid(void){
 	return gpregs[0];
 }
 
-typedef struct intel_dc_descriptor {
+typedef struct intel_cache_descriptor {
 	unsigned descriptor;
 	unsigned linesize;
 	unsigned totalsize;
 	unsigned associativity;
-} intel_dc_descriptor;
+	unsigned level;
+	int memtype;
+} intel_cache_descriptor;
 
-static const intel_dc_descriptor intel_dc1_descriptors[] = {
+static const intel_cache_descriptor intel_cache_descriptors[] = {
+	{       .descriptor = 0x06,
+		.linesize = 32,
+		.totalsize = 8 * 1024,
+		.associativity = 4,
+		.level = 1,
+		.memtype = MEMTYPE_CODE,
+	},
+	{       .descriptor = 0x08,
+		.linesize = 32,
+		.totalsize = 16 * 1024,
+		.associativity = 4,
+		.level = 1,
+		.memtype = MEMTYPE_CODE,
+	},
+	{       .descriptor = 0x09,
+		.linesize = 64,
+		.totalsize = 32 * 1024,
+		.associativity = 4,
+		.level = 1,
+		.memtype = MEMTYPE_CODE,
+	},
 	{       .descriptor = 0x0a,
 		.linesize = 32,
 		.totalsize = 8 * 1024,
 		.associativity = 2,
+		.level = 1,
+		.memtype = MEMTYPE_DATA,
 	},
 	{       .descriptor = 0x0c,
 		.linesize = 32,
 		.totalsize = 16 * 1024,
 		.associativity = 4,
+		.level = 1,
+		.memtype = MEMTYPE_DATA,
+	},
+	{       .descriptor = 0x0d, // ECC
+		.linesize = 64,
+		.totalsize = 16 * 1024,
+		.associativity = 4,
+		.level = 1,
+		.memtype = MEMTYPE_DATA,
+	},
+	{       .descriptor = 0x21,
+		.linesize = 64,
+		.totalsize = 256 * 1024,
+		.associativity = 8,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED, // FIXME "L2 (MLC)", say what?
+	},
+	{       .descriptor = 0x22,
+		.linesize = 64,
+		.totalsize = 512 * 1024,
+		.associativity = 4,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED, // sectored
+	},
+	{       .descriptor = 0x23,
+		.linesize = 64,
+		.totalsize = 1024 * 1024,
+		.associativity = 8,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED, // sectored
+	},
+	{       .descriptor = 0x25,
+		.linesize = 64,
+		.totalsize = 2 * 1024 * 1024,
+		.associativity = 8,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED, // sectored
+	},
+	{       .descriptor = 0x29,
+		.linesize = 64,
+		.totalsize = 4 * 1024 * 1024,
+		.associativity = 8,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED, // sectored
 	},
 	{       .descriptor = 0x2c,
 		.linesize = 64,
 		.totalsize = 32 * 1024,
 		.associativity = 8,
+		.level = 1,
+		.memtype = MEMTYPE_UNIFIED, // sectored
 	},
-	{       .descriptor = 0x60,
-		.linesize = 64,
-		.totalsize = 16 * 1024,
-		.associativity = 8,
-	},
-	{       .descriptor = 0x66,
-		.linesize = 64,
-		.totalsize = 8 * 1024,
-		.associativity = 4,
-	},
-	{       .descriptor = 0x67,
-		.linesize = 64,
-		.totalsize = 16 * 1024,
-		.associativity = 4,
-	},
-	{       .descriptor = 0x68,
+	{       .descriptor = 0x30,
 		.linesize = 64,
 		.totalsize = 32 * 1024,
-		.associativity = 4,
-	},
-	{       .descriptor = 0,
-		.linesize = 0,
-		.associativity = 0,
-		.totalsize = 0,
-	}
-};
-
-static const intel_dc_descriptor intel_dc2_descriptors[] = {
-	{       .descriptor = 0x1a,
-		.linesize = 64,
-		.totalsize = 96 * 1024,
-		.associativity = 6,
+		.associativity = 8,
+		.level = 1,
+		.memtype = MEMTYPE_CODE,
 	},
 	{       .descriptor = 0x39,
 		.linesize = 64,
 		.totalsize = 128 * 1024,
 		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED, // sectored
 	},
 	{       .descriptor = 0x3a,
 		.linesize = 64,
 		.totalsize = 192 * 1024,
 		.associativity = 6,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED, // sectored
 	},
 	{       .descriptor = 0x3b,
 		.linesize = 64,
 		.totalsize = 128 * 1024,
 		.associativity = 2,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED, // sectored
 	},
-	// FIXME many more still
+	{       .descriptor = 0x3c,
+		.linesize = 64,
+		.totalsize = 256 * 1024,
+		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED, // sectored
+	},
+	{       .descriptor = 0x3d,
+		.linesize = 64,
+		.totalsize = 384 * 1024,
+		.associativity = 6,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED, // sectored
+	},
+	{       .descriptor = 0x3e,
+		.linesize = 64,
+		.totalsize = 512 * 1024,
+		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED, // sectored
+	},
+	{       .descriptor = 0x40,
+		// Means "no higher-level cache". Special case? // FIXME
+	},
+	{       .descriptor = 0x41,
+		.linesize = 32,
+		.totalsize = 128 * 1024,
+		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x42,
+		.linesize = 32,
+		.totalsize = 256 * 1024,
+		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x43,
+		.linesize = 32,
+		.totalsize = 512 * 1024,
+		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x44,
+		.linesize = 32,
+		.totalsize = 1024 * 1024,
+		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x45,
+		.linesize = 32,
+		.totalsize = 2 * 1024 * 1024,
+		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x46,
+		.linesize = 64,
+		.totalsize = 4 * 1024 * 1024,
+		.associativity = 4,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x47,
+		.linesize = 64,
+		.totalsize = 8 * 1024 * 1024,
+		.associativity = 8,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x48, // unified on-die
+		.linesize = 64,
+		.totalsize = 3 * 1024 * 1024,
+		.associativity = 12,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x49, 		// FIXME has two meanings!
+		.linesize = 64,
+		.totalsize = 4 * 1024 * 1024,
+		.associativity = 16,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x4a,
+		.linesize = 64,
+		.totalsize = 6 * 1024 * 1024,
+		.associativity = 12,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x4b,
+		.linesize = 64,
+		.totalsize = 8 * 1024 * 1024,
+		.associativity = 16,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x4c,
+		.linesize = 64,
+		.totalsize = 12 * 1024 * 1024,
+		.associativity = 12,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x4d,
+		.linesize = 64,
+		.totalsize = 16 * 1024 * 1024,
+		.associativity = 16,
+		.level = 3,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x4e,
+		.linesize = 64,
+		.totalsize = 6 * 1024 * 1024,
+		.associativity = 24,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x60,
+		.linesize = 64,
+		.totalsize = 16 * 1024,
+		.associativity = 8,
+		.level = 1,
+		.memtype = MEMTYPE_DATA,
+	},
+	{       .descriptor = 0x66,
+		.linesize = 64,
+		.totalsize = 8 * 1024,
+		.associativity = 4,
+		.level = 1,
+		.memtype = MEMTYPE_DATA,
+	},
+	{       .descriptor = 0x67,
+		.linesize = 64,
+		.totalsize = 16 * 1024,
+		.associativity = 4,
+		.level = 1,
+		.memtype = MEMTYPE_DATA,
+	},
+	{       .descriptor = 0x68,
+		.linesize = 64,
+		.totalsize = 32 * 1024,
+		.associativity = 4,
+		.level = 1,
+		.memtype = MEMTYPE_DATA,
+	},
 	{       .descriptor = 0,
 		.linesize = 0,
 		.associativity = 0,
@@ -199,30 +399,63 @@ static const intel_dc_descriptor intel_dc2_descriptors[] = {
 	}
 };
 
-static int
-get_intel_clineb(const intel_dc_descriptor *descs,unsigned descriptor,
-				libtorque_memt *mem){
-	const intel_dc_descriptor *id;
+typedef struct intel_tlb_descriptor {
+	unsigned descriptor;
+	unsigned pagesize;
+	unsigned totalsize;
+	unsigned associativity;
+	unsigned level;
+	int tlbtype;
+} intel_tlb_descriptor;
 
-	for(id = descs ; id->descriptor ; ++id){
-		if(id->descriptor == descriptor){
+#include <stdio.h>
+static int
+get_intel_cache(const intel_cache_descriptor *descs,unsigned descriptor,
+				libtorque_memt *mem){
+	while(descs->descriptor){
+		if(descs->descriptor == descriptor){
 			break;
 		}
+		++descs;
 	}
-	if(id->descriptor == 0){ // Must keep descriptor tables up to date :/
+	if(descs->descriptor == 0){ // Must keep descriptor tables up to date :/
+		printf("unknown descriptor %x\n",descriptor);
 		return 0;
 	}
-	if(mem->linesize || mem->totalsize || mem->associativity){
-		return -1;
-	}
-	mem->linesize = id->linesize;
-	mem->totalsize = id->totalsize;
-	mem->associativity = id->associativity;
+	mem->memtype = descs->memtype;
+	mem->linesize = descs->linesize;
+	mem->totalsize = descs->totalsize;
+	mem->associativity = descs->associativity;
 	return 0;
 }
 
 static int
-decode_intel_func2(const intel_dc_descriptor *descs,uint32_t *gpregs,
+get_intel_tlb(const intel_tlb_descriptor *,unsigned,libtorque_tlbt *)
+	__attribute__ ((unused)); // FIXME
+
+static int
+get_intel_tlb(const intel_tlb_descriptor *descs,unsigned descriptor,
+				libtorque_tlbt *tlb){
+	while(descs->descriptor){
+		if(descs->descriptor == descriptor){
+			break;
+		}
+		++descs;
+	}
+	if(descs->descriptor == 0){ // Must keep descriptor tables up to date :/
+		printf("unknown descriptor %x\n",descriptor);
+		return 0;
+	}
+	tlb->pagesize = descs->pagesize;
+	tlb->totalsize = descs->totalsize;
+	tlb->associativity = descs->associativity;
+	tlb->sharedways = 0; // FIXME
+	// FIXME need to check tlbtype to ensure it's applicable
+	return 0;
+}
+
+static int
+decode_intel_func2(const intel_cache_descriptor *descs,uint32_t *gpregs,
 				libtorque_memt *mem){
 	uint32_t mask;
 	unsigned z;
@@ -240,7 +473,7 @@ decode_intel_func2(const intel_dc_descriptor *descs,uint32_t *gpregs,
 			unsigned descriptor;
 
 			if( (descriptor = (gpregs[z] & mask) >> ((3 - y) * 8u)) ){
-				if(get_intel_clineb(descs,descriptor,mem)){
+				if(get_intel_cache(descs,descriptor,mem)){
 					return -1;
 				}
 			}
@@ -255,7 +488,7 @@ decode_intel_func2(const intel_dc_descriptor *descs,uint32_t *gpregs,
 
 // Function 2 of Intel's CPUID -- See 3.1.3 of the CPUID Application Note
 static int
-extract_intel_func2(const intel_dc_descriptor *descs,libtorque_memt *mem){
+extract_intel_func2(const intel_cache_descriptor *descs,libtorque_memt *mem){
 	uint32_t gpregs[4],callreps;
 	int ret;
 
@@ -295,14 +528,15 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 		return -1;
 	}
 	memset(&mem,0,sizeof(mem));
-	if(extract_intel_func2(intel_dc1_descriptors,&mem)){
+	if(extract_intel_func2(intel_cache_descriptors,&mem)){
 		return -1;
 	}
 	if(!mem.linesize || !mem.totalsize || !mem.associativity){
 		return -1;
 	}
-	// FIXME need to get all of them; this just gets L1!
-	// FIXME also must determine sharing!
+	mem.sharedways = 1; // FIXME also must determine sharing!
+	// FIXME need to get all of them; this only handles 1!
+	// FIXME adds duplicate entries if we already used 0x0000_0004!
 	if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
 		return -1;
 	}
@@ -366,7 +600,9 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			}
 		}while(cachet != NULLCACHE);
 	}while(++level <= maxdc);
-	return level ? 0 : -1;
+	return 0;
+	// FIXME need to call 0x0000_0002 for TLB's
+	// return id_intel_caches_old(maxlevel,cpu);
 }
 
 static int
