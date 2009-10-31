@@ -71,23 +71,27 @@ detail_processing_unit(const libtorque_cput *pudesc){
 		const char *memt;
 
 		if((memt = memory_type(mem->memtype)) == NULL){
-			fprintf(stderr,"Error: invalid or unknown memory type\n");
+			fprintf(stderr,"Error: invalid or unknown memory type %d\n",mem->memtype);
 			return -1;
 		}
 		if(mem->totalsize <= 0){
-			fprintf(stderr,"Error: memory total size of 0\n");
+			fprintf(stderr,"Error: memory total size of %u\n",mem->totalsize);
 			return -1;
 		}
 		if(mem->linesize <= 0){
-			fprintf(stderr,"Error: memory linesize of 0\n");
+			fprintf(stderr,"Error: memory linesize of %u\n",mem->linesize);
 			return -1;
 		}
 		if(mem->associativity <= 0){
-			fprintf(stderr,"Error: memory associativity of 0\n");
+			fprintf(stderr,"Error: memory associativity of %u\n",mem->associativity);
 			return -1;
 		}
 		if(mem->sharedways <= 0){
-			fprintf(stderr,"Error: memory sharedways of 0\n");
+			fprintf(stderr,"Error: memory sharedways of %u\n",mem->sharedways);
+			return -1;
+		}
+		if(mem->level <= 0){
+			fprintf(stderr,"Error: memory level of %u\n",mem->level);
 			return -1;
 		}
 		printf("\tMemory %u of %u: ",n + 1,pudesc->memories);
@@ -104,7 +108,7 @@ detail_processing_unit(const libtorque_cput *pudesc){
 		}else{
 			printf("%u-shared ",mem->sharedways);
 		}
-		printf("(%s)\n",memt);
+		printf("(L%u %s)\n",mem->level,memt);
 	}
 	return 0;
 }
