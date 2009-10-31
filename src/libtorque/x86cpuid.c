@@ -513,6 +513,13 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 		.level = 2,
 		.tlbtype = MEMTYPE_DATA,
 	},
+	{	.descriptor = 0xca,
+		.pagesize = 4 * 1024,
+		.entries = 512,
+		.associativity = 4,
+		.level = 2,
+		.tlbtype = MEMTYPE_DATA,
+	},
 };
 
 static const unsigned intel_trace_descriptors[] = {
