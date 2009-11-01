@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+struct libtorque_cput;
+
 // We are not considering distributed systems in this model.
 //
 // The scheduling universe is defined by an ordered set of $N > 1$ levels
@@ -36,8 +38,7 @@ extern "C" {
 //  - shared data is allocated which fits entirely within the group's cache, or
 //  - we need to.
 typedef struct libtorque_topt {
-	static unsigned pu_typecount;	// number of different processor types
-	static libtorque_cput *pudescs;	// dynarray of pu_typecount elements
+	struct libtorque_cput *pudescs;	// dynarray of pu_typecount elements
 } libtorque_topt;
 
 const libtorque_topt *libtorque_sched_getdesc(int)
