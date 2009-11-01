@@ -8,6 +8,11 @@
 // hassle for package construction. As stands, this complicates logic FIXME.
 static unsigned use_cpusets;
 
+// Set whenever detect_cpucount() is called, which generally only happen once
+// (we don't enforce this; who knows what hotpluggable CPUs the future brings,
+// and what interfaces we'll need?)
+static cpu_set_t origmask;
+
 // Detect the number of processing elements (of any type) available to us; this
 // isn't a function of architecture, but a function of the OS (only certain
 // processors might be enabled, and we might be restricted to a subset). We
@@ -67,11 +72,11 @@ portable_cpuset_count(cpu_set_t *mask){
 // positive return value indicates failure to determine the processor count.
 // A "processor" is "something on which we can schedule a running thread". On a
 // successful return, mask contains the original affinity mask of the process.
-int detect_cpucount(cpu_set_t *mask){
+static inline int
+detect_cpucount_internal(cpu_set_t *mask){
 #ifdef LIBTORQUE_FREEBSD
 	int count;
 
-	CPU_ZERO(mask);
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 				sizeof(*mask),mask) < 0){
 		return -1;
@@ -114,6 +119,17 @@ int detect_cpucount(cpu_set_t *mask){
 #endif
 }
 
+int detect_cpucount(void){
+	int ret;
+
+	CPU_ZERO(&origmask);
+	if((ret = detect_cpucount_internal(&origmask)) <= 0){
+		CPU_ZERO(&origmask);
+		return -1;
+	}
+	return ret;
+}
+
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
 int pin_thread(int cpuid){
 	if(use_cpusets == 0){
@@ -139,13 +155,13 @@ int pin_thread(int cpuid){
 }
 
 // Undoes any prior pinning of this thread.
-int unpin_thread(cpu_set_t *origmask){
+int unpin_thread(void){
 	if(use_cpusets == 0){
 #ifdef LIBTORQUE_FREEBSD
 		if(cpuset_setaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
-					sizeof(*origmask),origmask)){
+					sizeof(origmask),&origmask)){
 #else
-		if(sched_setaffinity(0,sizeof(*origmask),origmask)){
+		if(sched_setaffinity(0,sizeof(origmask),&origmask)){
 #endif
 			return -1;
 		}

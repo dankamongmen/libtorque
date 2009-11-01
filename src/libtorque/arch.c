@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libtorque/arch.h>
+#include <libtorque/memory.h>
 #include <libtorque/schedule.h>
 #include <libtorque/x86cpuid.h>
 
@@ -113,12 +114,12 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
 static int
-detect_cputypes(unsigned *cputc,libtorque_cput **types,cpu_set_t *origmask){
+detect_cputypes(unsigned *cputc,libtorque_cput **types){
 	int totalpe,z;
 
 	*cputc = 0;
 	*types = NULL;
-	if((totalpe = detect_cpucount(origmask)) <= 0){
+	if((totalpe = detect_cpucount()) <= 0){
 		goto err;
 	}
 	for(z = 0 ; z < totalpe ; ++z){
@@ -139,22 +140,26 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types,cpu_set_t *origmask){
 			}
 		}
 	}
+	if(unpin_thread()){
+		goto err;
+	}
 	return 0;
 
 err:
-	CPU_ZERO(origmask);
+	unpin_thread();
+	while(--*cputc){
+		free_cpudetails((*types) + cpu_typecount);
+	}
 	free(*types);
 	*types = NULL;
-	*cputc = 0;
 	return -1;
 }
 
 int detect_architecture(void){
-	if(detect_cputypes(&cpu_typecount,&cpudescs,&orig_cpumask)){
-		return -1; // FIXME unpin?
+	if(detect_memories()){
+		return -1;
 	}
-	if(unpin_thread(&orig_cpumask)){
-		free_architecture();
+	if(detect_cputypes(&cpu_typecount,&cpudescs)){
 		return -1;
 	}
 	return 0;
@@ -168,6 +173,7 @@ void free_architecture(void){
 	}
 	free(cpudescs);
 	cpudescs = NULL;
+	free_memories();
 }
 
 unsigned libtorque_cpu_typecount(void){
