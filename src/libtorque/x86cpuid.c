@@ -172,12 +172,15 @@ static const intel_cache_descriptor intel_cache_descriptors[] = {
 		.level = 1,
 		.memtype = MEMTYPE_DATA,
 	},
+	// IAN 845 describes this as an MLC cache. This doesn't mean
+	// Multi-Level Cell (as in NAND flash technology), but
+	// "Mid-Level Cache". This essentially means to expect an L3.
 	{       .descriptor = 0x21,
 		.linesize = 64,
 		.totalsize = 256 * 1024,
 		.associativity = 8,
 		.level = 2,
-		.memtype = MEMTYPE_UNIFIED, // FIXME "L2 (MLC)", say what?
+		.memtype = MEMTYPE_UNIFIED,
 	},
 	{       .descriptor = 0x22,
 		.linesize = 64,
