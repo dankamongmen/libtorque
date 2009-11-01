@@ -36,8 +36,9 @@ typedef struct libtorque_cput {
 	unsigned family,model,stepping;	// x86-specific; perhaps use a union?
 					// family and model include the
 					// extended family and model bits
-	unsigned padding;		// FIXME
 	unsigned tlbs;			// Number of TLBs (per-mem?)
+	unsigned padding;		// FIXME
+	// cpu_set_t cpuset;		// Corresponding cpuset mask
 	libtorque_tlbt *tlbdescs;	// TLB descriptors, NULL if tlbs == 0
 	char *strdescription;		// Vender-specific string description
 	libtorque_memt *memdescs;	// Memory descriptors, never NULL
