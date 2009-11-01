@@ -56,11 +56,7 @@ portable_cpuset_count(cpu_set_t *mask){
 	unsigned cpu;
 
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
-#ifdef LIBTORQUE_LINUX
 		if(CPU_ISSET(cpu,mask)){
-#else
-		if(CPU_ISSET(cpu,*mask)){
-#endif
 			++count;
 		}
 	}
@@ -125,7 +121,12 @@ int pin_thread(int cpuid){
 
 		CPU_ZERO(&mask);
 		CPU_SET((unsigned)cpuid,&mask);
+#ifdef LIBTORQUE_FREEBSD
+		if(cpuset_setaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
+					sizeof(mask),&mask)){
+#else
 		if(sched_setaffinity(0,sizeof(mask),&mask)){
+#endif
 			return -1;
 		}
 		return 0;
@@ -140,7 +141,12 @@ int pin_thread(int cpuid){
 // Undoes any prior pinning of this thread.
 int unpin_thread(cpu_set_t *origmask){
 	if(use_cpusets == 0){
+#ifdef LIBTORQUE_FREEBSD
+		if(cpuset_setaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
+					sizeof(mask),&mask)){
+#else
 		if(sched_setaffinity(0,sizeof(*origmask),origmask)){
+#endif
 			return -1;
 		}
 		return 0;

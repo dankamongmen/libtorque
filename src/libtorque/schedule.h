@@ -11,8 +11,9 @@ extern "C" {
 #if defined(LIBTORQUE_LINUX)
 #include <sched.h>
 #elif defined(LIBTORQUE_FREEBSD)
+#include <sys/param.h>
 #include <sys/cpuset.h>
-typedef cpusetid cpu_set_t;
+typedef cpuset_t cpu_set_t;
 #endif
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
