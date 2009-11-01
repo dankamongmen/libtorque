@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <unistd.h>
+#include <libtorque/arch.h>
 #include <libtorque/schedule.h>
 
 // Set to 1 if we are using cpusets. Currently, this is determined at runtime
@@ -119,15 +120,19 @@ detect_cpucount_internal(cpu_set_t *mask){
 #endif
 }
 
+// Ought be called before any other scheduling functions are used, and again
+// after any hardware/software reconfiguration which results in a different CPU
+// configuration. Returns the number of running threads which can be scheduled
+// at once in the process's cpuset, or -1 on discovery failure.
 int detect_cpucount(void){
 	int ret;
 
 	CPU_ZERO(&origmask);
-	if((ret = detect_cpucount_internal(&origmask)) <= 0){
-		CPU_ZERO(&origmask);
-		return -1;
+	if((ret = detect_cpucount_internal(&origmask)) > 0){
+		return ret;
 	}
-	return ret;
+	CPU_ZERO(&origmask);
+	return -1;
 }
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
@@ -173,4 +178,3 @@ int unpin_thread(void){
 	return -1;
 #endif
 }
-

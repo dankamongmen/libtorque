@@ -17,9 +17,9 @@ typedef cpuset_t cpu_set_t;
 #endif
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
+int detect_cpucount(void);
 int pin_thread(int);
 int unpin_thread(void);
-int detect_cpucount(void);
 
 #ifdef __cplusplus
 }

@@ -180,6 +180,7 @@ unsigned libtorque_cpu_typecount(void){
 	return cpu_typecount;
 }
 
+// Takes a description ID
 const libtorque_cput *libtorque_cpu_getdesc(unsigned n){
 	if(n >= cpu_typecount){
 		return NULL;
