@@ -47,8 +47,6 @@ endif
 
 # This can be a URL; it's the docbook-to-manpage XSL
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
-#DOC2MANXSL?=/usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
-DOC2MANXSL?=--nonet
 #
 # USER SPECIFICATION AREA ENDS
 ######################################################################
@@ -210,6 +208,8 @@ $(OUT)/%.i: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -E $< -o $@
 
+# Should the network be inaccessible, and local copies are installed, try:
+#DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
 $(OUT)/%.3: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(XSLTPROC) -o $@ $(DOC2MANXSL) $<
