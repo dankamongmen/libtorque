@@ -15,6 +15,16 @@ memory_type(int mtype){
 }
 
 static const char *
+tlb_type(int ttype){
+	switch(ttype){
+		case MEMTYPE_DATA: return "data";
+		case MEMTYPE_CODE: return "code";
+		case MEMTYPE_UNIFIED: return "mixed";
+		default: return NULL;
+	}
+}
+
+static const char *
 x86_type(int x86type){
 	switch(x86type){
 		case PROCESSOR_X86_OEM: return "OEM";
@@ -91,12 +101,8 @@ static int
 detail_tlb(const libtorque_tlbt *tlb){
 	const char *tlbt;
 
-	if((tlbt = memory_type(tlb->tlbtype)) == NULL){
+	if((tlbt = tlb_type(tlb->tlbtype)) == NULL){
 		fprintf(stderr,"Error: invalid or unknown tlbory type %d\n",tlb->tlbtype);
-		return -1;
-	}
-	if(tlb->addressbits <= 0){
-		fprintf(stderr,"Error: address bits of %u\n",tlb->addressbits);
 		return -1;
 	}
 	if(tlb->pagesize <= 0){
@@ -115,19 +121,24 @@ detail_tlb(const libtorque_tlbt *tlb){
 		fprintf(stderr,"Error: TLB entries of %u\n",tlb->entries);
 		return -1;
 	}
+	if(tlb->level <= 0){
+		fprintf(stderr,"Error: TLB level of %u\n",tlb->level);
+		return -1;
+	}
+	if(fprintf_bunit(stdout,"B",tlb->pagesize) < 0){
+		return -1;
+	}
+	printf(" pages, ");
 	if(fprintf_bunit(stdout,"-entry,",tlb->entries) < 0){
 		return -1;
 	}
 	printf(" %u-assoc, ",tlb->associativity);
 	if(tlb->sharedways == 1){
-		printf("unshared (");
+		printf("unshared ");
 	}else{
-		printf("%u-shared (",tlb->sharedways);
+		printf("%u-shared ",tlb->sharedways);
 	}
-	if(fprintf_bunit(stdout,"B",tlb->pagesize) < 0){
-		return -1;
-	}
-	printf(" %s)\n",tlbt);
+	printf("(L%u %s)\n",tlb->level,tlbt);
 	return 0;
 }
 

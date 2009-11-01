@@ -709,8 +709,8 @@ get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb){
 			tlb->entries = intel_tlb_descriptors[n].entries;
 			tlb->associativity = intel_tlb_descriptors[n].associativity;
 			tlb->tlbtype = intel_tlb_descriptors[n].tlbtype;
+			tlb->level = intel_tlb_descriptors[n].level;
 			tlb->sharedways = 1; // FIXME
-			tlb->addressbits = 1; // FIXME
 			return 0;
 		}
 	}

@@ -15,7 +15,7 @@ typedef enum {
 typedef struct libtorque_tlbt {
 	unsigned entries,pagesize,associativity,sharedways;
 	libtorque_memtypet tlbtype;
-	unsigned addressbits;		// FIXME not yet filled in
+	unsigned level;
 } libtorque_tlbt;
 
 typedef struct libtorque_memt {
