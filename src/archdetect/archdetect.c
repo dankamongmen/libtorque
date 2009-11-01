@@ -70,11 +70,11 @@ detail_memory(const libtorque_memt *mem){
 		fprintf(stderr,"Error: memory level of %u\n",mem->level);
 		return -1;
 	}
-	if(fprintf_bunit(stdout,"b",mem->totalsize) < 0){
+	if(fprintf_bunit(stdout,"B",mem->totalsize) < 0){
 		return -1;
 	}
 	printf(" total, ");
-	if(fprintf_bunit(stdout,"b",mem->linesize) < 0){
+	if(fprintf_bunit(stdout,"B",mem->linesize) < 0){
 		return -1;
 	}
 	printf(" line, %u-assoc, ",mem->associativity);
@@ -115,19 +115,19 @@ detail_tlb(const libtorque_tlbt *tlb){
 		fprintf(stderr,"Error: TLB entries of %u\n",tlb->entries);
 		return -1;
 	}
-	if(fprintf_bunit(stdout,"-entry total, ",tlb->entries) < 0){
+	if(fprintf_bunit(stdout,"-entry,",tlb->entries) < 0){
 		return -1;
 	}
-	if(fprintf_bunit(stdout,"b",tlb->pagesize) < 0){
-		return -1;
-	}
-	printf(" page, %u-assoc, ",tlb->associativity);
+	printf(" %u-assoc, ",tlb->associativity);
 	if(tlb->sharedways == 1){
-		printf("unshared ");
+		printf("unshared (");
 	}else{
-		printf("%u-shared ",tlb->sharedways);
+		printf("%u-shared (",tlb->sharedways);
 	}
-	printf("(%u-bit %s)\n",tlb->addressbits,tlbt);
+	if(fprintf_bunit(stdout,"B",tlb->pagesize) < 0){
+		return -1;
+	}
+	printf(" %s)\n",tlbt);
 	return 0;
 }
 
