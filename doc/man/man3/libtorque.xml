@@ -100,10 +100,19 @@
 		<title>SEE ALSO</title>
 		<para> <!-- In alpabetical order. -->
 			<citerefentry>
+				<refentrytitle>madvise</refentrytitle>
+				<manvolnum>2</manvolnum>
+			</citerefentry>, <citerefentry>
+				<refentrytitle>mincore</refentrytitle>
+				<manvolnum>2</manvolnum>
+			</citerefentry>, <citerefentry>
 				<refentrytitle>mmap</refentrytitle>
 				<manvolnum>2</manvolnum>
 			</citerefentry>, <citerefentry>
 				<refentrytitle>mprotect</refentrytitle>
+				<manvolnum>2</manvolnum>
+			</citerefentry>, <citerefentry>
+				<refentrytitle>sigaction</refentrytitle>
 				<manvolnum>2</manvolnum>
 			</citerefentry>
 			</para><para>On Linux: <citerefentry>

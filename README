@@ -112,6 +112,7 @@ Environment variables can affect the build by overriding defaults, including:
  PREFIX (Installation prefix. Default: /usr/local)
  CC (C compiler executable. Default: gcc-4.4 (Linux), gcc44 (FreeBSD))
  TAGBIN (Source tag generator. Default: exctags if on path, otherwise ctags)
+ XSLTPROC (XSL processor. Default: xsltproc)
 
 Changing these environment variables ought be followed by the 'clean' target;
 this is one of the very few times the 'clean' target must be used.

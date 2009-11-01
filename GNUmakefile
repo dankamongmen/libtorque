@@ -46,6 +46,7 @@ LIBFLAGS:=-lcpuset
 endif
 
 # This can be a URL; it's the docbook-to-manpage XSL
+XSLTPROC?=$(shell which xsltproc || echo xsltproc) 2> /dev/null
 #DOC2MANXSL?=/usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
 DOC2MANXSL?=--nonet
 #
@@ -207,9 +208,9 @@ $(OUT)/%.i: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -E $< -o $@
 
-$(OUT)/%.3: %.xml
+$(OUT)/%.3: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
-	xsltproc -o $@ $(DOC2MANXSL) $<
+	$(XSLTPROC) -o $@ $(DOC2MANXSL) $<
 
 # Having TAGS dep on the involved makefiles -- and including TAGS in
 # GLOBOBJDEPS -- means that a makefile change forces global rebuilding, which
