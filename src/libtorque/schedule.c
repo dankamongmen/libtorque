@@ -143,7 +143,7 @@ int unpin_thread(cpu_set_t *origmask){
 	if(use_cpusets == 0){
 #ifdef LIBTORQUE_FREEBSD
 		if(cpuset_setaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
-					sizeof(mask),&mask)){
+					sizeof(*origmask),origmask)){
 #else
 		if(sched_setaffinity(0,sizeof(*origmask),origmask)){
 #endif
