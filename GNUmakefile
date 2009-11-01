@@ -127,7 +127,8 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
         -Wdeclaration-after-statement -Wfloat-equal -Wpacked -Winvalid-pch \
         -Wdisabled-optimization -Wcast-align -Wformat -Wformat-security \
         -Wold-style-definition -Woverlength-strings -Wwrite-strings -Wpadded \
-	-Wstrict-aliasing=2 -Wconversion
+	-Wstrict-aliasing=2 -Wconversion -Wstrict-overflow=5 \
+	-Wunsafe-loop-optimizations
 # We get the following from -O (taken from gcc 4.3 docs)
 # -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop -fdelayed-branch -fdse \
 # -fguess-branch-probability -fif-conversion2 -fif-conversion \
@@ -151,7 +152,8 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # -fgcse-after-reload
 
 # The following aren't bound to any -O level:
-# -fipa-pta -fipa-cp -ftree-loop-linear -ftree-loop-im -ftree-loop-ivcanon
+# -fipa-pta -fipa-cp -ftree-loop-linear -ftree-loop-im -ftree-loop-ivcanon \
+# -funsafe-loop-optimizations
 # The following also require profiling info:
 # -fipa-matrix-reorg
 # These require -pthread:

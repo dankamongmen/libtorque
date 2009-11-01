@@ -568,7 +568,7 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 	{	.descriptor = 0x55,
 		.pagesize = 4 * 1024,		// FIXME 2M or 4M
 		.entries = 7,
-		.associativity = 64,
+		.associativity = 7,
 		.level = 2,
 		.tlbtype = MEMTYPE_CODE,
 	},
