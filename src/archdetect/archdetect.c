@@ -25,7 +25,7 @@ x86_type(int x86type){
 }
 
 static int
-fprintf_bunit(FILE *fp,uintmax_t val){
+fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 	const char units[] = "KMGTPE",*unit = units;
 	const uintmax_t SCALE = 1024;
 
@@ -39,7 +39,7 @@ fprintf_bunit(FILE *fp,uintmax_t val){
 			return -1;
 		}
 	}
-	return fprintf(fp,"%ju%cb",val,*unit);
+	return fprintf(fp,"%ju%c%s",val,*unit,suffix);
 }
 
 static int
@@ -70,11 +70,11 @@ detail_memory(const libtorque_memt *mem){
 		fprintf(stderr,"Error: memory level of %u\n",mem->level);
 		return -1;
 	}
-	if(fprintf_bunit(stdout,mem->totalsize) < 0){
+	if(fprintf_bunit(stdout,"b",mem->totalsize) < 0){
 		return -1;
 	}
 	printf(" total, ");
-	if(fprintf_bunit(stdout,mem->linesize) < 0){
+	if(fprintf_bunit(stdout,"b",mem->linesize) < 0){
 		return -1;
 	}
 	printf(" line, %u-assoc, ",mem->associativity);
@@ -84,6 +84,50 @@ detail_memory(const libtorque_memt *mem){
 		printf("%u-shared ",mem->sharedways);
 	}
 	printf("(L%u %s)\n",mem->level,memt);
+	return 0;
+}
+
+static int
+detail_tlb(const libtorque_tlbt *tlb){
+	const char *tlbt;
+
+	if((tlbt = memory_type(tlb->tlbtype)) == NULL){
+		fprintf(stderr,"Error: invalid or unknown tlbory type %d\n",tlb->tlbtype);
+		return -1;
+	}
+	if(tlb->addressbits <= 0){
+		fprintf(stderr,"Error: address bits of %u\n",tlb->addressbits);
+		return -1;
+	}
+	if(tlb->pagesize <= 0){
+		fprintf(stderr,"Error: TLB pagesize of %u\n",tlb->pagesize);
+		return -1;
+	}
+	if(tlb->associativity <= 0){
+		fprintf(stderr,"Error: TLB associativity of %u\n",tlb->associativity);
+		return -1;
+	}
+	if(tlb->sharedways <= 0){
+		fprintf(stderr,"Error: TLB sharedways of %u\n",tlb->sharedways);
+		return -1;
+	}
+	if(tlb->entries <= 0){
+		fprintf(stderr,"Error: TLB entries of %u\n",tlb->entries);
+		return -1;
+	}
+	if(fprintf_bunit(stdout,"-entry total, ",tlb->entries) < 0){
+		return -1;
+	}
+	if(fprintf_bunit(stdout,"b",tlb->pagesize) < 0){
+		return -1;
+	}
+	printf(" page, %u-assoc, ",tlb->associativity);
+	if(tlb->sharedways == 1){
+		printf("unshared ");
+	}else{
+		printf("%u-shared ",tlb->sharedways);
+	}
+	printf("(%u-bit %s)\n",tlb->addressbits,tlbt);
 	return 0;
 }
 
@@ -116,6 +160,14 @@ detail_processing_unit(const libtorque_cput *pudesc){
 
 		printf("\tMemory %u of %u: ",n + 1,pudesc->memories);
 		if(detail_memory(mem)){
+			return -1;
+		}
+	}
+	for(n = 0 ; n < pudesc->tlbs ; ++n){
+		const libtorque_tlbt *tlb = pudesc->tlbdescs + n;
+
+		printf("\tTLB %u of %u: ",n + 1,pudesc->tlbs);
+		if(detail_tlb(tlb)){
 			return -1;
 		}
 	}

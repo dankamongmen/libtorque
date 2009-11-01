@@ -5,18 +5,22 @@
 extern "C" {
 #endif
 
+typedef enum {
+	MEMTYPE_UNKNOWN,
+	MEMTYPE_DATA,
+	MEMTYPE_CODE,
+	MEMTYPE_UNIFIED
+} libtorque_memtypet;
+
 typedef struct libtorque_tlbt {
 	unsigned entries,pagesize,associativity,sharedways;
+	libtorque_memtypet tlbtype;
+	unsigned addressbits;		// FIXME not yet filled in
 } libtorque_tlbt;
 
 typedef struct libtorque_memt {
 	unsigned totalsize,linesize,associativity,sharedways;
-	enum {
-		MEMTYPE_UNKNOWN,
-		MEMTYPE_DATA,
-		MEMTYPE_CODE,
-		MEMTYPE_UNIFIED
-	} memtype;
+	libtorque_memtypet memtype;
 	unsigned level;
 } libtorque_memt;
 
