@@ -95,6 +95,14 @@ NUMA is properly supported, devices/system/node* directories will be
 present in mounted sysfs filesystems. FreeBSD does not, to my knowledge, expose
 NUMA details as of 7.2.
 
+--misc requirements---------------------------------------------------------
+
+xsltproc is required to build the documentation. Exuberant Ctags are required
+to build the tagfile. On FreeBSD, the associated Ports are:
+
+ - devel/ctags
+ - textproc/xsltproc
+
 ----------------------------------------------------------------libtorque-----
 -=+ III. Building libtorque +=-
 ----------------------------------------------------------------libtorque-----
