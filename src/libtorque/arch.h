@@ -41,7 +41,6 @@ typedef struct libtorque_cput {
 	libtorque_tlbt *tlbdescs;	// TLB descriptors, NULL if tlbs == 0
 	char *strdescription;		// Vender-specific string description
 	libtorque_memt *memdescs;	// Memory descriptors, never NULL
-	// unsigned *apicids;		// FIXME not yet filled in
 } libtorque_cput;
 
 unsigned libtorque_cpu_typecount(void) __attribute__ ((visibility("default")));
