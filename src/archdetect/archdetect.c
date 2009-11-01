@@ -43,6 +43,51 @@ fprintf_bunit(FILE *fp,uintmax_t val){
 }
 
 static int
+detail_memory(const libtorque_memt *mem){
+	const char *memt;
+
+	if((memt = memory_type(mem->memtype)) == NULL){
+		fprintf(stderr,"Error: invalid or unknown memory type %d\n",mem->memtype);
+		return -1;
+	}
+	if(mem->totalsize <= 0){
+		fprintf(stderr,"Error: memory total size of %u\n",mem->totalsize);
+		return -1;
+	}
+	if(mem->linesize <= 0){
+		fprintf(stderr,"Error: memory linesize of %u\n",mem->linesize);
+		return -1;
+	}
+	if(mem->associativity <= 0){
+		fprintf(stderr,"Error: memory associativity of %u\n",mem->associativity);
+		return -1;
+	}
+	if(mem->sharedways <= 0){
+		fprintf(stderr,"Error: memory sharedways of %u\n",mem->sharedways);
+		return -1;
+	}
+	if(mem->level <= 0){
+		fprintf(stderr,"Error: memory level of %u\n",mem->level);
+		return -1;
+	}
+	if(fprintf_bunit(stdout,mem->totalsize) < 0){
+		return -1;
+	}
+	printf(" total, ");
+	if(fprintf_bunit(stdout,mem->linesize) < 0){
+		return -1;
+	}
+	printf(" line, %u-assoc, ",mem->associativity);
+	if(mem->sharedways == 1){
+		printf("unshared ");
+	}else{
+		printf("%u-shared ",mem->sharedways);
+	}
+	printf("(L%u %s)\n",mem->level,memt);
+	return 0;
+}
+
+static int
 detail_processing_unit(const libtorque_cput *pudesc){
 	const char *x86type;
 	unsigned n;
@@ -68,47 +113,11 @@ detail_processing_unit(const libtorque_cput *pudesc){
 	}
 	for(n = 0 ; n < pudesc->memories ; ++n){
 		const libtorque_memt *mem = pudesc->memdescs + n;
-		const char *memt;
 
-		if((memt = memory_type(mem->memtype)) == NULL){
-			fprintf(stderr,"Error: invalid or unknown memory type %d\n",mem->memtype);
-			return -1;
-		}
-		if(mem->totalsize <= 0){
-			fprintf(stderr,"Error: memory total size of %u\n",mem->totalsize);
-			return -1;
-		}
-		if(mem->linesize <= 0){
-			fprintf(stderr,"Error: memory linesize of %u\n",mem->linesize);
-			return -1;
-		}
-		if(mem->associativity <= 0){
-			fprintf(stderr,"Error: memory associativity of %u\n",mem->associativity);
-			return -1;
-		}
-		if(mem->sharedways <= 0){
-			fprintf(stderr,"Error: memory sharedways of %u\n",mem->sharedways);
-			return -1;
-		}
-		if(mem->level <= 0){
-			fprintf(stderr,"Error: memory level of %u\n",mem->level);
-			return -1;
-		}
 		printf("\tMemory %u of %u: ",n + 1,pudesc->memories);
-		if(fprintf_bunit(stdout,mem->totalsize) < 0){
+		if(detail_memory(mem)){
 			return -1;
 		}
-		printf(" total, ");
-		if(fprintf_bunit(stdout,mem->linesize) < 0){
-			return -1;
-		}
-		printf(" line, %u-assoc, ",mem->associativity);
-		if(mem->sharedways == 1){
-			printf("unshared ");
-		}else{
-			printf("%u-shared ",mem->sharedways);
-		}
-		printf("(L%u %s)\n",mem->level,memt);
 	}
 	return 0;
 }
