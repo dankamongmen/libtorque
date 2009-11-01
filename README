@@ -42,25 +42,25 @@ Dmitri Alperovitch and Dr. Sven Krasser.
 -=+ II. Minimum requirements +=-
 ----------------------------------------------------------------libtorque-----
 
---architecture requirements-------------------------------------libtorque-----
+--architecture requirements---------------------------------------------------
 
 Only x86 processors with the CPUID instruction are currently supported (most
 everything from the Pentium Pro onwards). Further hardware support is intended.
 
---operating system requirements---------------------------------libtorque-----
+--operating system requirements-----------------------------------------------
 
 libtorque has been tested on Linux (version 2.6.32), and FreeBSD (version 7.1).
 It might work on earlier versions of Linux. Support for other operating
 systems, and earlier versions, is intended.
 
---compiler requirements-----------------------------------------libtorque-----
+--compiler requirements-------------------------------------------------------
 
 libtorque does not employ the GNU autoconf tools, but is reliant upon GNU Make
 and the GNU Compiler Collection. gcc is tracked quite closely, and only recent
 versions might be supported at any time; 4.3 is the minimum gcc version
 explicitly supported or recommended.
 
---libc/pthreads requirements------------------------------------libtorque-----
+--libc/pthreads requirements--------------------------------------------------
 
 On Linux, the GNU C Library is required, using the NPTL threading
 implementation. Version 2.9 has been tested.
@@ -76,16 +76,24 @@ If using a 32-bit version of the library on a 64-bit system, place these same
 lines in /etc/libmap32.conf. The mapping may be restricted to libtorque if
 necessary (this author recommends general use of the libthr implementation).
 
---cpuset requirements-------------------------------------------libtorque-----
+--cpuset requirements---------------------------------------------------------
 
 On Linux, the libcpuset library (http://oss.sgi.com/projects/cpusets/) is used.
 Version 1.0 has been tested. CONFIG_CGROUPS must be enabled in the kernel; if
 cpusets are properly supported, the file self/cpuset will be present in mounted
-proc filesystems, and a "cpuset" or "cgroups" filesystem will be mounted on
+procfs filesystems, and a "cpuset" or "cgroups" filesystem will be mounted on
 /dev/cpuset. A root cpuset must have been created (see the Linux kernel's
 Documentation/cpusets.txt and libtorque bug #14:
 http://dank.qemfd.net/bugzilla/show_bug.cgi?id=14)). On FreeBSD, the native
 code added in 7.1 is used.
+
+--numa requirements---------------------------------------------------------
+
+On Linux, the libNUMA library (http://oss.sgi.com/projects/libnuma/) is used.
+Version 2.0.3 has been tested. CONFIG_NUMA must be enabled in the kernel; if
+NUMA is properly supported, devices/system/node* directories will be
+present in mounted sysfs filesystems. FreeBSD does not, to my knowledge, expose
+NUMA details as of 7.2.
 
 ----------------------------------------------------------------libtorque-----
 -=+ III. Building libtorque +=-
