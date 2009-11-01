@@ -705,11 +705,12 @@ get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb){
 
 	for(n = 0 ; n < sizeof(intel_tlb_descriptors) / sizeof(*intel_tlb_descriptors) ; ++n){
 		if(intel_tlb_descriptors[n].descriptor == descriptor){
-			// FIXME need to check tlbtype, ensure it's applicable
 			tlb->pagesize = intel_tlb_descriptors[n].pagesize;
 			tlb->entries = intel_tlb_descriptors[n].entries;
 			tlb->associativity = intel_tlb_descriptors[n].associativity;
-			tlb->sharedways = 0; // FIXME
+			tlb->tlbtype = intel_tlb_descriptors[n].tlbtype;
+			tlb->sharedways = 1; // FIXME
+			tlb->addressbits = 1; // FIXME
 			return 0;
 		}
 	}
