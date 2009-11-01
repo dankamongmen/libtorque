@@ -30,7 +30,7 @@ fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 	const uintmax_t SCALE = 1024;
 
 	if(val < SCALE || (val % SCALE)){
-		return fprintf(fp,"%jub",val);
+		return fprintf(fp,"%ju%s",val,suffix);
 	}
 	val /= SCALE;
 	while(val >= SCALE && (val % SCALE == 0)){
