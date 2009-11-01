@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all test clean install unsafe-install deinstall
+.PHONY: all test docs clean install unsafe-install deinstall
 .DEFAULT: all
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
@@ -44,6 +44,10 @@ ifdef $(LIBTORQUE_WITH_CPUSET)
 DFLAGS+=-DLIBTORQUE_WITH_CPUSET
 LIBFLAGS:=-lcpuset
 endif
+
+# This can be a URL; it's the docbook-to-manpage XSL
+#DOC2MANXSL?=/usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
+DOC2MANXSL?=--nonet
 #
 # USER SPECIFICATION AREA ENDS
 ######################################################################
@@ -68,9 +72,10 @@ ARCHDETECT:=archdetect
 
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
 # paths against overlong total path names.
-OBJOUT:=.out
+OUT:=.out
 SRCDIR:=src
 TOOLDIR:=tools
+MANDIR:=doc/man
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 ARCHDETECTDIRS:=$(SRCDIR)/$(ARCHDETECT)
@@ -81,8 +86,8 @@ TAGS:=.tags
 GLOBOBJDEPS:=$(TAGS) $(CINC)
 
 # Simple compositions from here on out
-LIBOUT:=$(OBJOUT)/lib
-BINOUT:=$(OBJOUT)/bin
+LIBOUT:=$(OUT)/lib
+BINOUT:=$(OUT)/bin
 TORQUESOL:=lib$(TORQUE).so
 TORQUESOR:=$(TORQUESOL).$(MAJORVER)
 TORQUEREAL:=$(TORQUESOR).$(MINORVER).$(RELEASEVER)
@@ -93,13 +98,18 @@ PKGCONFIG:=$(TOOLDIR)/lib$(TORQUE).pc
 CSRC:=$(shell find $(CSRCDIRS) -type f -name \*.c -print)
 CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
-TORQUEOBJ:=$(addprefix $(OBJOUT)/,$(TORQUESRC:%.c=%.o))
+TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 ARCHDETECTSRC:=$(foreach dir, $(ARCHDETECTDIRS), $(filter $(dir)/%, $(CSRC)))
-ARCHDETECTOBJ:=$(addprefix $(OBJOUT)/,$(ARCHDETECTSRC:%.c=%.o))
+ARCHDETECTOBJ:=$(addprefix $(OUT)/,$(ARCHDETECTSRC:%.c=%.o))
 SRC:=$(CSRC)
 BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
+
+# Documentation processing
+MAN3SRC:=$(shell find $(MANDIR)/man3/ -type f -print)
+MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3))
+DOCS:=$(MAN3OBJ)
 
 # Debugging flags. These aren't normally used.
 DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
@@ -159,7 +169,9 @@ ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
-all: test
+all: test docs
+
+docs: $(DOCS)
 
 test: $(BINS) $(LIBS)
 	@echo -n "Testing $(ARCHDETECT): "
@@ -181,19 +193,23 @@ $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(ARCHDETECTCFLAGS) -o $@ $(ARCHDETECTOBJ) $(ARCHDETECTLFLAGS)
 
-$(OBJOUT)/%.o: %.c $(GLOBOBJDEPS)
+$(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Assemble only, sometimes useful for close-in optimization
-$(OBJOUT)/%.s: %.c $(GLOBOBJDEPS)
+$(OUT)/%.s: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -S $< -o $@
 
 # Preprocess only, sometimes useful for debugging
-$(OBJOUT)/%.i: %.c $(GLOBOBJDEPS)
+$(OUT)/%.i: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -E $< -o $@
+
+$(OUT)/%.3: %.xml
+	@mkdir -p $(@D)
+	xsltproc -o $@ $(DOC2MANXSL) $<
 
 # Having TAGS dep on the involved makefiles -- and including TAGS in
 # GLOBOBJDEPS -- means that a makefile change forces global rebuilding, which
@@ -203,7 +219,7 @@ $(TAGS): $(SRC) $(CINC) $(MAKEFILE_LIST)
 	$(TAGBIN) -f $@ $^
 
 clean:
-	@rm -rfv $(OBJOUT) $(TAGS)
+	@rm -rfv $(OUT) $(TAGS)
 
 install: test unsafe-install
 
