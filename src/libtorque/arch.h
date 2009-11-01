@@ -48,8 +48,6 @@ const libtorque_cput *libtorque_cpu_getdesc(unsigned)
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
 int detect_architecture(void);
 void free_architecture(void);
-int pin_thread(int);
-int unpin_thread(void);
 
 #ifdef __cplusplus
 }

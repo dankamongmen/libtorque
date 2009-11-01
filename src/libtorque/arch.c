@@ -1,20 +1,9 @@
 #include <errno.h>
-#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <libtorque/arch.h>
+#include <libtorque/schedule.h>
 #include <libtorque/x86cpuid.h>
-
-#if defined(LIBTORQUE_WITH_CPUSET)
-#include <cpuset.h>
-#endif
-#if defined(LIBTORQUE_LINUX)
-#include <sched.h>
-#elif defined(LIBTORQUE_FREEBSD)
-#include <sys/cpuset.h>
-typedef cpusetid cpu_set_t;
-#endif
 
 // We dynamically determine whether or not advanced cpuset support (cgroups and
 // the SGI libcpuset library) is available on Linux (ENOSYS or ENODEV indicate
@@ -29,112 +18,6 @@ static unsigned cpu_typecount;
 static libtorque_cput *cpudescs; // dynarray of cpu_typecount elements
 
 // LibNUMA looks like the only real candidate for NUMA discovery (linux only)
-
-// Detect the number of processing elements (of any type) available to us; this
-// isn't a function of architecture, but a function of the OS (only certain
-// processors might be enabled, and we might be restricted to a subset). We
-// want only those processors we can *use* (schedule code on). Hopefully, the
-// OS is providing us with full use of the provided processors, simplifying our
-// own scheduling (assuming we're not using measured load as a feedback).
-//
-// Methods to do so include:
-//  - sysconf(_SC_NPROCESSORS_ONLN) (GNU extension: get_nprocs_conf())
-//  - sysconf(_SC_NPROCESSORS_CONF) (GNU extension: get_nprocs())
-//  - dmidecode --type 4 (Processor type)
-//  - grep ^processor /proc/cpuinfo (linux only)
-//  - ls /sys/devices/system/cpu/cpu? | wc -l (linux only)
-//  - ls /dev/cpuctl* | wc -l (freebsd only, with cpuctl device)
-//  - ls /dev/cpu/[0-9]* | wc -l (linux only, with cpuid driver)
-//  - mptable (freebsd only, with SMP option)
-//  - hw.ncpu, kern.smp.cpus sysctls (freebsd)
-//  - cpuset_size() (libcpuset, linux)
-//  - cpuset -g (freebsd)
-//  - taskset -c (linux)
-//  - cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET) (freebsd)
-//  - CPUID function 0x0000_000b (x2APIC/Topology Enumeration)
-static int
-fallback_detect_cpucount(void){
-	long sysonln;
-
-	// Not the most robust method -- we prefer cpuset functions -- but it's
-	// supported just about everywhere (x86info uses this method). See:
-	// http://lists.openwall.net/linux-kernel/2007/04/04/183
-	if((sysonln = sysconf(_SC_NPROCESSORS_ONLN)) <= 0){
-		return -1;
-	}
-	if(sysonln > INT_MAX){
-		return -1;
-	}
-	return (int)sysonln;
-}
-
-// FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
-// setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
-static inline int portable_cpuset_count(cpu_set_t *) __attribute__ ((unused));
-
-static inline int
-portable_cpuset_count(cpu_set_t *mask){
-	int count = 0;
-	unsigned cpu;
-
-	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
-#ifdef LIBTORQUE_LINUX
-		if(CPU_ISSET(cpu,mask)){
-#else
-		if(CPU_ISSET(cpu,*mask)){
-#endif
-			++count;
-		}
-	}
-	return count;
-}
-
-static inline int
-detect_cpucount(cpu_set_t *mask,unsigned *cpusets){
-#ifdef LIBTORQUE_FREEBSD
-	int count;
-
-	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
-				sizeof(*mask),mask) < 0){
-		return -1;
-	}
-	if((count = portable_cpuset_count(mask)) <= 0){ // broken cpusets...?
-		return fallback_detect_cpucount();
-	}
-	return count;
-#elif defined(LIBTORQUE_LINUX)
-	int csize;
-
-#ifdef LIBTORQUE_WITH_CPUSET
-	if((csize = cpuset_size()) < 0){
-		if(errno == ENOSYS || errno == ENODEV){
-			// Cpusets aren't supported, or aren't in use
-#endif
-			if(sched_getaffinity(0,sizeof(*mask),mask) == 0){
-#ifdef CPU_COUNT // FIXME what if CPU_COUNT is a function, not a macro?
-				int count = CPU_COUNT(mask);
-#else
-				int count = portable_cpuset_count(mask);
-#endif
-
-				if(count >= 1){
-					return count;
-				}
-				return -1; // broken affinity library?
-			}
-			return fallback_detect_cpucount(); // pre-affinity?
-#ifdef LIBTORQUE_WITH_CPUSET
-		}
-		return -1; // otherwise libcpuset error; die out
-	}
-#endif
-	*cpusets = 1;
-	return csize;
-#else
-#error "No CPU detection method defined for this OS"
-	return -1;
-#endif
-}
 
 // Returns the slot we just added to the end, or NULL on failure. Pointers
 // will be shallow-copied; dynamically allocate them, and do not free them
@@ -230,15 +113,12 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
 static int
-detect_cputypes(unsigned *cputc,libtorque_cput **types,unsigned *cpusets,
-			cpu_set_t *origmask){
+detect_cputypes(unsigned *cputc,libtorque_cput **types,cpu_set_t *origmask){
 	int totalpe,z;
 
 	*cputc = 0;
-	*cpusets = 0;
 	*types = NULL;
-	CPU_ZERO(origmask);
-	if((totalpe = detect_cpucount(origmask,cpusets)) <= 0){
+	if((totalpe = detect_cpucount(origmask)) <= 0){
 		goto err;
 	}
 	for(z = 0 ; z < totalpe ; ++z){
@@ -263,52 +143,17 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types,unsigned *cpusets,
 
 err:
 	CPU_ZERO(origmask);
-	*cpusets = 0;
 	free(*types);
 	*types = NULL;
 	*cputc = 0;
 	return -1;
 }
 
-// Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
-int pin_thread(int cpuid){
-	if(use_cpusets == 0){
-		cpu_set_t mask;
-
-		CPU_ZERO(&mask);
-		CPU_SET((unsigned)cpuid,&mask);
-		if(sched_setaffinity(0,sizeof(mask),&mask)){
-			return -1;
-		}
-		return 0;
-	}
-#ifdef LIBTORQUE_WITH_CPUSET
-	return cpuset_pin(cpuid);
-#else
-	return -1;
-#endif
-}
-
-// Undoes any prior pinning of this thread.
-int unpin_thread(void){
-	if(use_cpusets == 0){
-		if(sched_setaffinity(0,sizeof(orig_cpumask),&orig_cpumask)){
-			return -1;
-		}
-		return 0;
-	}
-#ifdef LIBTORQUE_WITH_CPUSET
-	return cpuset_unpin();
-#else
-	return -1;
-#endif
-}
-
 int detect_architecture(void){
-	if(detect_cputypes(&cpu_typecount,&cpudescs,&use_cpusets,&orig_cpumask)){
+	if(detect_cputypes(&cpu_typecount,&cpudescs,&orig_cpumask)){
 		return -1; // FIXME unpin?
 	}
-	if(unpin_thread()){
+	if(unpin_thread(&orig_cpumask)){
 		free_architecture();
 		return -1;
 	}

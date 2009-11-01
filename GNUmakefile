@@ -37,6 +37,13 @@ MARCH?=native
 ifneq ($(MARCH),generic)
 MTUNE?=native
 endif
+
+# The SGI libcpuset() library can be used, instead of native affinity calls.
+# This allows for more advanced scheduling.
+ifdef $(LIBTORQUE_WITH_CPUSET)
+DFLAGS+=-DLIBTORQUE_WITH_CPUSET
+LIBFLAGS:=-lcpuset
+endif
 #
 # USER SPECIFICATION AREA ENDS
 ######################################################################
@@ -47,10 +54,6 @@ endif
 ifeq ($(UNAME),Linux)
 DFLAGS:=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 LFLAGS:=-Wl,--warn-shared-textrel
-ifdef $(LIBTORQUE_WITH_CPUSET)
-DFLAGS+=-DLIBTORQUE_WITH_CPUSET
-LIBFLAGS:=-lcpuset
-endif
 else
 ifeq ($(UNAME),FreeBSD)
 DFLAGS:=-DLIBTORQUE_FREEBSD -D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
