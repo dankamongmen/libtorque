@@ -25,7 +25,7 @@ TAGBIN?=$(shell which exctags 2> /dev/null || echo ctags)
 # We want GCC 4.3+ if we can find it. Some systems have install it as gcc-v.v,
 # some as gccv.v, some will have a suitably up-to-date default gcc...bleh.
 ifeq "$(origin CC)" "default"
-CC:=$(shell (which gcc-4.4 || which gcc44 || which gcc-4.3 || which gcc43 || echo gcc) 2>/dev/null )
+CC:=$(shell (which gcc-4.4 || which gcc44 || which gcc-4.3 || which gcc43 || echo gcc) 2>/dev/null)
 endif
 
 # We compile for the host µ-architecture/ISA, providing the "native" option to
@@ -46,7 +46,7 @@ LIBFLAGS:=-lcpuset
 endif
 
 # This can be a URL; it's the docbook-to-manpage XSL
-XSLTPROC?=$(shell which xsltproc || echo xsltproc) 2> /dev/null
+XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 #DOC2MANXSL?=/usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
 DOC2MANXSL?=--nonet
 #

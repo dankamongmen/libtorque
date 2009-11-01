@@ -112,6 +112,12 @@
 				<refentrytitle>mprotect</refentrytitle>
 				<manvolnum>2</manvolnum>
 			</citerefentry>, <citerefentry>
+				<refentrytitle>posix_memalign</refentrytitle>
+				<manvolnum>3</manvolnum>
+			</citerefentry>, <citerefentry>
+				<refentrytitle>sendfile</refentrytitle>
+				<manvolnum>2</manvolnum>
+			</citerefentry>, <citerefentry>
 				<refentrytitle>sigaction</refentrytitle>
 				<manvolnum>2</manvolnum>
 			</citerefentry>
@@ -135,6 +141,15 @@
 				<manvolnum>2</manvolnum>
 			</citerefentry>, <citerefentry>
 				<refentrytitle>sched_setaffinity</refentrytitle>
+				<manvolnum>2</manvolnum>
+			</citerefentry>, <citerefentry>
+				<refentrytitle>signalfd</refentrytitle>
+				<manvolnum>2</manvolnum>
+			</citerefentry>, <citerefentry>
+				<refentrytitle>splice</refentrytitle>
+				<manvolnum>2</manvolnum>
+			</citerefentry>, <citerefentry>
+				<refentrytitle>timerfd_create</refentrytitle>
 				<manvolnum>2</manvolnum>
 			</citerefentry></para>
 			<para>On FreeBSD: <citerefentry>
