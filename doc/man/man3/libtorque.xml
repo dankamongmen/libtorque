@@ -94,7 +94,8 @@
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
-		<para>The upstreams <acronym>BTS</acronym> can be found at <ulink url="http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque"/>.</para>
+		<para>Search <ulink url="http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque"/>.
+		Mail bug reports and/or patches to the authors.</para>
 	</refsect1>
 	<refsect1 id="see_also">
 		<title>SEE ALSO</title>
@@ -122,6 +123,9 @@
 				<manvolnum>2</manvolnum>
 			</citerefentry>
 			</para><para>On Linux: <citerefentry>
+				<refentrytitle>aio</refentrytitle>
+				<manvolnum>3</manvolnum>
+			</citerefentry>, <citerefentry>
 				<refentrytitle>CPU_SET</refentrytitle>
 				<manvolnum>3</manvolnum>
 			</citerefentry>, <citerefentry>
@@ -153,6 +157,9 @@
 				<manvolnum>2</manvolnum>
 			</citerefentry></para>
 			<para>On FreeBSD: <citerefentry>
+				<refentrytitle>aio</refentrytitle>
+				<manvolnum>4</manvolnum>
+			</citerefentry>, <citerefentry>
 				<refentrytitle>cpuset_getaffinity</refentrytitle>
 				<manvolnum>2</manvolnum>
 			</citerefentry>, <citerefentry>

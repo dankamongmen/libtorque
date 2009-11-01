@@ -8,7 +8,6 @@ extern "C" {
 // A node is defined as an area where all memory has the same speed as seen
 // from some arbitrary set of CPUs (ignoring caches).
 typedef struct libtorque_topt {
-	unsigned id,size;
 } libtorque_topt;
 
 const libtorque_topt *libtorque_sched_getdesc(int)
