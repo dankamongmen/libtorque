@@ -160,7 +160,7 @@ detail_processing_unit(const libtorque_cput *pudesc){
 		fprintf(stderr,"Error: invalid processor family\n");
 		return -1;
 	}
-	printf("\tFamily: 0x%03x (%d)\tModel: 0x%02x (%d)\tStepping: %2d\n",
+	printf("\tFamily: 0x%03x (%d) Model: 0x%02x (%d) Stepping: %d\n",
 		pudesc->family,pudesc->family,pudesc->model,pudesc->model,pudesc->stepping);
 	if(pudesc->memories <= 0){
 		fprintf(stderr,"Error: memory count of 0\n");
