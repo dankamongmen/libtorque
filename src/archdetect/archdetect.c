@@ -56,11 +56,13 @@ fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 		return r;
 	}
 	if(val >= SCALE && (val % SCALE)){
-		while(*++unit && (val >= SCALE * SCALE) && (val % SCALE)){
+		// It's weird to see something like "1009.756MB"; you wish to
+		// perceive it as a G and change, but in reality it is less!
+		while(*++unit && (val / SCALE >= 1000) && (val % SCALE)){
 			val /= SCALE;
 		}
 		if(*unit){
-			return fprintf(fp," (%.3f%c%s)",(float)val / SCALE,*unit,suffix);
+			return fprintf(fp," (%.3f %c%s)",(float)val / SCALE,*unit,suffix);
 		}
 	}
 	return 0;
