@@ -232,7 +232,7 @@ unsafe-install: $(LIBS) $(PKGCONFIG) $(DOCS)
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
 		$(INSTALL) $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
 	@mkdir -p $(PREFIX)/share/man/man3
-	@$(INSTALL) $(DOCS) $(PREFIX)/share/man/man3
+	@$(INSTALL) -m 0644 $(DOCS) $(PREFIX)/share/man/man3
 	@echo "Running ldconfig..." && ldconfig
 
 deinstall:
