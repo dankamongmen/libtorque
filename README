@@ -108,14 +108,20 @@ to build the tagfile. On FreeBSD, the associated Ports are:
 -=+ III. Building libtorque +=-
 ----------------------------------------------------------------libtorque-----
 
-Environment variables can affect the build by overriding defaults, including:
+Environment variables can affect the build by overriding defaults:
 
  PREFIX (Installation prefix. Default: /usr/local)
  CC (C compiler executable. Default: gcc-4.4 (Linux), gcc44 (FreeBSD))
  TAGBIN (Source tag generator. Default: exctags if on path, otherwise ctags)
  XSLTPROC (XSL processor. Default: xsltproc)
 
-Changing these environment variables ought be followed by the 'clean' target;
+Policy decisions can be made by defining certain variables:
+
+ LIBTORQUE_WITH_CPUSET (If defined, build in and use libcpuset support)
+ LIBTORQUE_WITHOUT_ADNS (If defined, do not build in GNU adns support)
+ LIBTORQUE_WITHOUT_OPENSSL (If defined, do not build in OpenSSL support)
+
+Changing environment variables ought be followed by the 'clean' target;
 this is one of the very few times the 'clean' target must be used.
 
 By default, libtorque is built optimizing for the buildhost's µ-architecture
@@ -145,7 +151,7 @@ of files is not considered an error by the 'deinstall' target.
 
 libtorque can be brought up to date via 'git pull'. The 'clean' target ought
 never be necessary to run, save when hacking on the build process itself (or
-changing build parameters, as noted above).
+changing build parameters, as noted above), or after source files are removed.
 
 ----------------------------------------------------------------libtorque-----
 -=+ IV. Design Issues +=-

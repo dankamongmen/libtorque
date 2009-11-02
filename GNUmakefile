@@ -42,11 +42,21 @@ endif
 # This allows for more advanced scheduling.
 ifdef $(LIBTORQUE_WITH_CPUSET)
 DFLAGS+=-DLIBTORQUE_WITH_CPUSET
-LIBFLAGS:=-lcpuset
+LIBFLAGS+=-lcpuset
+endif
+
+ifndef $(LIBTORQUE_WITHOUT_ADNS)
+LIBFLAGS+=-ladns
+endif
+
+ifndef $(LIBTORQUE_WITHOUT_SSL)
+DFLAGS+=$(shell pkg-config --cflags openssl)
+LIBFLAGS+=$(shell (pkg-config --libs openssl || echo -lssl -lcrypto))
 endif
 
 # This can be a URL; it's the docbook-to-manpage XSL
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
+
 #
 # USER SPECIFICATION AREA ENDS
 ######################################################################
@@ -55,11 +65,11 @@ XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 
 # System-specific variables closed to external specification
 ifeq ($(UNAME),Linux)
-DFLAGS:=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+DFLAGS+=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 LFLAGS:=-Wl,--warn-shared-textrel
 else
 ifeq ($(UNAME),FreeBSD)
-DFLAGS:=-DLIBTORQUE_FREEBSD -D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
+DFLAGS+=-DLIBTORQUE_FREEBSD -D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 endif
 endif
 
@@ -162,11 +172,13 @@ OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
 CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 LIBFLAGS+=-lpthread
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
-	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc $(LIBFLAGS)
+	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc
 TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR)
 ARCHDETECTCFLAGS:=$(CFLAGS)
-ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
+# FIXME archdetect doesn't need -lcpuset, -ladns, etc...
+ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque $(LIBFLAGS)
+LFLAGS+=$(LIBFLAGS)
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
