@@ -55,8 +55,13 @@ fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 	if((r = fprintf(fp,"%ju%c%s",val,*unit,suffix)) < 0){
 		return r;
 	}
-	if((val >= SCALE) && (val % SCALE) && *++unit){
-		return fprintf(fp," (%.3f%c%s)",(float)val / SCALE,*unit,suffix);
+	if(val >= SCALE && (val % SCALE)){
+		while(*++unit && (val >= SCALE * SCALE) && (val % SCALE)){
+			val /= SCALE;
+		}
+		if(*unit){
+			return fprintf(fp," (%.3f%c%s)",(float)val / SCALE,*unit,suffix);
+		}
 	}
 	return 0;
 }
