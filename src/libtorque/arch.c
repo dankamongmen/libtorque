@@ -154,7 +154,7 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 
 err:
 	unpin_thread();
-	while(--*cputc){
+	while((*cputc)--){
 		free_cpudetails((*types) + cpu_typecount);
 	}
 	free(*types);
