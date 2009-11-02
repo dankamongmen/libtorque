@@ -5,6 +5,7 @@
 #include <libtorque/memory.h>
 #include <libtorque/schedule.h>
 #include <libtorque/x86cpuid.h>
+#include <libtorque/topology.h>
 
 // We dynamically determine whether or not advanced cpuset support (cgroups and
 // the SGI libcpuset library) is available on Linux (ENOSYS or ENODEV indicate
@@ -157,15 +158,20 @@ err:
 
 int detect_architecture(void){
 	if(detect_memories()){
-		return -1;
+		goto err;
 	}
 	if(detect_cputypes(&cpu_typecount,&cpudescs)){
-		return -1;
+		goto err;
 	}
 	return 0;
+
+err:
+	free_architecture();
+	return -1;
 }
 
 void free_architecture(void){
+	reset_topology();
 	CPU_ZERO(&orig_cpumask);
 	use_cpusets = 0;
 	while(--cpu_typecount){

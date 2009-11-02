@@ -41,10 +41,9 @@ typedef struct libtorque_topt {
 	struct libtorque_cput *pudescs;	// dynarray of pu_typecount elements
 } libtorque_topt;
 
-const libtorque_topt *libtorque_sched_getdesc(int)
-	__attribute__ ((visibility("default")));
-
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
+int associate_affinityid(unsigned,unsigned);
+void reset_topology(void);
 
 #ifdef __cplusplus
 }
