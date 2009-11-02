@@ -9,6 +9,7 @@ extern "C" {
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
 int x86cpuid(libtorque_cput *);
+unsigned x86apicid(void);
 
 #ifdef __cplusplus
 }

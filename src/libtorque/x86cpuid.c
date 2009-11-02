@@ -1031,3 +1031,12 @@ int x86cpuid(libtorque_cput *cpudesc){
 	}
 	return 0;
 }
+
+// x86cpuid() must have been successfully called, and we must still be pinned
+// to the relevant processor.
+unsigned x86apicid(void){
+	uint32_t gpregs[4];
+
+	cpuid(CPUID_CPU_VERSION,0,gpregs);
+	return ((gpregs[1] >> 24) & 0xffu);
+}
