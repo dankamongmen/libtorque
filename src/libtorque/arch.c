@@ -126,6 +126,7 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 	for(z = 0 ; z < totalpe ; ++z){
 		libtorque_cput cpudetails;
 		typeof(*types) cputype;
+		unsigned apic;
 
 		if(detect_cpudetails(z,&cpudetails)){
 			goto err;
@@ -140,7 +141,9 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
-		if(associate_affinityid((unsigned)z,(unsigned)(cputype - *types))){
+		apic = x86apicid();
+		if(associate_affinityid((unsigned)z,
+				(unsigned)(cputype - *types),apic)){
 			goto err;
 		}
 	}
