@@ -228,9 +228,9 @@ install: test unsafe-install
 
 unsafe-install: $(LIBS) $(PKGCONFIG) $(DOCS)
 	@mkdir -p $(PREFIX)/lib
-	@$(INSTALL) $(realpath $(REALSOS)) $(PREFIX)/lib
+	@$(INSTALL) -m 0644 $(realpath $(REALSOS)) $(PREFIX)/lib
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
-		$(INSTALL) $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
+		$(INSTALL) -m 0644 $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
 	@mkdir -p $(PREFIX)/share/man/man3
 	@$(INSTALL) -m 0644 $(DOCS) $(PREFIX)/share/man/man3
 	@echo "Running ldconfig..." && ldconfig
