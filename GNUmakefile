@@ -226,15 +226,18 @@ clean:
 
 install: test unsafe-install
 
-unsafe-install: $(LIBS) $(PKGCONFIG)
+unsafe-install: $(LIBS) $(PKGCONFIG) $(DOCS)
 	@mkdir -p $(PREFIX)/lib
 	@$(INSTALL) $(realpath $(REALSOS)) $(PREFIX)/lib
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
 		$(INSTALL) $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
+	@mkdir -p $(PREFIX)/share/man/man3
+	@$(INSTALL) $(DOCS) $(PREFIX)/share/man/man3
 	@echo "Running ldconfig..." && ldconfig
 
 deinstall:
+	@rm -fv $(addprefix $(PREFIX)/share/man/man3/,$(notdir $(DOCS)))
 	@rm -fv $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
-	@rm -rfv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
-	@rm -rfv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS)))
+	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
+	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS)))
 	@echo "Running ldconfig..." && ldconfig
