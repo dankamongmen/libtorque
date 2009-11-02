@@ -180,7 +180,7 @@ void free_architecture(void){
 	reset_topology();
 	CPU_ZERO(&orig_cpumask);
 	use_cpusets = 0;
-	while(--cpu_typecount){
+	while(cpu_typecount--){
 		free_cpudetails(&cpudescs[cpu_typecount]);
 	}
 	free(cpudescs);

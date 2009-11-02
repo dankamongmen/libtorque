@@ -1023,10 +1023,10 @@ int x86cpuid(libtorque_cput *cpudesc){
 	if(x86_getprocsig(maxlevel,cpudesc)){
 		return -1;
 	}
-	if(x86_getbrandname(cpudesc)){
+	if(vender->memfxn(maxlevel,cpudesc)){
 		return -1;
 	}
-	if(vender->memfxn(maxlevel,cpudesc)){
+	if(x86_getbrandname(cpudesc)){
 		return -1;
 	}
 	return 0;
