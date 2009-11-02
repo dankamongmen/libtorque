@@ -21,7 +21,7 @@ add_node(unsigned *count,libtorque_nodet **nodes,const libtorque_nodet *node){
 }
 
 static uintmax_t
-determine_sysmem(void){
+determine_sysmem(size_t psize){
 	struct rlimit rlim;
 	long pages;
 
@@ -33,13 +33,27 @@ determine_sysmem(void){
 	if((pages = sysconf(_SC_PHYS_PAGES)) <= 0){
 		return 0;
 	}
-	return (uintmax_t)pages;
+	return (uintmax_t)pages * psize;
+}
+
+// FIXME there can be multiple page sizes!
+static size_t
+determine_pagesize(void){
+	long psize;
+
+	if((psize = sysconf(_SC_PAGESIZE)) <= 0){
+		return 0;
+	}
+	return (size_t)psize;
 }
 
 int detect_memories(void){
 	libtorque_nodet umamem;
 
-	if((umamem.size = determine_sysmem()) <= 0){
+	if((umamem.psize = determine_pagesize()) <= 0){
+		return -1;
+	}
+	if((umamem.size = determine_sysmem(umamem.psize)) <= 0){
 		return -1;
 	}
 	if(add_node(&nodecount,&manodes,&umamem) == NULL){

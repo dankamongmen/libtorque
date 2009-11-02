@@ -10,6 +10,7 @@ extern "C" {
 // A node is defined as an area where all memory has the same speed as seen
 // from some arbitrary set of CPUs (ignoring caches).
 typedef struct libtorque_nodet {
+	size_t psize;
 	uintmax_t size;
 } libtorque_nodet;
 

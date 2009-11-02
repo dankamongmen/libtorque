@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <libtorque/arch.h>
+#include <libtorque/memory.h>
 #include <libtorque/libtorque.h>
 
 static const char *
@@ -197,7 +198,7 @@ detail_processing_units(unsigned cpu_typecount){
 			return EXIT_FAILURE;
 		}
 		if(pudesc->elements <= 0){
-			fprintf(stderr,"Error: element count of 0\n");
+			fprintf(stderr,"Error: element count of %u\n",pudesc->elements);
 			return -1;
 		}
 		printf("Processing unit type %u of %u (count: %u):\n",
@@ -209,13 +210,42 @@ detail_processing_units(unsigned cpu_typecount){
 	return 0;
 }
 
+static int
+detail_memory_nodes(unsigned mem_nodecount){
+	unsigned n;
+
+	for(n = 0 ; n < mem_nodecount ; ++n){
+		const libtorque_nodet *mdesc;
+
+		if((mdesc = libtorque_node_getdesc(n)) == NULL){
+			fprintf(stderr,"Couldn't look up mem node %u\n",n);
+			return EXIT_FAILURE;
+		}
+		if(mdesc->psize <= 0){
+			fprintf(stderr,"Error: page size of %zu\n",mdesc->psize);
+			return -1;
+		}
+		printf("Memory node %u of %u: ",n + 1,mem_nodecount);
+		fprintf_bunit(stdout,"B, ",mdesc->size);
+		fprintf_bunit(stdout,"B pages\n",mdesc->psize);
+	}
+	return 0;
+}
+
 int main(void){
-	unsigned cpu_typecount;
+	unsigned cpu_typecount,mem_nodecount;
 	int ret = EXIT_FAILURE;
 
 	if(libtorque_init()){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		return EXIT_FAILURE;
+	}
+	if((mem_nodecount = libtorque_mem_nodecount()) <= 0){
+		fprintf(stderr,"Got invalid memory node count: %u\n",mem_nodecount);
+		goto done;
+	}
+	if(detail_memory_nodes(mem_nodecount)){
+		goto done;
 	}
 	if((cpu_typecount = libtorque_cpu_typecount()) <= 0){
 		fprintf(stderr,"Got invalid CPU type count: %u\n",cpu_typecount);
