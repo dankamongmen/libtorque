@@ -23,17 +23,21 @@ add_node(unsigned *count,libtorque_nodet **nodes,const libtorque_nodet *node){
 static uintmax_t
 determine_sysmem(size_t psize){
 	struct rlimit rlim;
+	uintmax_t ret;
 	long pages;
 
-        if(getrlimit(RLIMIT_AS,&rlim) == 0){
-                if(rlim.rlim_cur > 0 && rlim.rlim_cur != RLIM_INFINITY){
-                        return rlim.rlim_cur;
-                }
-        }
 	if((pages = sysconf(_SC_PHYS_PAGES)) <= 0){
 		return 0;
 	}
-	return (uintmax_t)pages * psize;
+	ret = (uintmax_t)pages * psize;
+        if(getrlimit(RLIMIT_AS,&rlim) == 0){
+                if(rlim.rlim_cur > 0 && rlim.rlim_cur != RLIM_INFINITY){
+			if(rlim.rlim_cur < ret){
+                        	return rlim.rlim_cur;
+			}
+                }
+        }
+	return ret;
 }
 
 // FIXME there can be multiple page sizes!
