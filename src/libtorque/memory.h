@@ -5,10 +5,12 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 // A node is defined as an area where all memory has the same speed as seen
 // from some arbitrary set of CPUs (ignoring caches).
 typedef struct libtorque_nodet {
-	unsigned id,size;
+	uintmax_t size;
 } libtorque_nodet;
 
 unsigned libtorque_mem_nodecount(void) __attribute__ ((visibility("default")));

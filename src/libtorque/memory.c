@@ -1,4 +1,7 @@
+#include <unistd.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <sys/resource.h>
 #include <libtorque/memory.h>
 
 static unsigned nodecount;
@@ -17,11 +20,28 @@ add_node(unsigned *count,libtorque_nodet **nodes,const libtorque_nodet *node){
 	return (*nodes) + (*count)++;
 }
 
+static uintmax_t
+determine_sysmem(void){
+	struct rlimit rlim;
+	long pages;
+
+        if(getrlimit(RLIMIT_AS,&rlim) == 0){
+                if(rlim.rlim_cur > 0 && rlim.rlim_cur != RLIM_INFINITY){
+                        return rlim.rlim_cur;
+                }
+        }
+	if((pages = sysconf(_SC_PHYS_PAGES)) <= 0){
+		return 0;
+	}
+	return (uintmax_t)pages;
+}
+
 int detect_memories(void){
 	libtorque_nodet umamem;
 
-	umamem.id = 0;
-	umamem.size = 0;
+	if((umamem.size = determine_sysmem()) <= 0){
+		return -1;
+	}
 	if(add_node(&nodecount,&manodes,&umamem) == NULL){
 		return -1;
 	}
