@@ -140,6 +140,9 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
+		if(associate_affinityid((unsigned)z,(unsigned)(cputype - *types))){
+			goto err;
+		}
 	}
 	if(unpin_thread()){
 		goto err;

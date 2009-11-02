@@ -998,8 +998,7 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	return 0;
 }
 
-// Before this is called, verify that the CPUID instruction is available via
-// receipt of non-zero return from cpuid_available().
+// Before this is called, pin to the desired processor (FIXME enforce?)
 int x86cpuid(libtorque_cput *cpudesc){
 	const known_x86_vender *vender;
 	uint32_t gpregs[4];

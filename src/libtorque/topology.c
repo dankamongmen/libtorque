@@ -10,6 +10,9 @@ int associate_affinityid(unsigned aid,unsigned idx){
 	if(aid >= sizeof(affinityid_map) / sizeof(*affinityid_map)){
 		return -1;
 	}
+	if(CPU_ISSET(aid,&validmap)){
+		return -1;
+	}
 	CPU_SET(aid,&validmap);
 	affinityid_map[aid] = idx;
 	return 0;
