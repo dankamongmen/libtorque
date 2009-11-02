@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <libtorque/arch.h>
 #include <libtorque/memory.h>
 #include <libtorque/libtorque.h>
@@ -37,8 +38,9 @@ x86_type(int x86type){
 
 static int
 fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
-	const char units[] = "KMGTPE",*unit = units;
+	const char units[] = "KMGTPEZY",*unit = units;
 	const uintmax_t SCALE = 1024;
+	int r;
 
 	if(val < SCALE || (val % SCALE)){
 		return fprintf(fp,"%ju%s",val,suffix);
@@ -46,11 +48,17 @@ fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 	val /= SCALE;
 	while(val >= SCALE && (val % SCALE == 0)){
 		val /= SCALE;
-		if(!*++unit){
+		if(!*++unit){ // damn, chief!
 			return -1;
 		}
 	}
-	return fprintf(fp,"%ju%c%s",val,*unit,suffix);
+	if((r = fprintf(fp,"%ju%c%s",val,*unit,suffix)) < 0){
+		return r;
+	}
+	if((val >= SCALE) && (val % SCALE) && *++unit){
+		return fprintf(fp," (%.3f%c%s)",(float)val / SCALE,*unit,suffix);
+	}
+	return 0;
 }
 
 static int
@@ -130,10 +138,10 @@ detail_tlb(const libtorque_tlbt *tlb){
 		return -1;
 	}
 	printf(" pages, ");
-	if(fprintf_bunit(stdout,"-entry,",tlb->entries) < 0){
+	if(fprintf_bunit(stdout,"-entry",tlb->entries) < 0){
 		return -1;
 	}
-	printf(" %u-assoc, ",tlb->associativity);
+	printf(", %u-assoc, ",tlb->associativity);
 	if(tlb->sharedways == 1){
 		printf("unshared ");
 	}else{
@@ -225,9 +233,11 @@ detail_memory_nodes(unsigned mem_nodecount){
 			fprintf(stderr,"Error: page size of %zu\n",mdesc->psize);
 			return -1;
 		}
-		printf("Memory node %u of %u: ",n + 1,mem_nodecount);
-		fprintf_bunit(stdout,"B, ",mdesc->size);
-		fprintf_bunit(stdout,"B pages\n",mdesc->psize);
+		printf("Memory node %u of %u:\n\t",n + 1,mem_nodecount);
+		fprintf_bunit(stdout,"B",mdesc->size);
+		printf(" total\n\t");
+		fprintf_bunit(stdout,"B",mdesc->psize);
+		printf(" pages\n");
 	}
 	return 0;
 }
