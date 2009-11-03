@@ -988,7 +988,6 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 		return -1;
 	}
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
-	// MP-assigned APIC is available from ((gpregs[1] >> 24) & 0xffu)
 	cpu->stepping = gpregs[0] & 0xfu; // Stepping: EAX[3..0]
 	cpu->x86type = (gpregs[0] >> 12) & 0x2u; // Processor type: EAX[13..12]
 	// Extended model is EAX[19..16]. Model is EAX[7..4].
@@ -1040,6 +1039,11 @@ int x86cpuid(libtorque_cput *cpudesc){
 unsigned x86apicid(void){
 	uint32_t gpregs[4];
 
-	cpuid(CPUID_CPU_VERSION,0,gpregs);
-	return ((gpregs[1] >> 24) & 0xffu);
+	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
+	if(gpregs[0] < CPUID_STANDARD_TOPOLOGY){ // We only have legacy APIC
+		cpuid(CPUID_CPU_VERSION,0,gpregs);
+		return ((gpregs[1] >> 24) & 0xffu);
+	}
+	cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
+	return gpregs[3];
 }
