@@ -1068,12 +1068,10 @@ int x86cpuid(libtorque_cput *cpudesc){
 	return 0;
 }
 
-// x86cpuid() must have been successfully called, and we must still be pinned
-// to the relevant processor.
-int x86apicid(uint32_t *apic,unsigned *thread){
+static inline int
+x86apic(uint32_t *apic){
 	uint32_t gpregs[4],lev;
 
-	*thread = 0; // FIXME
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
 	*apic = (gpregs[1] >> 24) & 0xffu; 	// 8-bit legacy APIC
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
@@ -1101,5 +1099,16 @@ int x86apicid(uint32_t *apic,unsigned *thread){
 			return -1;
 		}
 	}
+	return 0;
+}
+
+// x86cpuid() must have been successfully called, and we must still be pinned
+// to the relevant processor.
+int x86apicid(const libtorque_cput *cpu,uint32_t *apic,unsigned *thread){
+	*thread = 0;
+	if(x86apic(apic)){
+		return -1;
+	}
+	*thread = *apic & (cpu->threadspercore - 1);
 	return 0;
 }

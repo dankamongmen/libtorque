@@ -142,7 +142,7 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
-		if(x86apicid(&apic,&thread)){
+		if(x86apicid(cputype,&apic,&thread)){
 			goto err;
 		}
 		if(associate_affinityid((unsigned)z,
