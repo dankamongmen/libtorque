@@ -183,8 +183,11 @@ detail_processing_unit(const libtorque_cput *pudesc){
 	}
 	printf("\tFamily: 0x%03x (%d) Model: 0x%02x (%d) Stepping: %d\n",
 		pudesc->family,pudesc->family,pudesc->model,pudesc->model,pudesc->stepping);
-	printf("\t%u thread%s per processing core\n",pudesc->threadspercore,
-			pudesc->threadspercore != 1 ? "s" : "");
+	printf("\t%u thread%s per processing core, %u core%s per package\n",
+			pudesc->threadspercore,
+			pudesc->threadspercore != 1 ? "s" : "",
+			pudesc->coresperpackage,
+			pudesc->coresperpackage != 1 ? "s" : "");
 	if(pudesc->memories <= 0){
 		fprintf(stderr,"Error: memory count of 0\n");
 		return -1;
