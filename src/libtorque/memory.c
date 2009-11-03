@@ -60,6 +60,8 @@ int detect_memories(void){
 	if((umamem.size = determine_sysmem(umamem.psize)) <= 0){
 		return -1;
 	}
+	umamem.nodeid = 0;
+	umamem.count = 1;
 	if(add_node(&nodecount,&manodes,&umamem) == NULL){
 		return -1;
 	}

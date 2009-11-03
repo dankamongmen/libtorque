@@ -12,6 +12,8 @@ extern "C" {
 typedef struct libtorque_nodet {
 	size_t psize;
 	uintmax_t size;
+	unsigned count;
+	unsigned nodeid;
 } libtorque_nodet;
 
 unsigned libtorque_mem_nodecount(void) __attribute__ ((visibility("default")));

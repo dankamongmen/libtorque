@@ -226,8 +226,8 @@ detail_processing_units(unsigned cpu_typecount){
 			fprintf(stderr,"Error: element count of %u\n",pudesc->elements);
 			return -1;
 		}
-		printf("Processing unit type %u of %u (count: %u):\n",
-				n + 1,cpu_typecount,pudesc->elements);
+		printf("(%ux) Processing unit type %u of %u:\n",
+				pudesc->elements,n + 1,cpu_typecount);
 		if(detail_processing_unit(pudesc)){
 			return -1;
 		}
@@ -250,7 +250,8 @@ detail_memory_nodes(unsigned mem_nodecount){
 			fprintf(stderr,"Error: page size of %zu\n",mdesc->psize);
 			return -1;
 		}
-		printf("Memory node %u of %u:\n\t",n + 1,mem_nodecount);
+		printf("(%ux) Memory node %u of %u:\n\t",mdesc->count,
+				n + 1,mem_nodecount);
 		fprintf_bunit(stdout,"B",mdesc->size);
 		printf(" total, ");
 		fprintf_bunit(stdout,"B",mdesc->psize);
