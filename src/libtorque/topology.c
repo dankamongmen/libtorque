@@ -32,40 +32,46 @@ print_cpuset(struct sgroup *s,unsigned depth){
 	int r = 0;
 
 	if(s){
-		unsigned i,lastset;
+		unsigned i,lastset,total;
 		int ret;
 
-		for(i = 0 ; i < depth ; ++i){
+		i = 0;
+		do{
 			if((ret = printf("\t")) < 0){
 				return -1;
 			}
 			r += ret;
-		}
+		}while(i++ < depth);
 		if((ret = printf("%s %u: ",depth_terms[depth],s->groupid)) < 0){
 			return -1;
 		}
 		r += ret;
 		lastset = CPU_SETSIZE;
+		total = 0;
 		for(z = 0 ; z < CPU_SETSIZE ; ++z){
 			if(CPU_ISSET(z,&s->schedulable)){
+				++total;
 				lastset = z;
-				if((ret = printf("%3u ",z)) < 0){
-					return -1;
+				if(s->sub == NULL){
+					if((ret = printf("%3u ",z)) < 0){
+						return -1;
+					}
+					r += ret;
 				}
-				r += ret;
 			}
 		}
-		if(lastset == CPU_SETSIZE){
+		if(total == 0 || lastset == CPU_SETSIZE){
 			return -1;
 		}
 		if(s->sub == NULL){
-			if((ret = printf("(Processor type %u)",
-					affinityid_map[lastset] + 1)) < 0){
-				return -1;
-			}
-			r += ret;
+			ret = printf("(Processor type %u)\n",affinityid_map[lastset] + 1);
+		}else{
+			ret = printf("(%u threads total)\n",total);
 		}
-		printf("\n");
+		if(ret < 0){
+			return -1;
+		}
+		r += ret;
 		if((ret = print_cpuset(s->sub,depth + 1)) < 0){
 			return -1;
 		}
@@ -79,22 +85,8 @@ print_cpuset(struct sgroup *s,unsigned depth){
 }
 
 int print_topology(void){
-	unsigned z;
-
 	if(print_cpuset(sched_zone,0) < 0){
 		return -1;
-	}
-	for(z = 0 ; z < sizeof(affinityid_map) / sizeof(*affinityid_map) ; ++z){
-		if(CPU_ISSET(z,&validmap)){
-			const libtorque_cput *cpu;
-
-			if((cpu = libtorque_cpu_getdesc(affinityid_map[z])) == NULL){
-				return -1;
-			}
-			printf("Cpuset ID %u: Type %u, SMT %u Core %u Package %u\n",z,
-				affinityid_map[z] + 1,cpu_map[z].thread + 1,
-				cpu_map[z].core + 1,cpu_map[z].package + 1);
-		}
 	}
 	return 0;
 }

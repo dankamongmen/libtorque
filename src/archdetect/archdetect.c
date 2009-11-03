@@ -268,6 +268,9 @@ int main(void){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		return EXIT_FAILURE;
 	}
+	if(print_topology()){
+		goto done;
+	}
 	if((mem_nodecount = libtorque_mem_nodecount()) <= 0){
 		fprintf(stderr,"Got invalid memory node count: %u\n",mem_nodecount);
 		goto done;
@@ -280,9 +283,6 @@ int main(void){
 		goto done;
 	}
 	if(detail_processing_units(cpu_typecount)){
-		goto done;
-	}
-	if(print_topology()){
 		goto done;
 	}
 	ret = EXIT_SUCCESS;
