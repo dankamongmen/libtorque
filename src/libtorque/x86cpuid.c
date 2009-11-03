@@ -900,8 +900,10 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 				return -1;
 			}
 			if(coresperpackage == 0){
-				if((cpu->threadspercore /= cpp) == 0){
-					return -1;
+				if(maxlevel < CPUID_STANDARD_TOPOLOGY){
+					if((cpu->threadspercore /= cpp) == 0){
+						return -1;
+					}
 				}
 				coresperpackage = cpp;
 			}else if(coresperpackage != cpp){
