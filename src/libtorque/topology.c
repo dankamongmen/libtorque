@@ -24,13 +24,15 @@ static struct sgroup {
 // development code
 #include <stdio.h>
 
+static const char *depth_terms[] = { "Package", "Core", "Thread", NULL };
+
 static int
 print_cpuset(struct sgroup *s,unsigned depth){
 	unsigned z;
 	int r = 0;
 
 	if(s){
-		unsigned i;
+		unsigned i,lastset;
 		int ret;
 
 		for(i = 0 ; i < depth ; ++i){
@@ -39,18 +41,29 @@ print_cpuset(struct sgroup *s,unsigned depth){
 			}
 			r += ret;
 		}
-		if((ret = printf("Zone %u: ",s->groupid)) < 0){
+		if((ret = printf("%s %u: ",depth_terms[depth],s->groupid)) < 0){
 			return -1;
 		}
 		r += ret;
+		lastset = CPU_SETSIZE;
 		for(z = 0 ; z < CPU_SETSIZE ; ++z){
 			if(CPU_ISSET(z,&s->schedulable)){
-
+				lastset = z;
 				if((ret = printf("%3u ",z)) < 0){
 					return -1;
 				}
 				r += ret;
 			}
+		}
+		if(lastset == CPU_SETSIZE){
+			return -1;
+		}
+		if(s->sub == NULL){
+			if((ret = printf("(Processor type %u)",
+					affinityid_map[lastset] + 1)) < 0){
+				return -1;
+			}
+			r += ret;
 		}
 		printf("\n");
 		if((ret = print_cpuset(s->sub,depth + 1)) < 0){
