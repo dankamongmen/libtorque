@@ -32,6 +32,17 @@ find_sched_group(struct sgroup *sz,unsigned id){
 	return sz;
 }
 
+static struct sgroup *
+create_zone(unsigned id){
+	struct sgroup *s;
+
+	if( (s = malloc(sizeof(*s))) ){
+		CPU_ZERO(&s->schedulable);
+		s->groupid = id;
+	}
+	return s;
+}
+
 // We must be currently pinned to the processor being associated
 int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
 				unsigned core,unsigned pkg){
@@ -43,11 +54,17 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
 	if(CPU_ISSET(aid,&validmap)){
 		return -1;
 	}
+	// FIXME need to handle same core ID on different packages!
+	if((sg = find_sched_group(sched_zone,core)) == NULL){
+		if((sg = create_zone(core)) == NULL){
+			return -1;
+		}
+		sg->next = sched_zone;
+		sched_zone = sg;
+	}
 	cpu_map[aid].thread = thread;
 	cpu_map[aid].core = core;
 	cpu_map[aid].package = pkg;
-	// FIXME need to handle same core ID on different packages!
-	sg = find_sched_group(sched_zone,core);
 	CPU_SET(aid,&validmap);
 	affinityid_map[aid] = idx;
 	return 0;
