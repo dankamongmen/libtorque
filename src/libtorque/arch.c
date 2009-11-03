@@ -127,7 +127,7 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 	for(z = 0 ; z < totalpe ; ++z){
 		libtorque_cput cpudetails;
 		typeof(*types) cputype;
-		unsigned apic;
+		unsigned apic,thread;
 
 		if(detect_cpudetails(z,&cpudetails)){
 			goto err;
@@ -142,11 +142,11 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
-		if(x86apicid(&apic)){
+		if(x86apicid(&apic,&thread)){
 			goto err;
 		}
 		if(associate_affinityid((unsigned)z,
-				(unsigned)(cputype - *types),apic)){
+				(unsigned)(cputype - *types),apic,thread)){
 			goto err;
 		}
 	}
@@ -160,6 +160,7 @@ err:
 	while((*cputc)--){
 		free_cpudetails((*types) + cpu_typecount);
 	}
+	*cputc = 0;
 	free(*types);
 	*types = NULL;
 	return -1;
@@ -186,6 +187,7 @@ void free_architecture(void){
 	while(cpu_typecount--){
 		free_cpudetails(&cpudescs[cpu_typecount]);
 	}
+	cpu_typecount = 0;
 	free(cpudescs);
 	cpudescs = NULL;
 	free_memories();
