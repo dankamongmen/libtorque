@@ -4,7 +4,10 @@
 #include <libtorque/topology.h>
 
 static cpu_set_t validmap;			// affinityid_map validity map
-static unsigned apicid_map[CPU_SETSIZE];	// map of the local APIC table
+static struct {
+	unsigned apic;
+	unsigned SMTways;
+} cpu_map[CPU_SETSIZE];
 static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 
 int associate_affinityid(unsigned aid,unsigned idx,unsigned apic){
@@ -16,13 +19,13 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned apic){
 	}
 	CPU_SET(aid,&validmap);
 	affinityid_map[aid] = idx;
-	apicid_map[aid] = apic;
+	cpu_map[aid].apic = apic;
 	return 0;
 }
 
 void reset_topology(void){
 	CPU_ZERO(&validmap);
-	memset(apicid_map,0,sizeof(apicid_map));
+	memset(cpu_map,0,sizeof(cpu_map));
 	memset(affinityid_map,0,sizeof(affinityid_map));
 }
 
@@ -34,8 +37,14 @@ int print_topology(void){
 
 	for(z = 0 ; z < sizeof(affinityid_map) / sizeof(*affinityid_map) ; ++z){
 		if(CPU_ISSET(z,&validmap)){
-			printf("Cpuset ID %u: Type %u, APIC ID 0x%08x (%u)\n",z,
-				affinityid_map[z] + 1,apicid_map[z],apicid_map[z]);
+			unsigned thread,core,package;
+
+			core = 0;
+			thread = 0;
+			package = 0;
+			printf("Cpuset ID %u: Type %u, APIC ID 0x%08x (%u) SMT %u Core %u Package %u\n",z,
+				affinityid_map[z] + 1,cpu_map[z].apic,
+				cpu_map[z].apic,thread,core,package);
 		}
 	}
 	return 0;

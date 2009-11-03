@@ -60,8 +60,8 @@ free_cpudetails(libtorque_cput *details){
 //  - /proc/cpuinfo (linux only)
 //  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
 static int
-detect_cpudetails(int cpuid,libtorque_cput *details){
-	if(pin_thread(cpuid)){
+detect_cpudetails(int id,libtorque_cput *details){
+	if(pin_thread(id)){
 		return -1;
 	}
 	if(x86cpuid(details)){
