@@ -5,11 +5,12 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <libtorque/arch.h>
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
 int x86cpuid(libtorque_cput *);
-unsigned x86apicid(void);
+int x86apicid(uint32_t *);
 
 #ifdef __cplusplus
 }

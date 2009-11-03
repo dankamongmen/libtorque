@@ -1036,14 +1036,35 @@ int x86cpuid(libtorque_cput *cpudesc){
 
 // x86cpuid() must have been successfully called, and we must still be pinned
 // to the relevant processor.
-unsigned x86apicid(void){
-	uint32_t gpregs[4];
+int x86apicid(uint32_t *apic){
+	uint32_t gpregs[4],lev;
 
+	cpuid(CPUID_CPU_VERSION,0,gpregs);
+	*apic = (gpregs[1] >> 24) & 0xffu; 	// 8-bit legacy APIC
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
 	if(gpregs[0] < CPUID_STANDARD_TOPOLOGY){ // We only have legacy APIC
-		cpuid(CPUID_CPU_VERSION,0,gpregs);
-		return ((gpregs[1] >> 24) & 0xffu);
+		return 0;
 	}
 	cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
-	return gpregs[3];
+	// EDX holds the 32-bit Extended APIC. Last 8 bits ought equal legacy.
+	if((gpregs[3] & 0xff) != *apic){
+		return -1;
+	}
+	*apic = gpregs[3];
+	// ECX[15..8] holds "Level type": 0 == invalid, 1 == thread, 2 == core
+	while( (lev = (gpregs[2] >> 8) & 0xffu) ){
+		switch(lev){
+			case 0x2: // core
+				break;
+			case 0x1: // thread
+				break;
+			default:
+				return -1;
+		}
+		cpuid(CPUID_STANDARD_TOPOLOGY,++lev,gpregs);
+		if(gpregs[3] != *apic){
+			return -1;
+		}
+	}
+	return 0;
 }
