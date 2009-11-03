@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all test docs clean install unsafe-install deinstall
+.PHONY: all test hardtest docs clean install unsafe-install deinstall
 .DEFAULT: all
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
@@ -191,6 +191,11 @@ docs: $(DOCS)
 test: $(BINS) $(LIBS)
 	@echo -n "Testing $(ARCHDETECT): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $(BINOUT)/$(ARCHDETECT)
+
+VALGRIND:=valgrind
+VALGRINDOPTS:=--tool=memcheck --error-exitcode=1 -v 
+hardtest: test
+	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
 
 $(LIBOUT)/$(TORQUESOL): $(LIBOUT)/$(TORQUEREAL)
 	@mkdir -p $(@D)
