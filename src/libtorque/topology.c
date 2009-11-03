@@ -62,6 +62,7 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
 		sg->next = sched_zone;
 		sched_zone = sg;
 	}
+	CPU_SET(aid,&sg->schedulable);
 	cpu_map[aid].thread = thread;
 	cpu_map[aid].core = core;
 	cpu_map[aid].package = pkg;
