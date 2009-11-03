@@ -18,7 +18,7 @@ static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 static struct sgroup {
 	cpu_set_t schedulable;
 	unsigned groupid;		// x86: Core for multicores, or package
-	struct sgroup *next;
+	struct sgroup *next,*sub;
 } *sched_zone;
 
 static struct sgroup *
@@ -55,12 +55,13 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
 		return -1;
 	}
 	// FIXME need to handle same core ID on different packages!
-	if((sg = find_sched_group(sched_zone,core)) == NULL){
-		if((sg = create_zone(core)) == NULL){
+	if((sg = find_sched_group(sched_zone,pkg)) == NULL){
+		if((sg = create_zone(pkg)) == NULL){
 			return -1;
 		}
 		sg->next = sched_zone;
 		sched_zone = sg;
+		sg->sub = NULL;
 	}
 	CPU_SET(aid,&sg->schedulable);
 	cpu_map[aid].thread = thread;
@@ -87,35 +88,41 @@ void reset_topology(void){
 #include <stdio.h>
 
 static int
-print_cpuset(cpu_set_t *cs){
+print_cpuset(struct sgroup *s){
 	unsigned z;
 	int r = 0;
 
-	for(z = 0 ; z < CPU_SETSIZE ; ++z){
-		if(CPU_ISSET(z,cs)){
-			int ret;
+	if(s){
+		int ret;
 
-			if((ret = printf("%u ",z)) < 0){
-				return -1;
+		printf("Zone %u: ",s->groupid);
+		for(z = 0 ; z < CPU_SETSIZE ; ++z){
+			if(CPU_ISSET(z,&s->schedulable)){
+
+				if((ret = printf("%u ",z)) < 0){
+					return -1;
+				}
+				r += ret;
 			}
-			r += ret;
 		}
+		printf("\n");
+		if((ret = print_cpuset(s->sub)) < 0){
+			return -1;
+		}
+		r += ret;
+		if((ret = print_cpuset(s->next)) < 0){
+			return -1;
+		}
+		r += ret;
 	}
 	return r;
 }
 
 int print_topology(void){
-	struct sgroup *s;
 	unsigned z;
 
-	s = sched_zone;
-	while(s){
-		printf("Zone %u: ",s->groupid);
-		if(print_cpuset(&s->schedulable) < 0){
-			return -1;
-		}
-		printf("\n");
-		s = s->next;
+	if(print_cpuset(sched_zone) < 0){
+		return -1;
 	}
 	for(z = 0 ; z < sizeof(affinityid_map) / sizeof(*affinityid_map) ; ++z){
 		if(CPU_ISSET(z,&validmap)){
