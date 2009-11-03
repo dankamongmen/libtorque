@@ -25,3 +25,18 @@ void reset_topology(void){
 	memset(apicid_map,0,sizeof(apicid_map));
 	memset(affinityid_map,0,sizeof(affinityid_map));
 }
+
+// development code
+#include <stdio.h>
+
+int print_topology(void){
+	unsigned z;
+
+	for(z = 0 ; z < sizeof(affinityid_map) / sizeof(*affinityid_map) ; ++z){
+		if(CPU_ISSET(z,&validmap)){
+			printf("Cpuset ID %u: Type %u, APIC ID %u\n",
+				z,affinityid_map[z] + 1,apicid_map[z]);
+		}
+	}
+	return 0;
+}

@@ -45,6 +45,8 @@ typedef struct libtorque_topt {
 int associate_affinityid(unsigned,unsigned,unsigned);
 void reset_topology(void);
 
+int print_topology(void) __attribute__ ((visibility ("default")));
+
 #ifdef __cplusplus
 }
 #endif

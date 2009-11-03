@@ -4,6 +4,7 @@
 #include <string.h>
 #include <libtorque/arch.h>
 #include <libtorque/memory.h>
+#include <libtorque/topology.h>
 #include <libtorque/libtorque.h>
 
 static const char *
@@ -269,6 +270,9 @@ int main(void){
 		goto done;
 	}
 	if(detail_processing_units(cpu_typecount)){
+		goto done;
+	}
+	if(print_topology()){
 		goto done;
 	}
 	ret = EXIT_SUCCESS;
