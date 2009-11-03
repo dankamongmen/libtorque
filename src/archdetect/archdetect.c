@@ -176,8 +176,6 @@ detail_processing_unit(const libtorque_cput *pudesc){
 		fprintf(stderr,"Error: invalid SMT information\n");
 		return -1;
 	}
-	printf("\t%u thread%s per processing core.\n",pudesc->threadspercore,
-			pudesc->threadspercore != 1 ? "s" : "");
 	printf("\tBrand name: %s (%s)\n",pudesc->strdescription,x86type);
 	if(pudesc->family == 0){
 		fprintf(stderr,"Error: invalid processor family\n");
@@ -185,6 +183,8 @@ detail_processing_unit(const libtorque_cput *pudesc){
 	}
 	printf("\tFamily: 0x%03x (%d) Model: 0x%02x (%d) Stepping: %d\n",
 		pudesc->family,pudesc->family,pudesc->model,pudesc->model,pudesc->stepping);
+	printf("\t%u thread%s per processing core\n",pudesc->threadspercore,
+			pudesc->threadspercore != 1 ? "s" : "");
 	if(pudesc->memories <= 0){
 		fprintf(stderr,"Error: memory count of 0\n");
 		return -1;
@@ -249,7 +249,7 @@ detail_memory_nodes(unsigned mem_nodecount){
 		}
 		printf("Memory node %u of %u:\n\t",n + 1,mem_nodecount);
 		fprintf_bunit(stdout,"B",mdesc->size);
-		printf(" total\n\t");
+		printf(" total, ");
 		fprintf_bunit(stdout,"B",mdesc->psize);
 		printf(" pages\n");
 	}
