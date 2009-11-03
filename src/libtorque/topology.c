@@ -68,20 +68,48 @@ void reset_topology(void){
 // development code
 #include <stdio.h>
 
+static int
+print_cpuset(cpu_set_t *cs){
+	unsigned z;
+	int r = 0;
+
+	for(z = 0 ; z < CPU_SETSIZE ; ++z){
+		if(CPU_ISSET(z,cs)){
+			int ret;
+
+			if((ret = printf("%u ",z)) < 0){
+				return -1;
+			}
+			r += ret;
+		}
+	}
+	return r;
+}
+
 int print_topology(void){
-   unsigned z;
+	struct sgroup *s;
+	unsigned z;
 
-   for(z = 0 ; z < sizeof(affinityid_map) / sizeof(*affinityid_map) ; ++z){
-           if(CPU_ISSET(z,&validmap)){
-		   const libtorque_cput *cpu;
+	s = sched_zone;
+	while(s){
+		printf("Zone %u: ",s->groupid);
+		if(print_cpuset(&s->schedulable) < 0){
+			return -1;
+		}
+		printf("\n");
+		s = s->next;
+	}
+	for(z = 0 ; z < sizeof(affinityid_map) / sizeof(*affinityid_map) ; ++z){
+		if(CPU_ISSET(z,&validmap)){
+			const libtorque_cput *cpu;
 
-		   if((cpu = libtorque_cpu_getdesc(affinityid_map[z])) == NULL){
-			   return -1;
-		   }
-                   printf("Cpuset ID %u: Type %u, SMT %u Core %u Package %u\n",z,
-                           affinityid_map[z] + 1,cpu_map[z].thread + 1,
-			   cpu_map[z].core + 1,cpu_map[z].package + 1);
-           }
-   }
-   return 0;
+			if((cpu = libtorque_cpu_getdesc(affinityid_map[z])) == NULL){
+				return -1;
+			}
+			printf("Cpuset ID %u: Type %u, SMT %u Core %u Package %u\n",z,
+				affinityid_map[z] + 1,cpu_map[z].thread + 1,
+				cpu_map[z].core + 1,cpu_map[z].package + 1);
+		}
+	}
+	return 0;
 }
