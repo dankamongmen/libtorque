@@ -40,16 +40,17 @@ endif
 
 # The SGI libcpuset() library can be used, instead of native affinity calls.
 # This allows for more advanced scheduling.
-ifdef $(LIBTORQUE_WITH_CPUSET)
+ifdef LIBTORQUE_WITH_CPUSET
 DFLAGS+=-DLIBTORQUE_WITH_CPUSET
 LIBFLAGS+=-lcpuset
 endif
 
-ifndef $(LIBTORQUE_WITHOUT_ADNS)
+
+ifndef LIBTORQUE_WITHOUT_ADNS
 LIBFLAGS+=-ladns
 endif
 
-ifndef $(LIBTORQUE_WITHOUT_SSL)
+ifndef LIBTORQUE_WITHOUT_SSL
 DFLAGS+=$(shell pkg-config --cflags openssl)
 LIBFLAGS+=$(shell (pkg-config --libs openssl || echo -lssl -lcrypto))
 endif
