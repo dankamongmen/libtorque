@@ -1030,7 +1030,7 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 			return -1;
 		}
 		cpuid(CPUID_STANDARD_TOPOLOGY,1,gpregs);
-		if(((gpregs[2] >> 8) & 0xffu) != 1u){
+		if(((gpregs[2] >> 8) & 0xffu) != 2u){
 			return -1;
 		}
 		if((cpu->coresperpackage = (gpregs[1] & 0xffffu)) == 0){
