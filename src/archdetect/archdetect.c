@@ -195,7 +195,7 @@ detail_processing_unit(const libtorque_cput *pudesc){
 	for(n = 0 ; n < pudesc->memories ; ++n){
 		const libtorque_memt *mem = pudesc->memdescs + n;
 
-		printf("\tMemory %u of %u: ",n + 1,pudesc->memories);
+		printf("\tCache %u of %u: ",n + 1,pudesc->memories);
 		if(detail_memory(mem)){
 			return -1;
 		}
