@@ -172,6 +172,12 @@ detail_processing_unit(const libtorque_cput *pudesc){
 		fprintf(stderr,"Error: invalid x86 type information\n");
 		return -1;
 	}
+	if(pudesc->threadspercore <= 0){
+		fprintf(stderr,"Error: invalid SMT information\n");
+		return -1;
+	}
+	printf("\t%u thread%s per processing core.\n",pudesc->threadspercore,
+			pudesc->threadspercore != 1 ? "s" : "");
 	printf("\tBrand name: %s (%s)\n",pudesc->strdescription,x86type);
 	if(pudesc->family == 0){
 		fprintf(stderr,"Error: invalid processor family\n");

@@ -37,7 +37,7 @@ typedef struct libtorque_cput {
 					// family and model include the
 					// extended family and model bits
 	unsigned tlbs;			// Number of TLBs (per-mem?)
-	unsigned padding;		// FIXME
+	unsigned threadspercore;	// Number of ways our core is shared
 	// cpu_set_t cpuset;		// Corresponding cpuset mask
 	libtorque_tlbt *tlbdescs;	// TLB descriptors, NULL if tlbs == 0
 	char *strdescription;		// Vender-specific string description
