@@ -48,8 +48,8 @@ typedef enum {
 	CPUID_EXTENDED_CPU_NAME1	=       0x80000002, // proc name part1
 	CPUID_EXTENDED_CPU_NAME2	=       0x80000003, // proc name part2
 	CPUID_EXTENDED_CPU_NAME3	=       0x80000004, // proc name part3
-	CPUID_EXTENDED_L1CACHE_TLB	=       0x80000005, // l1 cache, tlb0
-	CPUID_EXTENDED_L23CACHE_TLB	=       0x80000006, // l2,3 cache, tlb1
+	CPUID_AMD_L1CACHE_TLB		=       0x80000005, // l1, tlb0 (AMD)
+	CPUID_EXTENDED_L23CACHE_TLB	=       0x80000006, // l2,3, tlb1
 	CPUID_EXTENDED_ENHANCEDPOWER	=       0x80000006, // epm support
 } cpuid_class;
 
@@ -926,22 +926,25 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
 	uint32_t maxexlevel,gpregs[4];
 	libtorque_memt l1amd;
 
-	if((maxexlevel = identify_extended_cpuid()) < CPUID_EXTENDED_L1CACHE_TLB){
+	if((maxexlevel = identify_extended_cpuid()) < CPUID_AMD_L1CACHE_TLB){
 		return -1;
 	}
 	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
-	cpuid(CPUID_EXTENDED_L1CACHE_TLB,0,gpregs);
+	cpuid(CPUID_AMD_L1CACHE_TLB,0,gpregs);
 	l1amd.linesize = gpregs[2] & 0x000000ffu;
 	l1amd.associativity = 0;		// FIXME
 	l1amd.totalsize = 0;			// FIXME
 	l1amd.sharedways = 0;			// FIXME
 	l1amd.memtype = MEMTYPE_UNKNOWN;	// FIXME
 	l1amd.level = 1;
-	// FIXME handle other cache levels
 	if(add_hwmem(&cpud->memories,&cpud->memdescs,&l1amd) == NULL){
 		return -1;
 	}
-	return 0;
+	if(maxexlevel < CPUID_EXTENDED_L23CACHE_TLB){
+		return 0;
+	}
+	// FIXME get L2, L3
+	return -1;
 }
 
 static int
