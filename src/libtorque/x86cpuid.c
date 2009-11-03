@@ -849,6 +849,10 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 	uint32_t gpregs[4];
 
 	if(maxlevel < CPUID_STANDARD_CACHECONF){
+		// We determine the number of cores per package using the
+		// deterministic cache function (for some reason). Thankfully,
+		// all multicore processors support said function.
+		cpu->coresperpackage = 1;
 		return id_intel_caches_old(maxlevel,cpu);
 	}
 	maxdc = level = 1;
