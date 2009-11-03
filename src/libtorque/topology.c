@@ -13,7 +13,7 @@ static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 
 // We must be currently pinned to the processor being associated
 int associate_affinityid(unsigned aid,unsigned idx,unsigned apic,
-				unsigned thread,unsigned core){
+			unsigned thread,unsigned core,unsigned pkg){
 	if(aid >= sizeof(affinityid_map) / sizeof(*affinityid_map)){
 		return -1;
 	}
@@ -22,7 +22,7 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned apic,
 	}
 	cpu_map[aid].thread = thread;
 	cpu_map[aid].core = core;
-	cpu_map[aid].package = 0;
+	cpu_map[aid].package = pkg;
 	cpu_map[aid].apic = apic;
 	CPU_SET(aid,&validmap);
 	affinityid_map[aid] = idx;

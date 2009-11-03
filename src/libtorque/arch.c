@@ -48,6 +48,7 @@ free_cpudetails(libtorque_cput *details){
 	details->strdescription = NULL;
 	details->stepping = details->model = details->family = 0;
 	details->tlbs = details->elements = details->memories = 0;
+	details->coresperpackage = details->threadspercore = 0;
 	details->x86type = PROCESSOR_X86_UNKNOWN;
 }
 
@@ -81,7 +82,7 @@ compare_cpudetails(const libtorque_cput * restrict a,
 	if(a->memories != b->memories || a->tlbs != b->tlbs){
 		return -1;
 	}
-	if(a->threadspercore != b->threadspercore){
+	if(a->threadspercore != b->threadspercore || a->coresperpackage != b->coresperpackage){
 		return -1;
 	}
 	if(strcmp(a->strdescription,b->strdescription)){
@@ -125,8 +126,8 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 		goto err;
 	}
 	for(z = 0 ; z < totalpe ; ++z){
+		unsigned apic,thread,core,pkg;
 		libtorque_cput cpudetails;
-		unsigned apic,thread,core;
 		typeof(*types) cputype;
 
 		if(detect_cpudetails(z,&cpudetails)){
@@ -142,12 +143,12 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
-		if(x86apicid(cputype,&apic,&thread,&core)){
+		if(x86apicid(cputype,&apic,&thread,&core,&pkg)){
 			goto err;
 		}
 		if(associate_affinityid((unsigned)z,
 				(unsigned)(cputype - *types),
-				apic,thread,core)){
+				apic,thread,core,pkg)){
 			goto err;
 		}
 	}

@@ -845,7 +845,7 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 
 static int
 id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
-	unsigned n,level,maxdc,coresperpackage = 0;
+	unsigned n,level,maxdc;
 	uint32_t gpregs[4];
 
 	if(maxlevel < CPUID_STANDARD_CACHECONF){
@@ -899,14 +899,14 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			if((cpp = ((gpregs[0] >> 26) & 0x3fu) + 1) == 0){
 				return -1;
 			}
-			if(coresperpackage == 0){
+			if(cpu->coresperpackage == 0){
 				if(maxlevel < CPUID_STANDARD_TOPOLOGY){
 					if((cpu->threadspercore /= cpp) == 0){
 						return -1;
 					}
 				}
-				coresperpackage = cpp;
-			}else if(coresperpackage != cpp){
+				cpu->coresperpackage = cpp;
+			}else if(cpu->coresperpackage != cpp){
 				return -1;
 			}
 			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
@@ -1029,6 +1029,13 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 		if((cpu->threadspercore = (gpregs[1] & 0xffffu)) == 0){
 			return -1;
 		}
+		cpuid(CPUID_STANDARD_TOPOLOGY,1,gpregs);
+		if(((gpregs[2] >> 8) & 0xffu) != 1u){
+			return -1;
+		}
+		if((cpu->coresperpackage = (gpregs[1] & 0xffffu)) == 0){
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -1048,6 +1055,7 @@ int x86cpuid(libtorque_cput *cpudesc){
 	cpudesc->x86type = PROCESSOR_X86_UNKNOWN;
 	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
 	cpudesc->threadspercore = 0;
+	cpudesc->coresperpackage = 0;
 	if(!cpuid_available()){
 		return -1;
 	}
@@ -1105,8 +1113,8 @@ x86apic(uint32_t *apic){
 // x86cpuid() must have been successfully called, and we must still be pinned
 // to the relevant processor.
 int x86apicid(const libtorque_cput *cpu,uint32_t *apic,unsigned *thread,
-				unsigned *core){
-	unsigned tpc,cbits;
+				unsigned *core,unsigned *pkg){
+	unsigned tpc,cpp,cbits;
 
 	*core = 0;
 	*thread = 0;
@@ -1116,11 +1124,18 @@ int x86apicid(const libtorque_cput *cpu,uint32_t *apic,unsigned *thread,
 	if((tpc = cpu->threadspercore) == 0){
 		return -1;
 	}
+	if((cpp = cpu->coresperpackage) == 0){
+		return -1;
+	}
 	*thread = *apic & (tpc - 1);
 	cbits = *apic;
 	while( (tpc /= 2) ){
 		cbits >>= 1;
 	}
-	*core = cbits;
+	*core = cbits & (cpp - 1);
+	while( (cpp /= 2) ){
+		cbits >>= 1;
+	}
+	*pkg = cbits;
 	return 0;
 }
