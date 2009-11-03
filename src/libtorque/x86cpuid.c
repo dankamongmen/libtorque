@@ -845,7 +845,7 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 
 static int
 id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
-	unsigned n,level,maxdc;
+	unsigned n,level,maxdc,coresperpackage = 0;
 	uint32_t gpregs[4];
 
 	if(maxlevel < CPUID_STANDARD_CACHECONF){
@@ -862,7 +862,7 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 		n = 0;
 		do{
 			libtorque_memt mem;
-			unsigned lev;
+			unsigned lev,cpp;
 
 			cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
 			lev = (gpregs[0] >> 5) & 0x7u; // AX[7..5]
@@ -895,6 +895,18 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 				mem.linesize * (gpregs[2] + 1);
 			mem.sharedways = ((gpregs[0] >> 14) & 0xfffu) + 1;
 			mem.level = lev;
+			// Cores per package = EAX[31:26] + 1
+			if((cpp = ((gpregs[0] >> 26) & 0x3fu) + 1) == 0){
+				return -1;
+			}
+			if(coresperpackage == 0){
+				if((cpu->threadspercore /= cpp) == 0){
+					return -1;
+				}
+				coresperpackage = cpp;
+			}else if(coresperpackage != cpp){
+				return -1;
+			}
 			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
 				return -1;
 			}
@@ -995,14 +1007,26 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
 	cpu->family = ((gpregs[0] >> 17) & 0x7f8u) | ((gpregs[0] >> 8) & 0xfu);
 	if(maxfunc < CPUID_STANDARD_TOPOLOGY){
-		// Logical processors per physical package is EBX[23..16].
-		cpu->threadspercore = (gpregs[1] >> 16) & 0xffu;
+		// http://software.intel.com/en-us/articles/intel-64-architecture-processor-topology-enumeration/
+		// "The maximum number of addressable ID's that can be assigned
+		// to logical processors in a physical package." is EBX[23..16]
+		if((cpu->threadspercore = (gpregs[1] >> 16) & 0xffu) == 0){
+			return -1;
+		}
+		// Round this to the nearest >= power of 2
+		if(cpu->threadspercore & (cpu->threadspercore - 1)){
+			return -1; // FIXME
+		}
+		// Then divide by EAX[31:26] with CPUID_STANDARD_CACHECONF. We
+		// do this in id_intel_caches(), if it's available.
 	}else{
 		cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
 		if(((gpregs[2] >> 8) & 0xffu) != 1u){
 			return -1;
 		}
-		cpu->threadspercore = (gpregs[1] & 0xffffu);
+		if((cpu->threadspercore = (gpregs[1] & 0xffffu)) == 0){
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -1044,9 +1068,10 @@ int x86cpuid(libtorque_cput *cpudesc){
 
 // x86cpuid() must have been successfully called, and we must still be pinned
 // to the relevant processor.
-int x86apicid(uint32_t *apic){
+int x86apicid(uint32_t *apic,unsigned *thread){
 	uint32_t gpregs[4],lev;
 
+	*thread = 0; // FIXME
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
 	*apic = (gpregs[1] >> 24) & 0xffu; 	// 8-bit legacy APIC
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
