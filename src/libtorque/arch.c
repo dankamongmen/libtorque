@@ -40,8 +40,6 @@ add_cputype(unsigned *cputc,libtorque_cput **types,
 
 static void
 free_cpudetails(libtorque_cput *details){
-	// free(details->apicids);
-	// details->apicids = NULL;
 	free(details->tlbdescs);
 	details->tlbdescs = NULL;
 	free(details->memdescs);
