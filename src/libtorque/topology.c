@@ -6,7 +6,6 @@
 static cpu_set_t validmap;			// affinityid_map validity map
 static struct {
 	unsigned apic;
-	unsigned SMTways;
 } cpu_map[CPU_SETSIZE];
 static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 
@@ -33,19 +32,21 @@ void reset_topology(void){
 #include <stdio.h>
 
 int print_topology(void){
-	unsigned z;
+   unsigned z;
 
-	for(z = 0 ; z < sizeof(affinityid_map) / sizeof(*affinityid_map) ; ++z){
-		if(CPU_ISSET(z,&validmap)){
-			unsigned thread,core,package;
+   for(z = 0 ; z < sizeof(affinityid_map) / sizeof(*affinityid_map) ; ++z){
+           if(CPU_ISSET(z,&validmap)){
+		   unsigned apic,thread,core,package;
+		   const libtorque_cput *cpu;
 
-			core = 0;
-			thread = 0;
-			package = 0;
-			printf("Cpuset ID %u: Type %u, APIC ID 0x%08x (%u) SMT %u Core %u Package %u\n",z,
-				affinityid_map[z] + 1,cpu_map[z].apic,
-				cpu_map[z].apic,thread,core,package);
-		}
-	}
-	return 0;
+		   if((cpu = libtorque_cpu_getdesc(affinityid_map[z])) == NULL){
+			   return -1;
+		   }
+		   apic = cpu_map[z].apic;
+		   thread = package = core = 0;
+                   printf("Cpuset ID %u: Type %u, APIC ID 0x%08x (%u) SMT %u Core %u Package %u\n",z,
+                           affinityid_map[z] + 1,apic,apic,thread,core,package);
+           }
+   }
+   return 0;
 }
