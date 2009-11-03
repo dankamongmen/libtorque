@@ -81,6 +81,9 @@ compare_cpudetails(const libtorque_cput * restrict a,
 	if(a->memories != b->memories || a->tlbs != b->tlbs){
 		return -1;
 	}
+	if(a->threadspercore != b->threadspercore){
+		return -1;
+	}
 	if(strcmp(a->strdescription,b->strdescription)){
 		return -1;
 	}

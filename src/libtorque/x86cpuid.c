@@ -995,6 +995,8 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	cpu->model = ((gpregs[0] >> 12) & 0xf0u) | ((gpregs[0] >> 4) & 0xfu);
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
 	cpu->family = ((gpregs[0] >> 17) & 0x7f8u) | ((gpregs[0] >> 8) & 0xfu);
+	// Logical processors per physical processor core is EBX[23..16].
+	cpu->threadspercore = (gpregs[1] >> 16) & 0xffu;
 	return 0;
 }
 
@@ -1004,9 +1006,6 @@ int x86cpuid(libtorque_cput *cpudesc){
 	uint32_t gpregs[4];
 	unsigned maxlevel;
 
-	if(!cpuid_available()){
-		return -1;
-	}
 	cpudesc->tlbdescs = NULL;
 	cpudesc->tlbs = 0;
 	cpudesc->memories = 0;
@@ -1015,6 +1014,10 @@ int x86cpuid(libtorque_cput *cpudesc){
 	cpudesc->strdescription = NULL;
 	cpudesc->x86type = PROCESSOR_X86_UNKNOWN;
 	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
+	cpudesc->threadspercore = 0;
+	if(!cpuid_available()){
+		return -1;
+	}
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
 	maxlevel = gpregs[0];
 	if((vender = lookup_vender(gpregs + 1)) == NULL){
