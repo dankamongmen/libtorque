@@ -25,7 +25,7 @@ cpuid_available(void){
 	return ((f1 ^ f2) & flag) != 0;
 }
 
-// By far, the best reference here is Intel Application Note 845 (the CPUID
+// By far, the best reference here is Intel Application Note 485 (the CPUID
 // guide). Also useful are the Intel and AMD Architecture Software Developer's
 // Manuals. http://faydoc.tripod.com/cpu/cpuid.htm is pretty useful, as is
 // http://www.ee.nuigalway.ie/mirrors/www.sandpile.org/ia32/cpuid.htm.
@@ -172,7 +172,7 @@ static const intel_cache_descriptor intel_cache_descriptors[] = {
 		.level = 1,
 		.memtype = MEMTYPE_DATA,
 	},
-	// IAN 845 describes this as an MLC cache. This doesn't mean
+	// IAN 485 describes this as an MLC cache. This doesn't mean
 	// Multi-Level Cell (as in NAND flash technology), but
 	// "Mid-Level Cache". This essentially means to expect an L3.
 	{       .descriptor = 0x21,
@@ -853,7 +853,7 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 	}
 	maxdc = level = 1;
 	do{
-		enum { // Table 2.9, IAN 845
+		enum { // Table 2.9, IAN 485
 			NULLCACHE = 0,
 			DATACACHE = 1,
 			CODECACHE = 2,
@@ -994,8 +994,16 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	cpu->model = ((gpregs[0] >> 12) & 0xf0u) | ((gpregs[0] >> 4) & 0xfu);
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
 	cpu->family = ((gpregs[0] >> 17) & 0x7f8u) | ((gpregs[0] >> 8) & 0xfu);
-	// Logical processors per physical processor core is EBX[23..16].
-	cpu->threadspercore = (gpregs[1] >> 16) & 0xffu;
+	if(maxfunc < CPUID_STANDARD_TOPOLOGY){
+		// Logical processors per physical package is EBX[23..16].
+		cpu->threadspercore = (gpregs[1] >> 16) & 0xffu;
+	}else{
+		cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
+		if(((gpregs[2] >> 8) & 0xffu) != 1u){
+			return -1;
+		}
+		cpu->threadspercore = (gpregs[1] & 0xffffu);
+	}
 	return 0;
 }
 
