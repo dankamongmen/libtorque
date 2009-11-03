@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <string.h>
 #include <libtorque/arch.h>
 #include <libtorque/schedule.h>
@@ -10,9 +11,32 @@ static struct {
 } cpu_map[CPU_SETSIZE];
 static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 
+// The lowest level for any scheduling hierarchy is OS-schedulable entities.
+// This definition is independent of "threads", "cores", "packages", etc. Our
+// base composition and isomorphisms arise from schedulable entities. Should
+// a single execution state ever have "multiple levels", this still works.
+static struct sgroup {
+	cpu_set_t schedulable;
+	unsigned groupid;		// x86: Core for multicores, or package
+	struct sgroup *next;
+} *sched_zone;
+
+static struct sgroup *
+find_sched_group(struct sgroup *sz,unsigned id){
+	while(sz){
+		if(sz->groupid == id){
+			break;
+		}
+		sz = sz->next;
+	}
+	return sz;
+}
+
 // We must be currently pinned to the processor being associated
 int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
 				unsigned core,unsigned pkg){
+	struct sgroup *sg;
+
 	if(aid >= sizeof(affinityid_map) / sizeof(*affinityid_map)){
 		return -1;
 	}
@@ -22,12 +46,20 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
 	cpu_map[aid].thread = thread;
 	cpu_map[aid].core = core;
 	cpu_map[aid].package = pkg;
+	// FIXME need to handle same core ID on different packages!
+	sg = find_sched_group(sched_zone,core);
 	CPU_SET(aid,&validmap);
 	affinityid_map[aid] = idx;
 	return 0;
 }
 
 void reset_topology(void){
+	typeof(*sched_zone) *sz;
+
+	while( (sz = sched_zone) ){
+		sched_zone = sz->next;
+		free(sz);
+	}
 	CPU_ZERO(&validmap);
 	memset(cpu_map,0,sizeof(cpu_map));
 	memset(affinityid_map,0,sizeof(affinityid_map));
