@@ -1104,11 +1104,23 @@ x86apic(uint32_t *apic){
 
 // x86cpuid() must have been successfully called, and we must still be pinned
 // to the relevant processor.
-int x86apicid(const libtorque_cput *cpu,uint32_t *apic,unsigned *thread){
+int x86apicid(const libtorque_cput *cpu,uint32_t *apic,unsigned *thread,
+				unsigned *core){
+	unsigned tpc,cbits;
+
+	*core = 0;
 	*thread = 0;
 	if(x86apic(apic)){
 		return -1;
 	}
-	*thread = *apic & (cpu->threadspercore - 1);
+	if((tpc = cpu->threadspercore) == 0){
+		return -1;
+	}
+	*thread = *apic & (tpc - 1);
+	cbits = *apic;
+	while( (tpc /= 2) ){
+		cbits >>= 1;
+	}
+	*core = cbits;
 	return 0;
 }

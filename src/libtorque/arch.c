@@ -126,8 +126,8 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 	}
 	for(z = 0 ; z < totalpe ; ++z){
 		libtorque_cput cpudetails;
+		unsigned apic,thread,core;
 		typeof(*types) cputype;
-		unsigned apic,thread;
 
 		if(detect_cpudetails(z,&cpudetails)){
 			goto err;
@@ -142,11 +142,12 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
-		if(x86apicid(cputype,&apic,&thread)){
+		if(x86apicid(cputype,&apic,&thread,&core)){
 			goto err;
 		}
 		if(associate_affinityid((unsigned)z,
-				(unsigned)(cputype - *types),apic,thread)){
+				(unsigned)(cputype - *types),
+				apic,thread,core)){
 			goto err;
 		}
 	}

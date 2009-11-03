@@ -13,7 +13,7 @@ static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 
 // We must be currently pinned to the processor being associated
 int associate_affinityid(unsigned aid,unsigned idx,unsigned apic,
-				unsigned thread){
+				unsigned thread,unsigned core){
 	if(aid >= sizeof(affinityid_map) / sizeof(*affinityid_map)){
 		return -1;
 	}
@@ -21,7 +21,7 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned apic,
 		return -1;
 	}
 	cpu_map[aid].thread = thread;
-	cpu_map[aid].core = 0;
+	cpu_map[aid].core = core;
 	cpu_map[aid].package = 0;
 	cpu_map[aid].apic = apic;
 	CPU_SET(aid,&validmap);
@@ -51,8 +51,8 @@ int print_topology(void){
 		   }
 		   apic = cpu_map[z].apic;
                    printf("Cpuset ID %u: Type %u, APIC ID 0x%08x (%u) SMT %u Core %u Package %u\n",z,
-                           affinityid_map[z] + 1,apic,apic,cpu_map[z].thread,
-			   cpu_map[z].core,cpu_map[z].package);
+                           affinityid_map[z] + 1,apic,apic,cpu_map[z].thread + 1,
+			   cpu_map[z].core + 1,cpu_map[z].package + 1);
            }
    }
    return 0;
