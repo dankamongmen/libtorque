@@ -6,14 +6,13 @@
 
 static cpu_set_t validmap;			// affinityid_map validity map
 static struct {
-	unsigned apic;
 	unsigned thread,core,package;
 } cpu_map[CPU_SETSIZE];
 static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 
 // We must be currently pinned to the processor being associated
-int associate_affinityid(unsigned aid,unsigned idx,unsigned apic,
-			unsigned thread,unsigned core,unsigned pkg){
+int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
+				unsigned core,unsigned pkg){
 	if(aid >= sizeof(affinityid_map) / sizeof(*affinityid_map)){
 		return -1;
 	}
@@ -23,7 +22,6 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned apic,
 	cpu_map[aid].thread = thread;
 	cpu_map[aid].core = core;
 	cpu_map[aid].package = pkg;
-	cpu_map[aid].apic = apic;
 	CPU_SET(aid,&validmap);
 	affinityid_map[aid] = idx;
 	return 0;
@@ -44,14 +42,12 @@ int print_topology(void){
    for(z = 0 ; z < sizeof(affinityid_map) / sizeof(*affinityid_map) ; ++z){
            if(CPU_ISSET(z,&validmap)){
 		   const libtorque_cput *cpu;
-		   uint32_t apic;
 
 		   if((cpu = libtorque_cpu_getdesc(affinityid_map[z])) == NULL){
 			   return -1;
 		   }
-		   apic = cpu_map[z].apic;
-                   printf("Cpuset ID %u: Type %u, APIC ID 0x%08x (%u) SMT %u Core %u Package %u\n",z,
-                           affinityid_map[z] + 1,apic,apic,cpu_map[z].thread + 1,
+                   printf("Cpuset ID %u: Type %u, SMT %u Core %u Package %u\n",z,
+                           affinityid_map[z] + 1,cpu_map[z].thread + 1,
 			   cpu_map[z].core + 1,cpu_map[z].package + 1);
            }
    }

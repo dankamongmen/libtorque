@@ -5,12 +5,11 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <libtorque/arch.h>
+struct libtorque_cput;
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int x86cpuid(libtorque_cput *);
-int x86apicid(const libtorque_cput *,uint32_t *,unsigned *,unsigned *,unsigned *);
+int x86cpuid(struct libtorque_cput *);
+int x86topology(const struct libtorque_cput *,unsigned *,unsigned *,unsigned *);
 
 #ifdef __cplusplus
 }

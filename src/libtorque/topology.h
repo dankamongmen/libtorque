@@ -42,7 +42,7 @@ typedef struct libtorque_topt {
 } libtorque_topt;
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int associate_affinityid(unsigned,unsigned,unsigned,unsigned,unsigned,unsigned);
+int associate_affinityid(unsigned,unsigned,unsigned,unsigned,unsigned);
 void reset_topology(void);
 
 int print_topology(void) __attribute__ ((visibility ("default")));

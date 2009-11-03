@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <libtorque/arch.h>
 #include <libtorque/x86cpuid.h>
 
 static int
@@ -1119,13 +1120,14 @@ x86apic(uint32_t *apic){
 
 // x86cpuid() must have been successfully called, and we must still be pinned
 // to the relevant processor.
-int x86apicid(const libtorque_cput *cpu,uint32_t *apic,unsigned *thread,
-				unsigned *core,unsigned *pkg){
-	unsigned tpc,cpp,cbits;
+int x86topology(const libtorque_cput *cpu,unsigned *thread,unsigned *core,
+					unsigned *pkg){
+	unsigned tpc,cpp;
+	uint32_t apic;
 
 	*core = 0;
 	*thread = 0;
-	if(x86apic(apic)){
+	if(x86apic(&apic)){
 		return -1;
 	}
 	if((tpc = cpu->threadspercore) == 0){
@@ -1134,15 +1136,14 @@ int x86apicid(const libtorque_cput *cpu,uint32_t *apic,unsigned *thread,
 	if((cpp = cpu->coresperpackage) == 0){
 		return -1;
 	}
-	*thread = *apic & (tpc - 1);
-	cbits = *apic;
+	*thread = apic & (tpc - 1);
 	while( (tpc /= 2) ){
-		cbits >>= 1;
+		apic >>= 1;
 	}
-	*core = cbits & (cpp - 1);
+	*core = apic & (cpp - 1);
 	while( (cpp /= 2) ){
-		cbits >>= 1;
+		apic >>= 1;
 	}
-	*pkg = cbits;
+	*pkg = apic;
 	return 0;
 }
