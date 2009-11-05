@@ -64,7 +64,7 @@ print_cpuset(struct sgroup *s,unsigned depth){
 			return -1;
 		}
 		if(s->sub == NULL){
-			ret = printf("(Processor type %u)\n",affinityid_map[lastset] + 1);
+			ret = printf("(%ux processor type %u)\n",total,affinityid_map[lastset] + 1);
 		}else{
 			ret = printf("(%u threads total)\n",total);
 		}
