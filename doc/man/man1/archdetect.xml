@@ -105,6 +105,10 @@
 				<refentrytitle>cpuset</refentrytitle>
 				<manvolnum>7</manvolnum>
 			</citerefentry>
+			<citerefentry>
+				<refentrytitle>numa</refentrytitle>
+				<manvolnum>7</manvolnum>
+			</citerefentry>
 		</para>
 		<para>GitHub: <ulink url="http://dank.qemfd.net/dankwiki/index.php/Libtorque"/></para>
 		<para>Project wiki: <ulink url="http://github.com/dankamongmen/libtorque"/></para>
