@@ -587,7 +587,7 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 		.level = 1,
 		.tlbtype = MEMTYPE_DATA,
 	},
-	{	.descriptor = 0x5a,		// FIXME two interpretations!
+	{	.descriptor = 0x5a,		// FIXME 2M or 4M
 		.pagesize = 4 * 1024 * 1024,
 		.entries = 32,
 		.associativity = 4,
@@ -622,7 +622,7 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 		.level = 1,
 		.tlbtype = MEMTYPE_CODE,
 	},
-	{	.descriptor = 0xb1,		// FIXME two interpretations!
+	{	.descriptor = 0xb1,		// FIXME 8x2M or 4x4M
 		.pagesize = 2 * 1024 * 1024,
 		.entries = 8,
 		.associativity = 4,
