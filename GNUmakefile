@@ -139,7 +139,7 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
         -Wdeclaration-after-statement -Wfloat-equal -Wpacked -Winvalid-pch \
         -Wdisabled-optimization -Wcast-align -Wformat -Wformat-security \
         -Wold-style-definition -Woverlength-strings -Wwrite-strings \
-	-Wstrict-aliasing=2 -Wconversion -Wunsafe-loop-optimizations \
+	-Wstrict-aliasing=3 -Wconversion -Wunsafe-loop-optimizations \
 	-Wstrict-overflow=5
 # We get the following from -O (taken from gcc 4.3 docs)
 # -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop -fdelayed-branch -fdse \
