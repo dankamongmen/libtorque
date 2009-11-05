@@ -172,7 +172,7 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # -ftree-parallelize-loops
 OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
 	-fvisibility=hidden -fipa-cp -ftree-loop-linear -ftree-loop-im \
-	-ftree-loop-ivcanon
+	-ftree-loop-ivcanon -fno-common
 CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 LIBFLAGS+=-lpthread
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
@@ -222,7 +222,7 @@ $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 # Assemble only, sometimes useful for close-in optimization
 $(OUT)/%.s: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -S $< -o $@
+	$(CC) $(CFLAGS) -fverbose-asm -S $< -o $@
 
 # Preprocess only, sometimes useful for debugging
 $(OUT)/%.i: %.c $(GLOBOBJDEPS)
