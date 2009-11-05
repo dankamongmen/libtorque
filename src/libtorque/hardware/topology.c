@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
-#include <libtorque/arch.h>
 #include <libtorque/schedule.h>
-#include <libtorque/x86cpuid.h>
-#include <libtorque/topology.h>
+#include <libtorque/hardware/arch.h>
+#include <libtorque/hardware/x86cpuid.h>
+#include <libtorque/hardware/topology.h>
 
 static cpu_set_t validmap;			// affinityid_map validity map
 static struct {

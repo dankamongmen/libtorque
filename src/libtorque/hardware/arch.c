@@ -1,11 +1,11 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libtorque/arch.h>
-#include <libtorque/memory.h>
 #include <libtorque/schedule.h>
-#include <libtorque/x86cpuid.h>
-#include <libtorque/topology.h>
+#include <libtorque/hardware/arch.h>
+#include <libtorque/hardware/memory.h>
+#include <libtorque/hardware/x86cpuid.h>
+#include <libtorque/hardware/topology.h>
 
 // We dynamically determine whether or not advanced cpuset support (cgroups and
 // the SGI libcpuset library) is available on Linux (ENOSYS or ENODEV indicate

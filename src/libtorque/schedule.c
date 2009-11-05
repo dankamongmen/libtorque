@@ -1,6 +1,5 @@
 #include <limits.h>
 #include <unistd.h>
-#include <libtorque/arch.h>
 #include <libtorque/schedule.h>
 
 // Set to 1 if we are using cpusets. Currently, this is determined at runtime

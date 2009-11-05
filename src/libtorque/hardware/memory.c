@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/resource.h>
-#include <libtorque/memory.h>
+#include <libtorque/hardware/memory.h>
 
 static unsigned nodecount;
 static libtorque_nodet *manodes;

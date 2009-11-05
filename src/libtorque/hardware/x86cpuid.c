@@ -1,8 +1,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <libtorque/arch.h>
-#include <libtorque/x86cpuid.h>
+#include <libtorque/hardware/arch.h>
+#include <libtorque/hardware/x86cpuid.h>
 
 static int
 cpuid_available(void){

@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <libtorque/arch.h>
-#include <libtorque/memory.h>
-#include <libtorque/topology.h>
 #include <libtorque/libtorque.h>
+#include <libtorque/hardware/arch.h>
+#include <libtorque/hardware/memory.h>
+#include <libtorque/hardware/topology.h>
 
 static const char *
 memory_type(int mtype){

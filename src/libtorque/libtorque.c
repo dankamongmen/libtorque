@@ -1,5 +1,5 @@
-#include <libtorque/arch.h>
 #include <libtorque/libtorque.h>
+#include <libtorque/hardware/arch.h>
 
 int libtorque_init(void){
 	if(detect_architecture()){
