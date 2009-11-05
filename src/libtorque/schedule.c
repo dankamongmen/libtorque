@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <libtorque/schedule.h>
 
 // Set to 1 if we are using cpusets. Currently, this is determined at runtime
@@ -8,10 +9,35 @@
 // hassle for package construction. As stands, this complicates logic FIXME.
 static unsigned use_cpusets;
 
+typedef struct tdata {
+	int affinity_id;
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
+	enum {
+		THREAD_UNLAUNCHED = 0,
+		THREAD_PREFAIL,
+		THREAD_STARTED,
+	} status;
+} tdata;
+
 // Set whenever detect_cpucount() is called, which generally only happen once
 // (we don't enforce this; who knows what hotpluggable CPUs the future brings,
 // and what interfaces we'll need?)
+static unsigned cpucount;
 static cpu_set_t origmask;
+// This is fairly wasteful, and broken for libcpuset (which requires us to use
+// cpuset_size()). Allocate them upon detecting cpu count FIXME.
+static tdata tiddata[CPU_SETSIZE];
+static pthread_t tids[CPU_SETSIZE];
+
+static void
+reset_affinity_ids(tdata *data){
+	unsigned z;
+
+	for(z = 0 ; z < CPU_SETSIZE ; ++z){
+		data[z].affinity_id = -1;
+	}
+}
 
 // Detect the number of processing elements (of any type) available to us; this
 // isn't a function of architecture, but a function of the OS (only certain
@@ -30,10 +56,12 @@ static cpu_set_t origmask;
 //  - ls /dev/cpu/[0-9]* | wc -l (linux only, with cpuid driver)
 //  - mptable (freebsd only, with SMP option)
 //  - hw.ncpu, kern.smp.cpus sysctls (freebsd)
+//  - read BIOS via /dev/memory (requires root)
 //  - cpuset_size() (libcpuset, linux)
 //  - cpuset -g (freebsd)
 //  - taskset -c (linux)
 //  - cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET) (freebsd)
+//  - sched_getaffinity(0) (linux)
 //  - CPUID function 0x0000_000b (x2APIC/Topology Enumeration)
 static int
 fallback_detect_cpucount(void){
@@ -62,7 +90,7 @@ portable_cpuset_count(cpu_set_t *mask){
 
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
 		if(CPU_ISSET(cpu,mask)){
-			++count;
+			tiddata[count++].affinity_id = (int)cpu;
 		}
 	}
 	return count;
@@ -94,11 +122,7 @@ detect_cpucount_internal(cpu_set_t *mask){
 			// Cpusets aren't supported, or aren't in use
 #endif
 			if(sched_getaffinity(0,sizeof(*mask),mask) == 0){
-#ifdef CPU_COUNT // FIXME what if CPU_COUNT is a function, not a macro?
-				int count = CPU_COUNT(mask);
-#else
 				int count = portable_cpuset_count(mask);
-#endif
 
 				if(count >= 1){
 					return count;
@@ -126,8 +150,10 @@ detect_cpucount_internal(cpu_set_t *mask){
 int detect_cpucount(void){
 	int ret;
 
+	reset_affinity_ids(tiddata);
 	CPU_ZERO(&origmask);
 	if((ret = detect_cpucount_internal(&origmask)) > 0){
+		cpucount = (unsigned)ret;
 		return ret;
 	}
 	CPU_ZERO(&origmask);
@@ -176,4 +202,98 @@ int unpin_thread(void){
 #else
 	return -1;
 #endif
+}
+
+static int
+reap_thread(pthread_t tid,tdata *tstate){
+	void *joinret;
+	int ret = 0;
+
+	// If a thread has exited but not yet been joined, it's safe to call
+	// pthread_cancel(); go ahead and do a hard test for success.
+	if(pthread_cancel(tid)){
+		return -1;
+	}
+	if(pthread_join(tid,&joinret) || joinret != PTHREAD_CANCELED){
+		ret = -1;
+	}
+	ret |= pthread_mutex_destroy(&tstate->lock);
+	ret |= pthread_cond_destroy(&tstate->cond);
+	tstate->status = THREAD_UNLAUNCHED;
+	return 0;
+}
+
+static void *
+thread(void *void_marshal){
+	tdata *marshal = void_marshal;
+
+	if(pin_thread(marshal->affinity_id)){
+		goto earlyerr;
+	}
+	if(pthread_mutex_lock(&marshal->lock)){
+		goto earlyerr;
+	}
+	marshal->status = THREAD_STARTED;
+	if(pthread_mutex_unlock(&marshal->lock)){
+		goto earlyerr;
+	}
+	if(pthread_cond_broadcast(&marshal->cond)){
+		goto earlyerr;
+	}
+	// FIXME call down into event handler code
+	return NULL;
+
+earlyerr:
+	pthread_mutex_lock(&marshal->lock); // continue regardless
+	marshal->status = THREAD_PREFAIL;
+	pthread_mutex_unlock(&marshal->lock);
+	pthread_cond_broadcast(&marshal->cond);
+	return NULL;
+}
+
+int spawn_threads(void){
+	unsigned z;
+
+	for(z = 0 ; z < cpucount ; ++z){
+		if(pthread_mutex_init(&tiddata[z].lock,NULL)){
+			goto err;
+		}
+		if(pthread_cond_init(&tiddata[z].cond,NULL)){
+			pthread_mutex_destroy(&tiddata[z].lock);
+			goto err;
+		}
+		if(pthread_create(&tids[z],NULL,thread,&tiddata[z])){
+			pthread_mutex_destroy(&tiddata[z].lock);
+			pthread_cond_destroy(&tiddata[z].cond);
+			goto err;
+		}
+		pthread_mutex_lock(&tiddata[z].lock);
+		while(tiddata[z].status == THREAD_UNLAUNCHED){
+			pthread_cond_wait(&tiddata[z].cond,&tiddata[z].lock);
+		}
+		if(tiddata[z].status != THREAD_STARTED){
+			pthread_join(tids[z],NULL);
+			pthread_mutex_destroy(&tiddata[z].lock);
+			pthread_cond_destroy(&tiddata[z].cond);
+			goto err;
+		}
+		pthread_mutex_unlock(&tiddata[z].lock);
+	}
+	return 0;
+
+err:
+	while(z--){
+		reap_thread(tids[z],&tiddata[z]);
+	}
+	return -1;
+}
+
+int reap_threads(void){
+	int ret = 0;
+	unsigned z;
+
+	for(z = 0 ; z < cpucount ; ++z){
+		ret |= reap_thread(tids[z],&tiddata[z]);
+	}
+	return ret;
 }

@@ -20,6 +20,8 @@ typedef cpuset_t cpu_set_t;
 int detect_cpucount(void);
 int pin_thread(int);
 int unpin_thread(void);
+int spawn_threads(void);
+int reap_threads(void);
 
 #ifdef __cplusplus
 }
