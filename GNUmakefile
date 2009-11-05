@@ -19,9 +19,9 @@ UNAME:=$(shell uname)
 # specified. Provide the defaults here. Document these in the README.
 PREFIX?=/usr/local
 ifeq ($(UNAME),FreeBSD)
-DOCPREFIX?=$(PREFIX)
+DOCPREFIX?=$(PREFIX)/man
 else
-DOCPREFIX?=$(PREFIX)/share
+DOCPREFIX?=$(PREFIX)/share/man
 endif
 
 # Some systems don't install exuberant-ctags as 'ctags'. Some people use etags.
@@ -72,9 +72,11 @@ XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 ifeq ($(UNAME),Linux)
 DFLAGS+=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 LFLAGS:=-Wl,--warn-shared-textrel
+MANBIN:=mandb
 else
 ifeq ($(UNAME),FreeBSD)
 DFLAGS+=-DLIBTORQUE_FREEBSD -D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
+MANBIN:=makewhatis
 endif
 endif
 
@@ -262,18 +264,18 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@$(INSTALL) $(BINS) $(PREFIX)/bin
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
 		$(INSTALL) -m 0644 $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
-	@mkdir -p $(DOCPREFIX)/man/man1 $(DOCPREFIX)/man/man3
-	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man/man1
-	@$(INSTALL) -m 0644 $(MAN3OBJ) $(DOCPREFIX)/man/man3
+	@mkdir -p $(DOCPREFIX)/man1 $(DOCPREFIX)/man3
+	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
+	@$(INSTALL) -m 0644 $(MAN3OBJ) $(DOCPREFIX)/man3
 	@echo "Running ldconfig..." && ldconfig
-	@echo "Running mandb..." && mandb $(DOCPREFIX)/man
+	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
 
 deinstall:
-	@rm -fv $(addprefix $(DOCPREFIX)/man/man3/,$(notdir $(MAN3OBJ)))
-	@rm -fv $(addprefix $(DOCPREFIX)/man/man1/,$(notdir $(MAN1OBJ)))
+	@rm -fv $(addprefix $(DOCPREFIX)/man3/,$(notdir $(MAN3OBJ)))
+	@rm -fv $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
 	@rm -fv $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
 	@rm -fv $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS)))
 	@echo "Running ldconfig..." && ldconfig
-	@echo "Running mandb..." && mandb $(DOCPREFIX)/man
+	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
