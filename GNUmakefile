@@ -117,9 +117,11 @@ LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
 # Documentation processing
+MAN1SRC:=$(shell find $(MANDIR)/man1/ -type f -print)
 MAN3SRC:=$(shell find $(MANDIR)/man3/ -type f -print)
+MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1))
 MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3))
-DOCS:=$(MAN3OBJ)
+DOCS:=$(MAN1OBJ) $(MAN3OBJ)
 
 # Debugging flags. These aren't normally used.
 DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
@@ -233,6 +235,10 @@ $(OUT)/%.3: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(XSLTPROC) -o $@ $(DOC2MANXSL) $<
 
+$(OUT)/%.1: %.xml $(GLOBOBJDEPS)
+	@mkdir -p $(@D)
+	$(XSLTPROC) -o $@ $(DOC2MANXSL) $<
+
 # Having TAGS dep on the involved makefiles -- and including TAGS in
 # GLOBOBJDEPS -- means that a makefile change forces global rebuilding, which
 # seems a desirable goal anyway.
@@ -252,12 +258,14 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@$(INSTALL) $(BINS) $(PREFIX)/bin
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
 		$(INSTALL) -m 0644 $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
-	@mkdir -p $(PREFIX)/share/man/man3
-	@$(INSTALL) -m 0644 $(DOCS) $(PREFIX)/share/man/man3
+	@mkdir -p $(PREFIX)/share/man/man1 $(PREFIX)/share/man/man3
+	@$(INSTALL) -m 0644 $(MAN1OBJ) $(PREFIX)/share/man/man1
+	@$(INSTALL) -m 0644 $(MAN3OBJ) $(PREFIX)/share/man/man3
 	@echo "Running ldconfig..." && ldconfig
 
 deinstall:
-	@rm -fv $(addprefix $(PREFIX)/share/man/man3/,$(notdir $(DOCS)))
+	@rm -fv $(addprefix $(PREFIX)/share/man/man3/,$(notdir $(MAN3OBJ)))
+	@rm -fv $(addprefix $(PREFIX)/share/man/man1/,$(notdir $(MAN1OBJ)))
 	@rm -fv $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
 	@rm -fv $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))

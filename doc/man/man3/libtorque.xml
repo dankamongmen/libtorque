@@ -14,7 +14,7 @@
 <!-- "&dhpackage; command-line reference" or similar (see e.g. -->
 <!-- http://www.tldp.org/HOWTO/Man-Page/q2.html). But limit    -->
 <!-- the length to 30 chars.                                   -->
-<!ENTITY dhtitle     "libtorque summary">
+<!ENTITY dhtitle     "libtorque API summary">
   
 <!-- This is the application/package name.                     -->
 <!ENTITY dhucpackage "LIBTORQUE">
@@ -34,7 +34,7 @@
 
 <refentry>
 	<refentryinfo>
-	<title>&dhtitle;</title>
+		<title>&dhtitle;</title>
 		<!-- Better put a suite name instead of &dhpackage; into productname -->
 		<productname>&dhproduct;</productname>
 		<releaseinfo role="version">&dhrelease;</releaseinfo>
@@ -122,7 +122,9 @@
 				<refentrytitle>sigaction</refentrytitle>
 				<manvolnum>2</manvolnum>
 			</citerefentry>
-			</para><para>On Linux: <citerefentry>
+		</para>
+		<para>On Linux:
+			<citerefentry>
 				<refentrytitle>aio</refentrytitle>
 				<manvolnum>3</manvolnum>
 			</citerefentry>, <citerefentry>
@@ -155,8 +157,10 @@
 			</citerefentry>, <citerefentry>
 				<refentrytitle>timerfd_create</refentrytitle>
 				<manvolnum>2</manvolnum>
-			</citerefentry></para>
-			<para>On FreeBSD: <citerefentry>
+			</citerefentry>
+		</para>
+		<para>On FreeBSD:
+		       	<citerefentry>
 				<refentrytitle>aio</refentrytitle>
 				<manvolnum>4</manvolnum>
 			</citerefentry>, <citerefentry>
@@ -171,8 +175,9 @@
 			</citerefentry>, <citerefentry>
 				<refentrytitle>pthread</refentrytitle>
 				<manvolnum>3</manvolnum>
-			</citerefentry></para>
-			<para>GitHub: <ulink url="http://dank.qemfd.net/dankwiki/index.php/Libtorque"/></para>
-			<para>Project wiki: <ulink url="http://github.com/dankamongmen/libtorque"/></para>
+			</citerefentry>
+		</para>
+		<para>GitHub: <ulink url="http://dank.qemfd.net/dankwiki/index.php/Libtorque"/></para>
+		<para>Project wiki: <ulink url="http://github.com/dankamongmen/libtorque"/></para>
 	</refsect1>
 </refentry>
