@@ -193,7 +193,7 @@ test: $(BINS) $(LIBS)
 	env LD_LIBRARY_PATH=$(LIBOUT) $(BINOUT)/$(ARCHDETECT)
 
 VALGRIND:=valgrind
-VALGRINDOPTS:=--tool=memcheck --error-exitcode=1 -v 
+VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v 
 hardtest: test
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
 
