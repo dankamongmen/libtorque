@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_ARCH
-#define LIBTORQUE_ARCH
+#ifndef LIBTORQUE_HARDWARE_ARCH
+#define LIBTORQUE_HARDWARE_ARCH
 
 #ifdef __cplusplus
 extern "C" {

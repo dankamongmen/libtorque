@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_MEMORY
-#define LIBTORQUE_MEMORY
+#ifndef LIBTORQUE_HARDWARE_MEMORY
+#define LIBTORQUE_HARDWARE_MEMORY
 
 #ifdef __cplusplus
 extern "C" {

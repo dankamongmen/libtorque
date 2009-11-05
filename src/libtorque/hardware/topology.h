@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_TOPOLOGY
-#define LIBTORQUE_TOPOLOGY
+#ifndef LIBTORQUE_HARDWARE_TOPOLOGY
+#define LIBTORQUE_HARDWARE_TOPOLOGY
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_X86CPUID
-#define LIBTORQUE_X86CPUID
+#ifndef LIBTORQUE_HARDWARE_X86CPUID
+#define LIBTORQUE_HARDWARE_X86CPUID
 
 #ifdef __cplusplus
 extern "C" {
