@@ -30,15 +30,6 @@ static cpu_set_t origmask;
 static tdata tiddata[CPU_SETSIZE];
 static pthread_t tids[CPU_SETSIZE];
 
-static void
-reset_affinity_ids(tdata *data){
-	unsigned z;
-
-	for(z = 0 ; z < CPU_SETSIZE ; ++z){
-		data[z].affinity_id = -1;
-	}
-}
-
 // Detect the number of processing elements (of any type) available to us; this
 // isn't a function of architecture, but a function of the OS (only certain
 // processors might be enabled, and we might be restricted to a subset). We
@@ -63,34 +54,18 @@ reset_affinity_ids(tdata *data){
 //  - cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET) (freebsd)
 //  - sched_getaffinity(0) (linux)
 //  - CPUID function 0x0000_000b (x2APIC/Topology Enumeration)
-static int
-fallback_detect_cpucount(void){
-	long sysonln;
-
-	// Not the most robust method -- we prefer cpuset functions -- but it's
-	// supported just about everywhere (x86info uses this method). See:
-	// http://lists.openwall.net/linux-kernel/2007/04/04/183
-	if((sysonln = sysconf(_SC_NPROCESSORS_ONLN)) <= 0){
-		return -1;
-	}
-	if(sysonln > INT_MAX){
-		return -1;
-	}
-	return (int)sysonln;
-}
 
 // FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
 // setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
-static inline int portable_cpuset_count(cpu_set_t *) __attribute__ ((unused));
-
 static inline int
 portable_cpuset_count(cpu_set_t *mask){
-	int count = 0;
-	unsigned cpu;
+	int count = 0,cpu;
 
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
-		if(CPU_ISSET(cpu,mask)){
-			tiddata[count++].affinity_id = (int)cpu;
+		if(CPU_ISSET((unsigned)cpu,mask)){
+			tiddata[count++].affinity_id = cpu;
+		}else{
+			tiddata[count].affinity_id = -1;
 		}
 	}
 	return count;
@@ -103,44 +78,37 @@ portable_cpuset_count(cpu_set_t *mask){
 static inline int
 detect_cpucount_internal(cpu_set_t *mask){
 #ifdef LIBTORQUE_FREEBSD
-	int count;
-
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
-				sizeof(*mask),mask) < 0){
-		return -1;
+				sizeof(*mask),mask) == 0){
+		int count;
+
+		if((count = portable_cpuset_count(mask)) > 0){
+			return count;
+		}
 	}
-	if((count = portable_cpuset_count(mask)) <= 0){ // broken cpusets...?
-		return fallback_detect_cpucount();
-	}
-	return count;
 #elif defined(LIBTORQUE_LINUX)
 	int csize;
 
 #ifdef LIBTORQUE_WITH_CPUSET
-	if((csize = cpuset_size()) < 0){
-		if(errno == ENOSYS || errno == ENODEV){
-			// Cpusets aren't supported, or aren't in use
-#endif
-			if(sched_getaffinity(0,sizeof(*mask),mask) == 0){
-				int count = portable_cpuset_count(mask);
-
-				if(count >= 1){
-					return count;
-				}
-				return -1; // broken affinity library?
-			}
-			return fallback_detect_cpucount(); // pre-affinity?
-#ifdef LIBTORQUE_WITH_CPUSET
+	if((csize = cpuset_size()) <= 0){
+		// Fall through if cpusets aren't supported, or aren't in use
+		if(csize == 0 || (errno != ENOSYS && errno != ENODEV)){
+			return -1;
 		}
-		return -1; // otherwise libcpuset error; die out
+	}else{
+		use_cpusets = 1;
+		return csize;
 	}
 #endif
-	use_cpusets = 1;
-	return csize;
+	if(sched_getaffinity(0,sizeof(*mask),mask) == 0){
+		if((csize = portable_cpuset_count(mask)) > 0){
+			return csize;
+		}
+	}
 #else
 #error "No CPU detection method defined for this OS"
-	return -1;
 #endif
+	return -1;
 }
 
 // Ought be called before any other scheduling functions are used, and again
@@ -150,7 +118,6 @@ detect_cpucount_internal(cpu_set_t *mask){
 int detect_cpucount(void){
 	int ret;
 
-	reset_affinity_ids(tiddata);
 	CPU_ZERO(&origmask);
 	if((ret = detect_cpucount_internal(&origmask)) > 0){
 		cpucount = (unsigned)ret;
