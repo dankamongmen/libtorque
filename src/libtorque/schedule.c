@@ -100,7 +100,7 @@ detect_cpucount_internal(cpu_set_t *mask){
 		return csize;
 	}
 #endif
-	if(sched_getaffinity(0,sizeof(*mask),mask) == 0){
+	if(pthread_getaffinity_np(pthread_self(),sizeof(*mask),mask) == 0){
 		if((csize = portable_cpuset_count(mask)) > 0){
 			return csize;
 		}
@@ -138,7 +138,7 @@ int pin_thread(int cpuid){
 		if(cpuset_setaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 					sizeof(mask),&mask)){
 #else
-		if(sched_setaffinity(0,sizeof(mask),&mask)){
+		if(pthread_setaffinity_np(pthread_self(),sizeof(mask),&mask)){
 #endif
 			return -1;
 		}
@@ -158,7 +158,8 @@ int unpin_thread(void){
 		if(cpuset_setaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 					sizeof(origmask),&origmask)){
 #else
-		if(sched_setaffinity(0,sizeof(origmask),&origmask)){
+		if(pthread_setaffinity_np(pthread_self(),sizeof(origmask),
+						&origmask)){
 #endif
 			return -1;
 		}
