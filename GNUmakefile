@@ -1,6 +1,6 @@
 .DELETE_ON_ERROR:
 .PHONY: all test hardtest docs clean install unsafe-install deinstall
-.DEFAULT: all
+.DEFAULT: test
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
 # release, and at that point changes only when the API changes. The minor
@@ -236,6 +236,7 @@ $(OUT)/%.i: %.c $(GLOBOBJDEPS)
 
 # Should the network be inaccessible, and local copies are installed, try:
 #DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
+#DOC2MANXSL?=--nonet
 $(OUT)/%.3: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(XSLTPROC) -o $@ $(DOC2MANXSL) $<
