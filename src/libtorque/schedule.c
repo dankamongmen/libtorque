@@ -1,7 +1,7 @@
-#include <limits.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <libtorque/schedule.h>
+#include <libtorque/events/thread.h>
 
 // Set to 1 if we are using cpusets. Currently, this is determined at runtime
 // (when built with libcpuset support, anyway). We perhaps ought just make
@@ -207,7 +207,7 @@ thread(void *void_marshal){
 	if(pthread_cond_broadcast(&marshal->cond)){
 		goto earlyerr;
 	}
-	// FIXME call down into event handler code
+	event_thread();
 	return NULL;
 
 earlyerr:
