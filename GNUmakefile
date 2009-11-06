@@ -184,10 +184,9 @@ LIBFLAGS+=-lpthread
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc
 TORQUECFLAGS:=$(CFLAGS) -shared
-TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR)
+TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 ARCHDETECTCFLAGS:=$(CFLAGS)
-# FIXME archdetect doesn't need -lcpuset, -ladns, etc...
-ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque $(LIBFLAGS)
+ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 LFLAGS+=$(LIBFLAGS)
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
