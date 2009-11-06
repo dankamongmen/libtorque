@@ -18,6 +18,11 @@ UNAME:=$(shell uname)
 # Variables defined with ?= can be inherited from the environment, and thus
 # specified. Provide the defaults here. Document these in the README.
 PREFIX?=/usr/local
+ifeq ($(UNAME),FreeBSD)
+DOCPREFIX?=$(PREFIX)
+else
+DOCPREFIX?=$(PREFIX)/share
+endif
 
 # Some systems don't install exuberant-ctags as 'ctags'. Some people use etags.
 TAGBIN?=$(shell which exctags 2> /dev/null || echo ctags)
@@ -44,7 +49,6 @@ ifdef LIBTORQUE_WITH_CPUSET
 DFLAGS+=-DLIBTORQUE_WITH_CPUSET
 LIBFLAGS+=-lcpuset
 endif
-
 
 ifndef LIBTORQUE_WITHOUT_ADNS
 LIBFLAGS+=-ladns
@@ -258,18 +262,18 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@$(INSTALL) $(BINS) $(PREFIX)/bin
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
 		$(INSTALL) -m 0644 $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
-	@mkdir -p $(PREFIX)/share/man/man1 $(PREFIX)/share/man/man3
-	@$(INSTALL) -m 0644 $(MAN1OBJ) $(PREFIX)/share/man/man1
-	@$(INSTALL) -m 0644 $(MAN3OBJ) $(PREFIX)/share/man/man3
-	@echo "Running mandb..." && mandb $(PREFIX)/share/man
+	@mkdir -p $(DOCPREFIX)/man/man1 $(DOCPREFIX)/man/man3
+	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man/man1
+	@$(INSTALL) -m 0644 $(MAN3OBJ) $(DOCPREFIX)/man/man3
 	@echo "Running ldconfig..." && ldconfig
+	@echo "Running mandb..." && mandb $(DOCPREFIX)/man
 
 deinstall:
-	@rm -fv $(addprefix $(PREFIX)/share/man/man3/,$(notdir $(MAN3OBJ)))
-	@rm -fv $(addprefix $(PREFIX)/share/man/man1/,$(notdir $(MAN1OBJ)))
+	@rm -fv $(addprefix $(DOCPREFIX)/man/man3/,$(notdir $(MAN3OBJ)))
+	@rm -fv $(addprefix $(DOCPREFIX)/man/man1/,$(notdir $(MAN1OBJ)))
 	@rm -fv $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
 	@rm -fv $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS)))
-	@echo "Running mandb..." && mandb $(PREFIX)/share/man
 	@echo "Running ldconfig..." && ldconfig
+	@echo "Running mandb..." && mandb $(DOCPREFIX)/man
