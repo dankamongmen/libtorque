@@ -135,7 +135,7 @@ int pin_thread(int cpuid){
 		CPU_ZERO(&mask);
 		CPU_SET((unsigned)cpuid,&mask);
 #ifdef LIBTORQUE_FREEBSD
-		if(cpuset_setaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
+		if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
 					sizeof(mask),&mask)){
 #else
 		if(sched_setaffinity(0,sizeof(mask),&mask)){
@@ -155,7 +155,7 @@ int pin_thread(int cpuid){
 int unpin_thread(void){
 	if(use_cpusets == 0){
 #ifdef LIBTORQUE_FREEBSD
-		if(cpuset_setaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
+		if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
 					sizeof(origmask),&origmask)){
 #else
 		if(sched_setaffinity(0,sizeof(origmask),&origmask)){
