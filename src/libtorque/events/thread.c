@@ -55,6 +55,8 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 	return ret;
 }
 #elif defined(LIBTORQUE_FREEBSD)
+#include <stdint.h>
+#include <sys/types.h>
 #include <sys/event.h>
 
 #define PTR_TO_EVENTV(ev) ((ev)->eventv)
@@ -72,7 +74,7 @@ Kevent(int kq,struct kevent *changelist,int nchanges,
 	int ret;
 
 	pthread_testcancel();
-	while((ret = kevent(kq,changelist,nchanges,eventlist,nevents)) < 0){
+	while((ret = kevent(kq,changelist,nchanges,eventlist,nevents,NULL)) < 0){
 		if(errno != EINTR){ // loop on EINTR
 			break;
 		}

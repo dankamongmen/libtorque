@@ -32,8 +32,10 @@ determine_sysmem(size_t psize){
 	ret = (uintmax_t)pages * psize;
         if(getrlimit(RLIMIT_AS,&rlim) == 0){
                 if(rlim.rlim_cur > 0 && rlim.rlim_cur != RLIM_INFINITY){
-			if(rlim.rlim_cur < ret){
-                        	return rlim.rlim_cur;
+			uintmax_t asrlim = (uintmax_t)rlim.rlim_cur;
+
+			if(asrlim < ret){
+                        	return asrlim;
 			}
                 }
         }
