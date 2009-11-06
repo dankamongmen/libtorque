@@ -1,6 +1,6 @@
 .DELETE_ON_ERROR:
 .PHONY: all test hardtest docs clean install unsafe-install deinstall
-.DEFAULT: test
+.DEFAULT_GOAL:=test
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
 # release, and at that point changes only when the API changes. The minor
