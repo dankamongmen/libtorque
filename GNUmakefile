@@ -268,7 +268,7 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
 	@$(INSTALL) -m 0644 $(MAN3OBJ) $(DOCPREFIX)/man3
 	@echo "Running ldconfig..." && ldconfig
-	@echo "Running mandb..." && $(MANBIN) $(DOCPREFIX)
+	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
 
 deinstall:
 	@rm -fv $(addprefix $(DOCPREFIX)/man3/,$(notdir $(MAN3OBJ)))
@@ -278,4 +278,4 @@ deinstall:
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS)))
 	@echo "Running ldconfig..." && ldconfig
-	@echo "Running mandb..." && $(MANBIN) $(DOCPREFIX)
+	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
