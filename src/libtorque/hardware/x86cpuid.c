@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -888,7 +887,6 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 				}else if(descriptor == 0x40){
 					// Means "no higher(?)-level cache"
 				}else{
-					printf("UNKNOWN: %u %x\n",descriptor,descriptor);
 					return -1;
 				}
 			}
@@ -908,12 +906,10 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 	int ret;
 
 	if(maxlevel < CPUID_STANDARD_CPUCONF){
-		printf("BAD MAX\n");
 		return -1;
 	}
 	cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
 	if((callreps = gpregs[0] & 0x000000ffu) != 1){
-		printf("NO CALLS MAX\n");
 		return -1;
 	}
 	while(!(ret = decode_intel_func2(cpu,gpregs))){
@@ -922,7 +918,6 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 		}
 		cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
 	}
-	printf("RET: %d\n",ret);
 	return ret;
 }
 
@@ -936,7 +931,6 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 		// deterministic cache function (for some reason). Thankfully,
 		// all multicore processors support said function.
 		cpu->coresperpackage = 1;
-		printf("OLDSKOOL\n");
 		return id_intel_caches_old(maxlevel,cpu);
 	}
 	maxdc = level = 1;
@@ -990,13 +984,11 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			if(cpu->coresperpackage == 0){
 				if(maxlevel < CPUID_STANDARD_TOPOLOGY){
 					if((cpu->threadspercore /= cpp) == 0){
-						printf("BAD CPP\n");
 						return -1;
 					}
 				}
 				cpu->coresperpackage = cpp;
 			}else if(cpu->coresperpackage != cpp){
-				printf("CHANGED CPP\n");
 				return -1;
 			}
 			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
@@ -1004,7 +996,6 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			}
 		}while(cachet != NULLCACHE);
 	}while(++level <= maxdc);
-		printf("NEWSKOOL\n");
 	return id_intel_caches_old(maxlevel,cpu);
 }
 
@@ -1093,10 +1084,8 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	uint32_t gpregs[4];
 
 	if(maxfunc < CPUID_CPU_VERSION){
-		printf("MAX LOW!\n");
 		return -1;
 	}
-	printf("MAX GOOD!\n");
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
 	cpu->stepping = gpregs[0] & 0xfu; // Stepping: EAX[3..0]
 	cpu->x86type = (gpregs[0] >> 12) & 0x2u; // Processor type: EAX[13..12]
@@ -1105,7 +1094,6 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
 	cpu->family = ((gpregs[0] >> 17) & 0x7f8u) | ((gpregs[0] >> 8) & 0xfu);
 	if(maxfunc < CPUID_STANDARD_TOPOLOGY){
-		printf("NO TOPOLOGY!\n");
 		// http://software.intel.com/en-us/articles/intel-64-architecture-processor-topology-enumeration/
 		// "The maximum number of addressable ID's that can be assigned
 		// to logical processors in a physical package." is EBX[23..16]
@@ -1116,13 +1104,11 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 		}
 		// Round this to the nearest >= power of 2
 		if(cpu->threadspercore & (cpu->threadspercore - 1)){
-			printf("BAD TPC!\n");
 			return -1; // FIXME
 		}
 		// Then divide by EAX[31:26] with CPUID_STANDARD_CACHECONF. We
 		// do this in id_intel_caches(), if it's available.
 	}else{
-		printf("GOOD TOPOLOGY!\n");
 		cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
 		if(((gpregs[2] >> 8) & 0xffu) != 1u){
 			return -1;
@@ -1147,7 +1133,6 @@ int x86cpuid(libtorque_cput *cpudesc){
 	uint32_t gpregs[4];
 	unsigned maxlevel;
 
-	printf("HERE!\n");
 	cpudesc->tlbdescs = NULL;
 	cpudesc->tlbs = 0;
 	cpudesc->memories = 0;
@@ -1158,29 +1143,23 @@ int x86cpuid(libtorque_cput *cpudesc){
 	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
 	cpudesc->threadspercore = 0;
 	cpudesc->coresperpackage = 0;
-	printf("GOTcwINIT\n");
 	if(!cpuid_available()){
 		return -1;
 	}
-	printf("GOT CPUID\n");
 	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
 	maxlevel = gpregs[0];
 	if((vender = lookup_vender(gpregs + 1)) == NULL){
 		return -1;
 	}
-	printf("GOT VENDOR\n");
 	if(x86_getprocsig(maxlevel,cpudesc)){
 		return -1;
 	}
-	printf("GOT PROC\n");
 	if(vender->memfxn(maxlevel,cpudesc)){
 		return -1;
 	}
-	printf("GOT MEMRORY\n");
 	if(x86_getbrandname(cpudesc)){
 		return -1;
 	}
-	printf("GOT BRANDNAME\n");
 	return 0;
 }
 
