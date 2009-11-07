@@ -44,6 +44,11 @@ struct libtorque_cput;
 // This definition is independent of "threads", "cores", "packages", etc. Our
 // base composition and isomorphisms arise from schedulable entities. Should
 // a single execution state ever have "multiple levels", this still works.
+//
+// Devices are also expressed in the topology:
+//  - DMA connects to a memory
+//  - DCA connects to a cache
+//  - PIO connects to a processor
 typedef struct libtorque_topt {
 	cpu_set_t schedulable;
 	unsigned groupid;		// x86: Core for multicores, or package

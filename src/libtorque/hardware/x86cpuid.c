@@ -1299,6 +1299,16 @@ id_x86_topology(uint32_t maxfunc,libtorque_cput *cpu){
 
 static int
 id_amd_topology(uint32_t maxfunc,libtorque_cput *cpu){
+	uint32_t gpregs[4];
+
+	if(maxfunc < CPUID_EXTENDED_TOPOLOGY){
+		return id_x86_topology(maxfunc,cpu);
+	}
+	cpuid(CPUID_EXTENDED_TOPOLOGY,0,gpregs);
+	// cores per processor = ECX[7:0] + 1
+	if((cpu->coresperpackage = gpregs[2] 0xff) == 0){
+		return -1;
+	}
 	return id_x86_topology(maxfunc,cpu);
 }
 
