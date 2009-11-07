@@ -75,10 +75,12 @@ ifeq ($(UNAME),Linux)
 DFLAGS+=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 LFLAGS:=-Wl,--warn-shared-textrel
 MANBIN:=mandb
+LDCONFIG:=ldconfig -n
 else
 ifeq ($(UNAME),FreeBSD)
 DFLAGS+=-DLIBTORQUE_FREEBSD -D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 MANBIN:=makewhatis
+LDCONFIG:=ldconfig -m
 endif
 endif
 
@@ -262,6 +264,7 @@ install: test unsafe-install
 unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@mkdir -p $(PREFIX)/lib
 	@$(INSTALL) -m 0644 $(realpath $(REALSOS)) $(PREFIX)/lib
+	@(cd $(PREFIX)/lib ; ln -s $(notdir $(REALSOS) $(TORQUESOL)))
 	@mkdir -p $(PREFIX)/bin
 	@$(INSTALL) $(BINS) $(PREFIX)/bin
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
@@ -269,7 +272,7 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@mkdir -p $(DOCPREFIX)/man1 $(DOCPREFIX)/man3
 	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
 	@$(INSTALL) -m 0644 $(MAN3OBJ) $(DOCPREFIX)/man3
-	@echo "Running ldconfig..." && ldconfig
+	@echo "Running $(LDCONFIG)..." && $(LDCONFIG) $(PREFIX)/lib
 	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
 
 deinstall:
@@ -278,6 +281,6 @@ deinstall:
 	@rm -fv $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
 	@rm -fv $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
-	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS)))
-	@echo "Running ldconfig..." && ldconfig
+	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS) $(TORQUESOL)))
+	@echo "Running $(LDCONFIG)..." && $(LDCONFIG) $(PREFIX)/lib
 	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
