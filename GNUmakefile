@@ -17,7 +17,7 @@ UNAME:=$(shell uname)
 #
 # Variables defined with ?= can be inherited from the environment, and thus
 # specified. Provide the defaults here. Document these in the README.
-include GNUmakefile.local
+-include GNUmakefile.local
 
 PREFIX?=/usr/local
 ifeq ($(UNAME),FreeBSD)
