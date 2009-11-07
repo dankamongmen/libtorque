@@ -17,14 +17,8 @@ libtorque_topt *libtorque_get_topology(void){
 }
 
 static libtorque_topt *
-find_sched_group(libtorque_topt *sz,unsigned id,unsigned *existing){
-	if(existing){
-		*existing = 0;
-	}
+find_sched_group(libtorque_topt *sz,unsigned id){
 	while(sz){
-		if(existing){
-			*existing = sz->groupid;
-		}
 		if(sz->groupid == id){
 			break;
 		}
@@ -59,18 +53,29 @@ share_pkg(libtorque_topt *sz,unsigned core){
 	return 1;
 }
 
+static unsigned
+first_aid(cpu_set_t *cs){
+	unsigned z;
+
+	for(z = 0 ; z < CPU_SETSIZE ; ++z){
+		if(CPU_ISSET(z,cs)){
+			break;
+		}
+	}
+	return z;
+}
+
 // We must be currently pinned to the processor being associated
 int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
 	libtorque_topt *sg;
-	unsigned extant;
 
+	if(aid >= CPU_SETSIZE){
+		return -1;
+	}
 	if(CPU_ISSET(aid,&validmap)){
 		return -1;
 	}
-	cpu_map[aid].thread = thread;
-	cpu_map[aid].core = core;
-	cpu_map[aid].package = pkg;
-	if((sg = find_sched_group(sched_zone,pkg,&extant)) == NULL){
+	if((sg = find_sched_group(sched_zone,pkg)) == NULL){
 		if((sg = create_zone(pkg)) == NULL){
 			return -1;
 		}
@@ -82,23 +87,31 @@ int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
 	if(share_pkg(sg,core) == 0){
 		typeof(*sg) *sc;
 
-		if((sc = find_sched_group(sg->sub,core,NULL)) == NULL){
+		if((sc = find_sched_group(sg->sub,core)) == NULL){
+			if(sg->sub == NULL){
+				unsigned oid;
+
+				if((oid = first_aid(&sg->schedulable)) >= CPU_SETSIZE){
+					return -1;
+				}
+				if((sg->sub = create_zone(cpu_map[oid].core)) == NULL){
+					return -1;
+				}
+				CPU_SET(oid,&sg->sub->schedulable);
+				sg->sub->next = NULL;
+			}
 			if((sc = create_zone(core)) == NULL){
 				return -1;
 			}
-			if((sc->next = sg->sub) == NULL){
-				if((sc->next = create_zone(cpu_map[extant].core)) == NULL){
-					free(sc);
-					return -1;
-				}
-				CPU_SET(extant,&sc->next->schedulable);
-				sc->next->next = NULL;
-			}
+			sc->next = sg->sub;
 			sg->sub = sc;
 		}
 		CPU_SET(aid,&sc->schedulable);
 	}
 	CPU_SET(aid,&sg->schedulable);
+	cpu_map[aid].thread = thread;
+	cpu_map[aid].core = core;
+	cpu_map[aid].package = pkg;
 	CPU_SET(aid,&validmap);
 	return 0;
 }
