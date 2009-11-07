@@ -133,7 +133,7 @@ identify_extended_cpuid(void){
 typedef struct intel_cache_descriptor {
 	unsigned descriptor;
 	unsigned linesize;
-	unsigned totalsize;
+	uintmax_t totalsize;
 	unsigned associativity;
 	unsigned level;
 	int memtype;
@@ -763,6 +763,8 @@ add_hwmem(unsigned *memories,libtorque_memt **mems,
 		return NULL;
 	}
 	*mems = tmp;
+	// Needed due to memcmp()-based cpu compare
+	memset((*mems) + *memories,0,sizeof((**mems)));
 	(*mems)[*memories] = *amem;
 	return *mems + (*memories)++;
 }
@@ -825,6 +827,8 @@ add_tlb(unsigned *tlbs,libtorque_tlbt **tlbdescs,const libtorque_tlbt *tlb){
 		return NULL;
 	}
 	*tlbdescs = tmp;
+	// Needed due to memcmp()-based cpu compare
+	memset((*tlbdescs) + *tlbs,0,sizeof((**tlbdescs)));
 	(*tlbdescs)[*tlbs] = *tlb;
 	return *tlbdescs + (*tlbs)++;
 }

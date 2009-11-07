@@ -89,15 +89,11 @@ compare_cpudetails(const libtorque_cput * restrict a,
 	if(strcmp(a->strdescription,b->strdescription)){
 		return -1;
 	}
-	for(n = 0 ; n < a->tlbs ; ++n){
-		if(memcmp(a->tlbdescs + n,b->tlbdescs + n,sizeof(*a->tlbdescs))){
-			return -1;
-		}
+	if(memcmp(a->tlbdescs + n,b->tlbdescs + n,a->tlbs * sizeof(*a->tlbdescs))){
+		return -1;
 	}
-	for(n = 0 ; n < a->memories ; ++n){
-		if(memcmp(a->memdescs + n,b->memdescs + n,sizeof(*a->memdescs))){
-			return -1;
-		}
+	if(memcmp(a->memdescs + n,b->memdescs + n,a->memories * sizeof(*a->memdescs))){
+		return -1;
 	}
 	return 0;
 }
