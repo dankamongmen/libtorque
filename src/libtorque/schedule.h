@@ -16,8 +16,11 @@ extern "C" {
 typedef cpuset_t cpu_set_t;
 #endif
 
+unsigned libtorque_affinitymapping(unsigned) __attribute__ ((visibility("default")));
+
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
 unsigned detect_cpucount(cpu_set_t *);
+int associate_affinityid(unsigned,unsigned);
 int pin_thread(unsigned);
 int unpin_thread(void);
 int spawn_threads(void);

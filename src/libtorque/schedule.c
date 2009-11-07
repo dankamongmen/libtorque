@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <string.h>
 #include <pthread.h>
 #include <libtorque/schedule.h>
 #include <libtorque/events/thread.h>
@@ -20,15 +21,29 @@ typedef struct tdata {
 	} status;
 } tdata;
 
-// Set whenever detect_cpucount() is called, which generally only happen once
-// (we don't enforce this; who knows what hotpluggable CPUs the future brings,
-// and what interfaces we'll need?)
+static pthread_once_t cpucount_once = PTHREAD_ONCE_INIT;
+// Set whenever detect_cpucount() is called, which generally only happens once.
+// Who knows what hotpluggable CPUs the future brings, and what interfaces
+// we'll need? For now, ensure this via a pthread_once_t.
 static unsigned cpucount;
 static cpu_set_t origmask;
 // This is fairly wasteful, and broken for libcpuset (which requires us to use
 // cpuset_size()). Allocate them upon detecting cpu count FIXME.
 static tdata tiddata[CPU_SETSIZE];
 static pthread_t tids[CPU_SETSIZE];
+static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
+
+unsigned libtorque_affinitymapping(unsigned aid){
+	return affinityid_map[aid];
+}
+
+int associate_affinityid(unsigned aid,unsigned idx){
+	if(aid < sizeof(affinityid_map) / sizeof(*affinityid_map)){
+		affinityid_map[aid] = idx;
+		return 0;
+	}
+	return -1;
+}
 
 // Detect the number of processing elements (of any type) available to us; this
 // isn't a function of architecture, but a function of the OS (only certain
@@ -98,21 +113,23 @@ detect_cpucount_internal(cpu_set_t *mask){
 #elif defined(LIBTORQUE_LINUX)
 	unsigned csize;
 
-#ifdef LIBTORQUE_WITH_CPUSET
-	if((csize = cpuset_size()) <= 0){
-		// Fall through if cpusets aren't supported, or aren't in use
-		if(csize == 0 || (errno != ENOSYS && errno != ENODEV)){
-			return 0;
-		}
-	}else{
-		use_cpusets = 1;
-		return csize;
-	}
-#endif
 	// We might be only a subthread of a larger application; use the
 	// affinity mask of the thread which initializes us.
 	if(pthread_getaffinity_np(pthread_self(),sizeof(*mask),mask) == 0){
 		if((csize = portable_cpuset_count(mask)) > 0){
+#ifdef LIBTORQUE_WITH_CPUSET
+			int cs;
+
+			if((cs = cpuset_size()) <= 0){
+				// Fall through if cpusets aren't supported, or aren't in use
+				if(csize == 0 || (errno != ENOSYS && errno != ENODEV)){
+					return 0;
+				}
+			}else if(cs != csize){ // ensure equality of counts
+				return 0;
+			}
+			use_cpusets = 1;
+#endif
 			return csize;
 		}
 	}
@@ -122,21 +139,24 @@ detect_cpucount_internal(cpu_set_t *mask){
 	return 0;
 }
 
+static void
+initialize_cpucount(void){
+	CPU_ZERO(&origmask);
+	if((cpucount = detect_cpucount_internal(&origmask)) <= 0){
+		CPU_ZERO(&origmask);
+	}
+}
+
 // Ought be called before any other scheduling functions are used, and again
 // after any hardware/software reconfiguration which results in a different CPU
 // configuration. Returns the number of running threads which can be scheduled
 // at once in the process's cpuset, or -1 on discovery failure.
 unsigned detect_cpucount(cpu_set_t *map){
-	unsigned ret;
-
 	CPU_ZERO(map);
-	CPU_ZERO(&origmask);
-	if((ret = detect_cpucount_internal(&origmask)) > 0){
+	if(pthread_once(&cpucount_once,initialize_cpucount) == 0){
 		CPU_OR(map,map,&origmask);
-		cpucount = ret;
-		return ret;
+		return cpucount;
 	}
-	CPU_ZERO(&origmask);
 	return 0;
 }
 

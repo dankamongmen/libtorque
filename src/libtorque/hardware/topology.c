@@ -9,13 +9,8 @@ static cpu_set_t validmap;			// affinityid_map validity map
 static struct {
 	unsigned thread,core,package;
 } cpu_map[CPU_SETSIZE];
-static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 
 static libtorque_topt *sched_zone;
-
-unsigned libtorque_affinitymapping(unsigned aid){
-	return affinityid_map[aid];
-}
 
 libtorque_topt *libtorque_get_topology(void){
 	return sched_zone;
@@ -61,14 +56,10 @@ share_pkg(libtorque_topt *sz,unsigned core){
 }
 
 // We must be currently pinned to the processor being associated
-int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
-				unsigned core,unsigned pkg){
+int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
 	libtorque_topt *sg;
 	unsigned extant;
 
-	if(aid >= sizeof(affinityid_map) / sizeof(*affinityid_map)){
-		return -1;
-	}
 	if(CPU_ISSET(aid,&validmap)){
 		return -1;
 	}
@@ -80,7 +71,7 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
 		sg->next = sched_zone;
 		sched_zone = sg;
 	}
-	// If we don't share the package, it mustn't be a new package. Quod, we
+	// If we share the package, it mustn't be a new package. Quod, we
 	// needn't worry about free()ing it, and can stroll on down...
 	if(share_pkg(sg,core) == 0){
 		typeof(*sg) *sc;
@@ -106,7 +97,6 @@ int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
 	cpu_map[aid].core = core;
 	cpu_map[aid].package = pkg;
 	CPU_SET(aid,&validmap);
-	affinityid_map[aid] = idx;
 	return 0;
 }
 
@@ -119,5 +109,4 @@ void reset_topology(void){
 	}
 	CPU_ZERO(&validmap);
 	memset(cpu_map,0,sizeof(cpu_map));
-	memset(affinityid_map,0,sizeof(affinityid_map));
 }

@@ -52,10 +52,9 @@ typedef struct libtorque_topt {
 
 // FIXME return a const! what's up with CPU_ISSET? :/
 libtorque_topt *libtorque_get_topology(void) __attribute__ ((visibility("default")));
-unsigned libtorque_affinitymapping(unsigned) __attribute__ ((visibility("default")));
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int associate_affinityid(unsigned,unsigned,unsigned,unsigned,unsigned);
+int topologize(unsigned,unsigned,unsigned,unsigned);
 void reset_topology(void);
 
 #ifdef __cplusplus
