@@ -1065,6 +1065,50 @@ decode_amd_l23cache(uint32_t reg,unsigned *size,unsigned *assoc,unsigned *lsize,
 }
 
 static int
+id_amd_gbtlbs(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
+	libtorque_tlbt tlb,tlb2;
+	libtorque_tlbt itlb,itlb2;
+
+	if(maxexlevel < CPUID_EXTENDED_GBTLB){
+		return 0;
+	}
+	cpuid(CPUID_EXTENDED_GBTLB,0,gpregs);
+	itlb.pagesize = itlb2.pagesize = tlb.pagesize =
+		tlb2.pagesize = 1024 * 1024 * 1024;
+	itlb.sharedways = itlb2.sharedways = tlb.sharedways =
+		tlb2.sharedways = cpud->threadspercore;
+	itlb.level = tlb.level = 1;
+	itlb2.level = tlb2.level = 2;
+	tlb.tlbtype = tlb2.tlbtype = MEMTYPE_DATA;
+	itlb.tlbtype = itlb2.tlbtype = MEMTYPE_CODE;
+	if(amd_tlb_presentp(gpregs[0])){
+		if(decode_amd_l23tlb(gpregs[0],&tlb.associativity,&itlb.associativity,
+					&tlb.entries,&itlb.entries)){
+			return -1;
+		}
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb) == NULL){
+			return -1;
+		}
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb) == NULL){
+			return -1;
+		}
+	}
+	if(amd_tlb_presentp(gpregs[1])){
+		if(decode_amd_l23tlb(gpregs[1],&tlb2.associativity,&itlb2.associativity,
+					&tlb2.entries,&itlb2.entries)){
+			return -1;
+		}
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb2) == NULL){
+			return -1;
+		}
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb2) == NULL){
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static int
 id_amd_23caches(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
 	libtorque_tlbt tlb,tlb24,itlb,itlb24;
 	libtorque_memt l2cache,l3cache;
@@ -1108,10 +1152,10 @@ id_amd_23caches(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
 					&tlb24.entries,&itlb24.entries)){
 			return -1;
 		}
-		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb) == NULL){
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb24) == NULL){
 			return -1;
 		}
-		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb) == NULL){
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb24) == NULL){
 			return -1;
 		}
 	}
@@ -1120,14 +1164,14 @@ id_amd_23caches(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
 					&tlb.entries,&itlb.entries)){
 			return -1;
 		}
-		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb24) == NULL){
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb) == NULL){
 			return -1;
 		}
-		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb24) == NULL){
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb) == NULL){
 			return -1;
 		}
 	}
-	return 0;
+	return id_amd_gbtlbs(maxexlevel,gpregs,cpud);
 }
 
 static int
