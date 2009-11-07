@@ -16,18 +16,7 @@ libtorque_topt *libtorque_get_topology(void){
 	return sched_zone;
 }
 
-static libtorque_topt *
-find_sched_group(libtorque_topt *sz,unsigned id){
-	while(sz){
-		if(sz->groupid == id){
-			break;
-		}
-		sz = sz->next;
-	}
-	return sz;
-}
-
-static libtorque_topt *
+static inline libtorque_topt *
 create_zone(unsigned id){
 	libtorque_topt *s;
 
@@ -37,6 +26,26 @@ create_zone(unsigned id){
 		s->sub = NULL;
 	}
 	return s;
+}
+
+static libtorque_topt *
+find_sched_group(libtorque_topt **sz,unsigned id){
+	libtorque_topt *n;
+
+	while(*sz){
+		if((*sz)->groupid == id){
+			return (*sz);
+		}
+		if((*sz)->groupid > id){
+			break;
+		}
+		sz = &(*sz)->next;
+	}
+	if( (n = create_zone(id)) ){
+		n->next = *sz;
+		*sz = n;
+	}
+	return n;
 }
 
 static int
@@ -75,36 +84,28 @@ int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
 	if(CPU_ISSET(aid,&validmap)){
 		return -1;
 	}
-	if((sg = find_sched_group(sched_zone,pkg)) == NULL){
-		if((sg = create_zone(pkg)) == NULL){
-			return -1;
-		}
-		sg->next = sched_zone;
-		sched_zone = sg;
+	if((sg = find_sched_group(&sched_zone,pkg)) == NULL){
+		return -1;
 	}
 	// If we share the package, it mustn't be a new package. Quod, we
 	// needn't worry about free()ing it, and can stroll on down...
 	if(share_pkg(sg,core) == 0){
 		typeof(*sg) *sc;
 
-		if((sc = find_sched_group(sg->sub,core)) == NULL){
-			if(sg->sub == NULL){
-				unsigned oid;
+		if(sg->sub == NULL){
+			unsigned oid;
 
-				if((oid = first_aid(&sg->schedulable)) >= CPU_SETSIZE){
-					return -1;
-				}
-				if((sg->sub = create_zone(cpu_map[oid].core)) == NULL){
-					return -1;
-				}
-				CPU_SET(oid,&sg->sub->schedulable);
-				sg->sub->next = NULL;
-			}
-			if((sc = create_zone(core)) == NULL){
+			if((oid = first_aid(&sg->schedulable)) >= CPU_SETSIZE){
 				return -1;
 			}
-			sc->next = sg->sub;
-			sg->sub = sc;
+			if((sg->sub = create_zone(cpu_map[oid].core)) == NULL){
+				return -1;
+			}
+			CPU_SET(oid,&sg->sub->schedulable);
+			sg->sub->next = NULL;
+		}
+		if((sc = find_sched_group(&sg->sub,core)) == NULL){
+			return -1;
 		}
 		CPU_SET(aid,&sc->schedulable);
 	}
