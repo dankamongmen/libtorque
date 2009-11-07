@@ -759,7 +759,7 @@ add_hwmem(unsigned *memories,libtorque_memt **mems,
 }
 
 static int
-get_intel_cache(unsigned descriptor,libtorque_memt *mem){
+get_intel_cache(unsigned descriptor,libtorque_memt *mem,unsigned sharedways){
 	unsigned n;
 
 	// FIXME convert this to a table indexed by (8-bit) descriptor
@@ -770,7 +770,7 @@ get_intel_cache(unsigned descriptor,libtorque_memt *mem){
 			mem->totalsize = intel_cache_descriptors[n].totalsize;
 			mem->associativity = intel_cache_descriptors[n].associativity;
 			mem->level = intel_cache_descriptors[n].level;
-			mem->sharedways = 1;		// FIXME
+			mem->sharedways = sharedways;
 			return 0;
 		}
 	}
@@ -778,7 +778,7 @@ get_intel_cache(unsigned descriptor,libtorque_memt *mem){
 }
 
 static int
-get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb){
+get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb,unsigned sharedways){
 	unsigned n;
 
 	for(n = 0 ; n < sizeof(intel_tlb_descriptors) / sizeof(*intel_tlb_descriptors) ; ++n){
@@ -788,7 +788,7 @@ get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb){
 			tlb->associativity = intel_tlb_descriptors[n].associativity;
 			tlb->tlbtype = intel_tlb_descriptors[n].tlbtype;
 			tlb->level = intel_tlb_descriptors[n].level;
-			tlb->sharedways = 1; // FIXME
+			tlb->sharedways = sharedways;
 			return 0;
 		}
 	}
@@ -868,14 +868,16 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 				libtorque_memt mem;
 				libtorque_tlbt tlb;
 
-				if(get_intel_cache(descriptor,&mem) == 0){
+				// Physical resources are shared at least by
+				// the logical cores, but also further FIXME
+				if(get_intel_cache(descriptor,&mem,cpu->threadspercore) == 0){
 					// Don't add duplicates from CPUID Fxn4
 					if(!match_memtype(cpu->memories,cpu->memdescs,&mem)){
 						if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
 							return -1;
 						}
 					}
-				}else if(get_intel_tlb(descriptor,&tlb) == 0){
+				}else if(get_intel_tlb(descriptor,&tlb,cpu->threadspercore) == 0){
 					if(add_tlb(&cpu->tlbs,&cpu->tlbdescs,&tlb) == NULL){
 						return -1;
 					}
@@ -984,6 +986,7 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			}
 			if(cpu->coresperpackage == 0){
 				if(maxlevel < CPUID_STANDARD_TOPOLOGY){
+					// See comments within x86_getprocsig()
 					if((cpu->threadspercore /= cpp) == 0){
 						return -1;
 					}
@@ -991,6 +994,9 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 				cpu->coresperpackage = cpp;
 			}else if(cpu->coresperpackage != cpp){
 				return -1;
+			}
+			if(mem.sharedways < cpu->threadspercore){
+				mem.sharedways = cpu->threadspercore;
 			}
 			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
 				return -1;
