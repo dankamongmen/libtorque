@@ -9,22 +9,13 @@ typedef struct evsource {
 	evcbfxn rxfxn;
 	evcbfxn txfxn;
 	void *cbstate;
-	pthread_mutex_t lock;
 } evsource;
 
 evsource *create_evsources(unsigned n){
 	evsource *evs;
 
 	if( (evs = malloc(sizeof(*evs) * n)) ){
-		unsigned z;
-
 		memset(evs,0,sizeof(*evs) * n);
-		for(z = 0 ; z < n ; ++z){
-			if(pthread_mutex_init(&evs[z].lock,NULL)){
-				destroy_evsources(evs,z);
-				return NULL;
-			}
-		}
 	}
 	return evs;
 }
@@ -48,15 +39,11 @@ int handle_evsource_read(evsource *evs,unsigned n){
 	return -1;
 }
 
-int destroy_evsources(evsource *evs,unsigned n){
+int destroy_evsources(evsource *evs,unsigned n __attribute__ ((unused))){
 	int ret = 0;
-	unsigned z;
 
 	if(evs){
-		for(z = 0 ; z < n ; ++z){
-			ret |= pthread_mutex_destroy(&evs[z].lock);
-		}
 		free(evs);
 	}
-	return ret ? -1 : 0;
+	return ret;
 }
