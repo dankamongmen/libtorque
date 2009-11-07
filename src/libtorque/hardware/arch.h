@@ -12,6 +12,13 @@ typedef enum {
 	MEMTYPE_UNIFIED
 } libtorque_memtypet;
 
+typedef enum {
+	PROCESSOR_X86_OEM = 0,
+	PROCESSOR_X86_OVERDRIVE = 1,
+	PROCESSOR_X86_DUAL = 2,
+	PROCESSOR_X86_UNKNOWN
+} libtorque_x86typet;
+
 typedef struct libtorque_tlbt {
 	unsigned entries,pagesize,associativity,sharedways;
 	libtorque_memtypet tlbtype;
@@ -27,15 +34,10 @@ typedef struct libtorque_memt {
 typedef struct libtorque_cput {
 	unsigned elements;		// Usable processors of this type
 	unsigned memories;		// Number of memories for this type
-	enum {				// Table 2.1, Intel IAN 845
-		PROCESSOR_X86_OEM = 0,
-		PROCESSOR_X86_OVERDRIVE = 1,
-		PROCESSOR_X86_DUAL = 2,
-		PROCESSOR_X86_UNKNOWN
-	} x86type;
 	unsigned family,model,stepping;	// x86-specific; perhaps use a union?
 					// family and model include the
 					// extended family and model bits
+	libtorque_x86typet x86type;	// stupid bullshit
 	unsigned tlbs;			// Number of TLBs (per-mem?)
 	unsigned threadspercore;	// Number of ways our core is shared
 	unsigned coresperpackage;	// Number of cores sharing our die

@@ -40,7 +40,7 @@ fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 }
 
 static const char *
-memory_type(int mtype){
+memory_type(libtorque_memtypet mtype){
 	switch(mtype){
 		case MEMTYPE_DATA: return "data";
 		case MEMTYPE_CODE: return "code";
@@ -50,7 +50,7 @@ memory_type(int mtype){
 }
 
 static const char *
-tlb_type(int ttype){
+tlb_type(libtorque_memtypet ttype){
 	switch(ttype){
 		case MEMTYPE_DATA: return "data";
 		case MEMTYPE_CODE: return "code";
@@ -60,7 +60,7 @@ tlb_type(int ttype){
 }
 
 static const char *
-x86_type(int x86type){
+x86_type(libtorque_x86typet x86type){
 	switch(x86type){
 		case PROCESSOR_X86_OEM: return "OEM";
 		case PROCESSOR_X86_OVERDRIVE: return "OverDrive"; // FIXME: TM!
