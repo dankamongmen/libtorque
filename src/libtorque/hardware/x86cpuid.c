@@ -76,10 +76,10 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 	);
 }
 
-typedef struct known_x86_vender {
+typedef struct known_x86_vendor {
 	const char *signet;
 	int (*memfxn)(uint32_t,libtorque_cput *);
-} known_x86_vender;
+} known_x86_vendor;
 
 static int id_amd_caches(uint32_t,libtorque_cput *);
 static int id_via_caches(uint32_t,libtorque_cput *);
@@ -88,7 +88,7 @@ static int id_intel_caches(uint32_t,libtorque_cput *);
 // There's also: (Collect them all! Impress your friends!)
 //      " UMC UMC UMC" "CyriteadxIns" "NexGivenenDr"
 //      "RiseRiseRise" "GenuMx86ineT" "Geod NSCe by"
-static const known_x86_vender venders[] = {
+static const known_x86_vendor vendors[] = {
 	{       .signet = "GenuntelineI",
 		.memfxn = id_intel_caches,
 	},
@@ -101,13 +101,13 @@ static const known_x86_vender venders[] = {
 };
 
 // vendstr should be 12 bytes corresponding to EBX, ECX, EDX post-CPUID
-static const known_x86_vender *
-lookup_vender(const uint32_t *vendstr){
+static const known_x86_vendor *
+lookup_vendor(const uint32_t *vendstr){
 	unsigned z;
 
-	for(z = 0 ; z < sizeof(venders) / sizeof(*venders) ; ++z){
-		if(memcmp(vendstr,venders[z].signet,sizeof(*vendstr) * 3) == 0){
-			return venders + z;
+	for(z = 0 ; z < sizeof(vendors) / sizeof(*vendors) ; ++z){
+		if(memcmp(vendstr,vendors[z].signet,sizeof(*vendstr) * 3) == 0){
+			return vendors + z;
 		}
 	}
 	return NULL;
@@ -1142,49 +1142,18 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	return 0;
 }
 
-// Before this is called, pin to the desired processor (FIXME enforce?). Relies
-// on the caller to free data upon error.
-int x86cpuid(libtorque_cput *cpudesc){
-	const known_x86_vender *vender;
-	uint32_t gpregs[4];
-	unsigned maxlevel;
-
-	cpudesc->elements = 0;
-	cpudesc->tlbdescs = NULL;
-	cpudesc->memdescs = NULL;
-	cpudesc->strdescription = NULL;
-	cpudesc->tlbs = cpudesc->memories = 0;
-	cpudesc->x86type = PROCESSOR_X86_UNKNOWN;
-	cpudesc->threadspercore = cpudesc->coresperpackage = 0;
-	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
-	if(!cpuid_available()){
-		return -1;
-	}
-	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
-	maxlevel = gpregs[0];
-	if((vender = lookup_vender(gpregs + 1)) == NULL){
-		return -1;
-	}
-	if(x86_getprocsig(maxlevel,cpudesc)){
-		return -1;
-	}
-	if(vender->memfxn(maxlevel,cpudesc)){
-		return -1;
-	}
-	if(x86_getbrandname(cpudesc)){
-		return -1;
-	}
-	return 0;
-}
-
 static inline int
-x86apic(uint32_t *apic){
+x86apic(unsigned maxlevel,uint32_t *apic){
 	uint32_t gpregs[4],lev;
 
+	// CPUID1.EBX[31:24] is the local APIC on Intel and AMD
+	if(maxlevel < CPUID_CPU_VERSION){
+		return -1; // FIXME any other way to get local APIC?
+	}
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
 	*apic = (gpregs[1] >> 24) & 0xffu; 	// 8-bit legacy APIC
-	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
-	if(gpregs[0] < CPUID_STANDARD_TOPOLOGY){ // We only have legacy APIC
+	// AMD doesn't have extended APIC as of 25481-Revision 2.28 FIXME
+	if(maxlevel < CPUID_STANDARD_TOPOLOGY){ // We only have legacy APIC
 		return 0;
 	}
 	cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
@@ -1211,16 +1180,15 @@ x86apic(uint32_t *apic){
 	return 0;
 }
 
-// x86cpuid() must have been successfully called, and we must still be pinned
-// to the relevant processor.
-int x86topology(const libtorque_cput *cpu,unsigned *thread,unsigned *core,
-					unsigned *pkg){
+static int
+x86topology(unsigned maxlevel,const libtorque_cput *cpu,unsigned *thread,
+				unsigned *core,unsigned *pkg){
 	unsigned tpc,cpp;
 	uint32_t apic;
 
 	*core = 0;
 	*thread = 0;
-	if(x86apic(&apic)){
+	if(x86apic(maxlevel,&apic)){
 		return -1;
 	}
 	if((tpc = cpu->threadspercore) == 0){
@@ -1238,5 +1206,44 @@ int x86topology(const libtorque_cput *cpu,unsigned *thread,unsigned *core,
 		apic >>= 1;
 	}
 	*pkg = apic;
+	return 0;
+}
+
+// Before this is called, pin to the desired processor (FIXME enforce?). Relies
+// on the caller to free data upon error.
+int x86cpuid(libtorque_cput *cpudesc,unsigned *thread,unsigned *core,
+						unsigned *pkg){
+	const known_x86_vendor *vendor;
+	uint32_t gpregs[4];
+	unsigned maxlevel;
+
+	cpudesc->elements = 0;
+	cpudesc->tlbdescs = NULL;
+	cpudesc->memdescs = NULL;
+	cpudesc->strdescription = NULL;
+	cpudesc->tlbs = cpudesc->memories = 0;
+	cpudesc->x86type = PROCESSOR_X86_UNKNOWN;
+	cpudesc->threadspercore = cpudesc->coresperpackage = 0;
+	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
+	if(!cpuid_available()){
+		return -1;
+	}
+	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
+	maxlevel = gpregs[0];
+	if((vendor = lookup_vendor(gpregs + 1)) == NULL){
+		return -1;
+	}
+	if(x86_getprocsig(maxlevel,cpudesc)){
+		return -1;
+	}
+	if(vendor->memfxn(maxlevel,cpudesc)){
+		return -1;
+	}
+	if(x86_getbrandname(cpudesc)){
+		return -1;
+	}
+	if(x86topology(maxlevel,cpudesc,thread,core,pkg)){
+		return -1;
+	}
 	return 0;
 }

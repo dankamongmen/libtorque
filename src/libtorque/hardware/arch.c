@@ -64,11 +64,7 @@ detect_cpudetails(unsigned id,libtorque_cput *details,unsigned *thread,
 	if(pin_thread(id)){
 		return -1;
 	}
-	if(x86cpuid(details)){
-		free_cpudetails(details);
-		return -1;
-	}
-	if(x86topology(details,thread,core,pkg)){
+	if(x86cpuid(details,thread,core,pkg)){
 		free_cpudetails(details);
 		return -1;
 	}
