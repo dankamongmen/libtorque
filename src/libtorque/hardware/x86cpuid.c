@@ -1013,8 +1013,124 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 	return id_intel_caches_old(maxlevel,cpu);
 }
 
+// FIXME we need to check the presence of either/or; right now, we break if
+// only one is present (because later we try to add both)
+static inline unsigned
+amd_tlb_presentp(uint32_t reg){
+	return (((reg >> 12u) & 0xf) || (reg >> 28u));
+}
+
+static inline unsigned
+amd_cache_presentp(uint32_t reg){
+	return !!((reg >> 12u) & 0xf);
+}
+
+static unsigned
+amd_l23assoc(unsigned idx,unsigned lines){
+	switch(idx){
+		case 0xf: return lines; // fully associative
+		case 0xe: return 128;
+		case 0xd: return 96;
+		case 0xc: return 64;
+		case 0xb: return 48;
+		case 0xa: return 32;
+		case 0x8: return 16;
+		case 0x6: return 8;
+		case 0x4: return 4;
+		case 0x2: return 2;
+		case 0x1: return 1;
+		// 0 == explicitly disabled. all other values reserved.
+	}
+	return 0;
+}
+
 static int
-decode_amd_tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents,
+decode_amd_l23tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents,
+					unsigned *ients){
+	*dents = (reg >> 16u) & 0xfffu;
+	*ients = reg & 0xfffu;
+	*dassoc = amd_l23assoc(reg >> 28u,*dents);
+	*iassoc = amd_l23assoc((reg >> 12u) & 0xf,*ients);
+	return (*dents && *ients && *dassoc && *iassoc) ? 0 : -1;
+}
+
+static int
+decode_amd_l23cache(uint32_t reg,unsigned *size,unsigned *assoc,unsigned *lsize,
+			unsigned shift,unsigned mul){
+	*size = (reg >> shift) * 1024 * mul;
+	*lsize = reg & 0xffu;
+	*assoc = amd_l23assoc((reg >> 12u) & 0xf,*size / *lsize);
+	return (*size && *assoc && *lsize) ? 0 : -1;
+}
+
+static int
+id_amd_23caches(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
+	libtorque_tlbt tlb,tlb24,itlb,itlb24;
+	libtorque_memt l2cache,l3cache;
+
+	if(maxexlevel < CPUID_EXTENDED_L23CACHE_TLB){
+		return 0;
+	}
+	cpuid(CPUID_EXTENDED_L23CACHE_TLB,0,gpregs);
+	l2cache.sharedways = cpud->threadspercore;
+	l3cache.sharedways = cpud->coresperpackage;
+	l2cache.level = 2;
+	l3cache.level = 3;
+	l2cache.memtype = l3cache.memtype = MEMTYPE_UNIFIED;
+	if(amd_cache_presentp(gpregs[2])){
+		if(decode_amd_l23cache(gpregs[2],&l2cache.totalsize,&l2cache.associativity,
+					&l2cache.linesize,16,1)){
+			return -1;
+		}
+		if(add_hwmem(&cpud->memories,&cpud->memdescs,&l2cache) == NULL){
+			return -1;
+		}
+	}
+	if(amd_cache_presentp(gpregs[3])){
+		if(decode_amd_l23cache(gpregs[3],&l3cache.totalsize,&l3cache.associativity,
+					&l3cache.linesize,18,512)){
+			return -1;
+		}
+		if(add_hwmem(&cpud->memories,&cpud->memdescs,&l3cache) == NULL){
+			return -1;
+		}
+	}
+	tlb.pagesize = itlb.pagesize = 4096;
+	tlb24.pagesize = itlb24.pagesize = 1024 * 2096; // FIXME
+	tlb.sharedways = itlb.sharedways = cpud->threadspercore;
+	tlb24.sharedways = itlb24.sharedways = cpud->threadspercore;
+	tlb.level = itlb.level = tlb24.level = itlb24.level = 2;
+	tlb.tlbtype = tlb24.tlbtype = MEMTYPE_DATA;
+	itlb.tlbtype = itlb24.tlbtype = MEMTYPE_CODE;
+	if(amd_tlb_presentp(gpregs[0])){
+		if(decode_amd_l23tlb(gpregs[0],&tlb24.associativity,&itlb24.associativity,
+					&tlb24.entries,&itlb24.entries)){
+			return -1;
+		}
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb) == NULL){
+			return -1;
+		}
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb) == NULL){
+			return -1;
+		}
+	}
+	if(amd_tlb_presentp(gpregs[1])){
+		if(decode_amd_l23tlb(gpregs[1],&tlb.associativity,&itlb.associativity,
+					&tlb.entries,&itlb.entries)){
+			return -1;
+		}
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb24) == NULL){
+			return -1;
+		}
+		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb24) == NULL){
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static int
+decode_amd_l1tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents,
 					unsigned *ients){
 	*dassoc = reg >> 24u;
 	*iassoc = (reg >> 8u) & 0xffu;
@@ -1024,20 +1140,11 @@ decode_amd_tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents,
 }
 
 static int
-decode_amd_cache(uint32_t reg,unsigned *size,unsigned *assoc,unsigned *lsize){
+decode_amd_l1cache(uint32_t reg,unsigned *size,unsigned *assoc,unsigned *lsize){
 	*size = (reg >> 24u) * 1024u;
 	*assoc = (reg >> 16u) & 0xffu;
 	*lsize = reg & 0xffu;
 	return (*size && *assoc && *lsize) ? 0 : -1;
-}
-
-static int
-id_amd_23caches(uint32_t maxexlevel){
-	if(maxexlevel < CPUID_EXTENDED_L23CACHE_TLB){
-		return 0;
-	}
-	// FIXME get L2, L3
-	return -1;
 }
 
 static int
@@ -1051,30 +1158,30 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
 	}
 	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
 	cpuid(CPUID_AMD_L1CACHE_TLB,0,gpregs);
-	if(decode_amd_cache(gpregs[2],&l1icache.totalsize,&l1icache.associativity,
+	if(decode_amd_l1cache(gpregs[2],&l1icache.totalsize,&l1icache.associativity,
 				&l1icache.linesize)){
 		return -1;
 	}
-	if(decode_amd_cache(gpregs[3],&l1dcache.totalsize,&l1dcache.associativity,
+	if(decode_amd_l1cache(gpregs[3],&l1dcache.totalsize,&l1dcache.associativity,
 				&l1dcache.linesize)){
 		return -1;
 	}
-	l1icache.sharedways = l1dcache.sharedways = 1;	// FIXME
+	l1icache.sharedways = l1dcache.sharedways = cpud->threadspercore;
 	l1icache.level = l1dcache.level = 1;
 	l1icache.memtype = MEMTYPE_CODE;
 	l1dcache.memtype = MEMTYPE_DATA;
-	if(decode_amd_tlb(gpregs[0],&tlb24.associativity,&itlb24.associativity,
+	if(decode_amd_l1tlb(gpregs[0],&tlb24.associativity,&itlb24.associativity,
 				&tlb24.entries,&itlb24.entries)){
 		return -1;
 	}
-	if(decode_amd_tlb(gpregs[0],&tlb.associativity,&itlb.associativity,
+	if(decode_amd_l1tlb(gpregs[1],&tlb.associativity,&itlb.associativity,
 				&tlb.entries,&itlb.entries)){
 		return -1;
 	}
 	tlb.pagesize = itlb.pagesize = 4096;
 	tlb24.pagesize = itlb24.pagesize = 1024 * 2096; // FIXME
-	tlb.sharedways = itlb.sharedways = 1;		// FIXME
-	tlb24.sharedways = itlb24.sharedways = 1;	// FIXME
+	tlb.sharedways = itlb.sharedways = cpud->threadspercore;
+	tlb24.sharedways = itlb24.sharedways = cpud->threadspercore;
 	tlb.level = itlb.level = tlb24.level = itlb24.level = 1;
 	tlb.tlbtype = tlb24.tlbtype = MEMTYPE_DATA;
 	itlb.tlbtype = itlb24.tlbtype = MEMTYPE_CODE;
@@ -1096,7 +1203,7 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
 	if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb24) == NULL){
 		return -1;
 	}
-	if(id_amd_23caches(maxex)){
+	if(id_amd_23caches(maxex,gpregs,cpud)){
 		return -1;
 	}
 	return 0;
