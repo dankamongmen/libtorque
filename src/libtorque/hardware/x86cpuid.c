@@ -53,6 +53,7 @@ typedef enum {
 	CPUID_EXTENDED_L23CACHE_TLB	=       0x80000006, // l2,3, tlb1
 	CPUID_EXTENDED_ENHANCEDPOWER	=       0x80000006, // epm support
 	CPUID_EXTENDED_TOPOLOGY         =       0x80000008, // topology (AMD)
+	CPUID_EXTENDED_GBTLB            =       0x80000019, // 1GB tlbs
 } cpuid_class;
 
 // Uses all four primary general-purpose 32-bit registers (e[abcd]x), returning
@@ -1297,19 +1298,47 @@ id_x86_topology(uint32_t maxfunc,libtorque_cput *cpu){
 	return 0;
 }
 
+#define CPUID_WDT			0x1000u
+#define CPUID_SSE5			0x0800u
+#define CPUID_IBS			0x0400u
+#define CPUID_OSVW			0x0200u
+#define CPUID_3DNOWPREFETCH		0x0100u
+#define CPUID_MISALIGNSSE		0x0080u
+#define CPUID_SSE4A			0x0040u
+#define CPUID_ABM			0x0020u
+#define CPUID_ALTMOVCR8			0x0010u
+#define CPUID_EXTAPICSPACE		0x0008u
+#define CPUID_SVM			0x0004u
+#define CPUID_CMPLEGACY			0x0002u
+#define CPUID_CLAHFSAHF			0x0001u
+
 static int
 id_amd_topology(uint32_t maxfunc,libtorque_cput *cpu){
+	unsigned apiccorebits;
 	uint32_t gpregs[4];
 
+	cpu->coresperpackage = 1;
 	if(maxfunc < CPUID_EXTENDED_TOPOLOGY){
 		return id_x86_topology(maxfunc,cpu);
 	}
 	cpuid(CPUID_EXTENDED_TOPOLOGY,0,gpregs);
-	// cores per processor = ECX[7:0] + 1
-	if((cpu->coresperpackage = gpregs[2] 0xff) == 0){
-		return -1;
+	if( (apiccorebits = ((gpregs[2] >> 12u) & 0xf)) ){
+		unsigned z = apiccorebits;
+
+		do{
+			cpu->coresperpackage <<= 1u;
+		}while(--z);
+	}else{
+		// cores per processor = ECX[7:0] + 1 ("NC")
+		cpu->coresperpackage = (gpregs[2] & 0xff) + 1;
 	}
-	return id_x86_topology(maxfunc,cpu);
+	// CPUID.80000001 ECX[1] is CmpLegacy. LogicalProcessorCount is
+	// reserved when CmpLegacy is set, or HTT is 0.
+	if(!(gpregs[3] & CPUID_CMPLEGACY)){
+		return id_x86_topology(maxfunc,cpu);
+	}
+	cpu->threadspercore = 1;
+	return 0;
 }
 
 static int
