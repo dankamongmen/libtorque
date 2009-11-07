@@ -1054,13 +1054,13 @@ id_via_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpu){
 
 static int
 x86_getbrandname(libtorque_cput *cpudesc){
-	char brandname[16 * 3 + 1]; // each _NAMEx function returns E[BCD]X
+	char *aname,brandname[16 * 3 + 1]; // _NAMEx functions return E[BCD]X
 	cpuid_class ops[] = { CPUID_EXTENDED_CPU_NAME1,
 				CPUID_EXTENDED_CPU_NAME2,
 				CPUID_EXTENDED_CPU_NAME3 };
 	uint32_t maxlevel;
-	unsigned z,hadspace;
-	char *aname;
+	int hadspace;
+	unsigned z;
 
 	if((maxlevel = identify_extended_cpuid()) < CPUID_EXTENDED_CPU_NAME3){
 		return -1;
