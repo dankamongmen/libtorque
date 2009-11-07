@@ -1058,29 +1058,37 @@ x86_getbrandname(libtorque_cput *cpudesc){
 	cpuid_class ops[] = { CPUID_EXTENDED_CPU_NAME1,
 				CPUID_EXTENDED_CPU_NAME2,
 				CPUID_EXTENDED_CPU_NAME3 };
-	uint32_t gpregs[4],maxlevel;
-	const char *aname;
-	unsigned z;
+	uint32_t maxlevel;
+	unsigned z,hadspace;
+	char *aname;
 
 	if((maxlevel = identify_extended_cpuid()) < CPUID_EXTENDED_CPU_NAME3){
 		return -1;
 	}
+	// We want to remove duplicate and leading spaces (not localized white-
+	// space, but ASCII 0x20 (SP). Do *not* use isspace(), etc).
+	hadspace = 1;
+	aname = brandname;
 	for(z = 0 ; z < sizeof(ops) / sizeof(*ops) ; ++z){
+		uint32_t gpregs[4];
 		unsigned y;
 
 		cpuid(ops[z],0,gpregs);
-		for(y = 0 ; y < 4 ; ++y){
-			memcpy(&brandname[z * 16 + y * 4],&gpregs[y],sizeof(*gpregs));
+		for(y = 0 ; y < sizeof(gpregs) / sizeof(*gpregs) ; ++y){
+			unsigned x;
+
+			for(x = 0 ; x < 4 ; ++x){
+				char c = ((const char *)(gpregs + y))[x];
+
+				if(c != ' ' || !hadspace){
+					*aname++ = c;
+					hadspace = c == ' ';
+				}
+			}
 		}
 	}
-	brandname[z * 16] = '\0';
-	aname = brandname;
-	// we do *NOT* want a localized match here; we want ASCII 0x20 (SP). do
-	// *not* use isspace() or its ilk.
-	while(*aname == ' '){
-		++aname;
-	}
-	if((cpudesc->strdescription = strdup(aname)) == NULL){
+	*aname = '\0';
+	if((cpudesc->strdescription = strdup(brandname)) == NULL){
 		return -1;
 	}
 	return 0;
