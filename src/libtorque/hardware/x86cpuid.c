@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/x86cpuid.h>
 
@@ -1027,9 +1028,13 @@ amd_cache_presentp(uint32_t reg){
 }
 
 static unsigned
-amd_l23assoc(unsigned idx,unsigned lines){
+amd_l23assoc(unsigned idx,uintmax_t lines){
+
+	if(lines > UINT_MAX){
+		return 0;
+	}
 	switch(idx){
-		case 0xf: return lines; // fully associative
+		case 0xf: return (unsigned)lines; // fully associative
 		case 0xe: return 128;
 		case 0xd: return 96;
 		case 0xc: return 64;
@@ -1056,7 +1061,7 @@ decode_amd_l23tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents
 }
 
 static int
-decode_amd_l23cache(uint32_t reg,unsigned *size,unsigned *assoc,unsigned *lsize,
+decode_amd_l23cache(uint32_t reg,uintmax_t *size,unsigned *assoc,unsigned *lsize,
 			unsigned shift,unsigned mul){
 	*size = (reg >> shift) * 1024 * mul;
 	*lsize = reg & 0xffu;
@@ -1185,7 +1190,7 @@ decode_amd_l1tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents,
 }
 
 static int
-decode_amd_l1cache(uint32_t reg,unsigned *size,unsigned *assoc,unsigned *lsize){
+decode_amd_l1cache(uint32_t reg,uintmax_t *size,unsigned *assoc,unsigned *lsize){
 	*size = (reg >> 24u) * 1024u;
 	*assoc = (reg >> 16u) & 0xffu;
 	*lsize = reg & 0xffu;

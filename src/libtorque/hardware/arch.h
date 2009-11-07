@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 typedef enum {
 	MEMTYPE_UNKNOWN,
 	MEMTYPE_DATA,
