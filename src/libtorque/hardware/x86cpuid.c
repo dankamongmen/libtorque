@@ -1142,22 +1142,21 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	return 0;
 }
 
-// Before this is called, pin to the desired processor (FIXME enforce?)
+// Before this is called, pin to the desired processor (FIXME enforce?). Relies
+// on the caller to free data upon error.
 int x86cpuid(libtorque_cput *cpudesc){
 	const known_x86_vender *vender;
 	uint32_t gpregs[4];
 	unsigned maxlevel;
 
-	cpudesc->tlbdescs = NULL;
-	cpudesc->tlbs = 0;
-	cpudesc->memories = 0;
-	cpudesc->memdescs = NULL;
 	cpudesc->elements = 0;
+	cpudesc->tlbdescs = NULL;
+	cpudesc->memdescs = NULL;
 	cpudesc->strdescription = NULL;
+	cpudesc->tlbs = cpudesc->memories = 0;
 	cpudesc->x86type = PROCESSOR_X86_UNKNOWN;
+	cpudesc->threadspercore = cpudesc->coresperpackage = 0;
 	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
-	cpudesc->threadspercore = 0;
-	cpudesc->coresperpackage = 0;
 	if(!cpuid_available()){
 		return -1;
 	}

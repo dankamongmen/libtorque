@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <libtorque/schedule.h>
+
 struct libtorque_cput;
 
 // We are not considering distributed systems in this model.
@@ -37,15 +39,24 @@ struct libtorque_cput;
 // schedule to SMT processors if
 //  - shared data is allocated which fits entirely within the group's cache, or
 //  - we need to.
+//
+// The lowest level for any scheduling hierarchy is OS-schedulable entities.
+// This definition is independent of "threads", "cores", "packages", etc. Our
+// base composition and isomorphisms arise from schedulable entities. Should
+// a single execution state ever have "multiple levels", this still works.
 typedef struct libtorque_topt {
-	struct libtorque_cput *pudescs;	// dynarray of pu_typecount elements
+	cpu_set_t schedulable;
+	unsigned groupid;		// x86: Core for multicores, or package
+	struct libtorque_topt *next,*sub;
 } libtorque_topt;
+
+// FIXME return a const! what's up with CPU_ISSET? :/
+libtorque_topt *libtorque_get_topology(void) __attribute__ ((visibility("default")));
+unsigned libtorque_affinitymapping(unsigned) __attribute__ ((visibility("default")));
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
 int associate_affinityid(unsigned,unsigned,unsigned,unsigned,unsigned);
 void reset_topology(void);
-
-int print_topology(void) __attribute__ ((visibility ("default")));
 
 #ifdef __cplusplus
 }

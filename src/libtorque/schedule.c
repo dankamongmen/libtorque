@@ -10,7 +10,7 @@
 static unsigned use_cpusets;
 
 typedef struct tdata {
-	int affinity_id;
+	unsigned affinity_id;
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
 	enum {
@@ -57,49 +57,60 @@ static pthread_t tids[CPU_SETSIZE];
 
 // FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
 // setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
-static inline int
+static inline unsigned
 portable_cpuset_count(cpu_set_t *mask){
-	int count = 0,cpu;
+#ifdef CPU_COUNT // what if it's a function, not a macro? it'll go unused...
+	int ret;
+
+	if((ret = CPU_COUNT(mask)) <= 0){
+		return 0;
+	}
+	return (unsigned)ret;
+#else
+	unsigned count = 0,cpu;
 
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
-		if(CPU_ISSET((unsigned)cpu,mask)){
+		if(CPU_ISSET(cpu,mask)){
 			tiddata[count++].affinity_id = cpu;
 		}else{
 			tiddata[count].affinity_id = -1;
 		}
 	}
 	return count;
+#endif
 }
 
 // Returns a positive integer number of processing elements on success. A non-
 // positive return value indicates failure to determine the processor count.
 // A "processor" is "something on which we can schedule a running thread". On a
 // successful return, mask contains the original affinity mask of the process.
-static inline int
+static inline unsigned
 detect_cpucount_internal(cpu_set_t *mask){
 #ifdef LIBTORQUE_FREEBSD
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 				sizeof(*mask),mask) == 0){
-		int count;
+		unsigned count;
 
 		if((count = portable_cpuset_count(mask)) > 0){
 			return count;
 		}
 	}
 #elif defined(LIBTORQUE_LINUX)
-	int csize;
+	unsigned csize;
 
 #ifdef LIBTORQUE_WITH_CPUSET
 	if((csize = cpuset_size()) <= 0){
 		// Fall through if cpusets aren't supported, or aren't in use
 		if(csize == 0 || (errno != ENOSYS && errno != ENODEV)){
-			return -1;
+			return 0;
 		}
 	}else{
 		use_cpusets = 1;
 		return csize;
 	}
 #endif
+	// We might be only a subthread of a larger application; use the
+	// affinity mask of the thread which initializes us.
 	if(pthread_getaffinity_np(pthread_self(),sizeof(*mask),mask) == 0){
 		if((csize = portable_cpuset_count(mask)) > 0){
 			return csize;
@@ -108,32 +119,34 @@ detect_cpucount_internal(cpu_set_t *mask){
 #else
 #error "No CPU detection method defined for this OS"
 #endif
-	return -1;
+	return 0;
 }
 
 // Ought be called before any other scheduling functions are used, and again
 // after any hardware/software reconfiguration which results in a different CPU
 // configuration. Returns the number of running threads which can be scheduled
 // at once in the process's cpuset, or -1 on discovery failure.
-int detect_cpucount(void){
-	int ret;
+unsigned detect_cpucount(cpu_set_t *map){
+	unsigned ret;
 
+	CPU_ZERO(map);
 	CPU_ZERO(&origmask);
 	if((ret = detect_cpucount_internal(&origmask)) > 0){
-		cpucount = (unsigned)ret;
+		CPU_OR(map,map,&origmask);
+		cpucount = ret;
 		return ret;
 	}
 	CPU_ZERO(&origmask);
-	return -1;
+	return 0;
 }
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
-int pin_thread(int cpuid){
+int pin_thread(unsigned aid){
 	if(use_cpusets == 0){
 		cpu_set_t mask;
 
 		CPU_ZERO(&mask);
-		CPU_SET((unsigned)cpuid,&mask);
+		CPU_SET(aid,&mask);
 #ifdef LIBTORQUE_FREEBSD
 		if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
 					sizeof(mask),&mask)){

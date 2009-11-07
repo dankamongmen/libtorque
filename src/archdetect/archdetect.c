@@ -7,36 +7,6 @@
 #include <libtorque/hardware/memory.h>
 #include <libtorque/hardware/topology.h>
 
-static const char *
-memory_type(int mtype){
-	switch(mtype){
-		case MEMTYPE_DATA: return "data";
-		case MEMTYPE_CODE: return "code";
-		case MEMTYPE_UNIFIED: return "unified";
-		default: return NULL;
-	}
-}
-
-static const char *
-tlb_type(int ttype){
-	switch(ttype){
-		case MEMTYPE_DATA: return "data";
-		case MEMTYPE_CODE: return "code";
-		case MEMTYPE_UNIFIED: return "mixed";
-		default: return NULL;
-	}
-}
-
-static const char *
-x86_type(int x86type){
-	switch(x86type){
-		case PROCESSOR_X86_OEM: return "OEM";
-		case PROCESSOR_X86_OVERDRIVE: return "OverDrive"; // FIXME: TM!
-		case PROCESSOR_X86_DUAL: return "MP";
-		default: return NULL;
-	}
-}
-
 static int
 fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 	const char units[] = "KMGTPEZY",*unit = units;
@@ -67,6 +37,36 @@ fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 		}
 	}
 	return 0;
+}
+
+static const char *
+memory_type(int mtype){
+	switch(mtype){
+		case MEMTYPE_DATA: return "data";
+		case MEMTYPE_CODE: return "code";
+		case MEMTYPE_UNIFIED: return "unified";
+		default: return NULL;
+	}
+}
+
+static const char *
+tlb_type(int ttype){
+	switch(ttype){
+		case MEMTYPE_DATA: return "data";
+		case MEMTYPE_CODE: return "code";
+		case MEMTYPE_UNIFIED: return "mixed";
+		default: return NULL;
+	}
+}
+
+static const char *
+x86_type(int x86type){
+	switch(x86type){
+		case PROCESSOR_X86_OEM: return "OEM";
+		case PROCESSOR_X86_OVERDRIVE: return "OverDrive"; // FIXME: TM!
+		case PROCESSOR_X86_DUAL: return "MP";
+		default: return NULL;
+	}
 }
 
 static int
@@ -266,15 +266,89 @@ detail_memory_nodes(unsigned mem_nodecount){
 	return 0;
 }
 
+static const char *depth_terms[] = { "Package", "Core", "Thread", NULL };
+
+static int
+print_cpuset(libtorque_topt *s,unsigned depth){
+	unsigned z;
+	int r = 0;
+
+	if(s){
+		unsigned i,lastset,total;
+		int ret;
+
+		i = 0;
+		do{
+			if((ret = printf("\t")) < 0){
+				return -1;
+			}
+			r += ret;
+		}while(i++ < depth);
+		if((ret = printf("%s %u: ",depth_terms[depth],s->groupid)) < 0){
+			return -1;
+		}
+		r += ret;
+		lastset = CPU_SETSIZE;
+		total = 0;
+		for(z = 0 ; z < CPU_SETSIZE ; ++z){
+			if(CPU_ISSET(z,&s->schedulable)){
+				++total;
+				lastset = z;
+				if(s->sub == NULL){
+					if((ret = printf("%3u ",z)) < 0){
+						return -1;
+					}
+					r += ret;
+				}
+			}
+		}
+		if(total == 0 || lastset == CPU_SETSIZE){
+			return -1;
+		}
+		if(s->sub == NULL){
+			ret = printf("(%ux processor type %u)\n",total,
+				libtorque_affinitymapping(lastset) + 1);
+		}else{
+			ret = printf("(%u threads total)\n",total);
+		}
+		if(ret < 0){
+			return -1;
+		}
+		r += ret;
+		if((ret = print_cpuset(s->sub,depth + 1)) < 0){
+			return -1;
+		}
+		r += ret;
+		if((ret = print_cpuset(s->next,depth)) < 0){
+			return -1;
+		}
+		r += ret;
+	}
+	return r;
+}
+
+static inline int
+print_topology(libtorque_topt *t){
+	if(print_cpuset(t,0) < 0){
+		return -1;
+	}
+	return 0;
+}
+
 int main(void){
 	unsigned cpu_typecount,mem_nodecount;
 	int ret = EXIT_FAILURE;
+	libtorque_topt *t;
 
 	if(libtorque_init()){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		return EXIT_FAILURE;
 	}
-	if(print_topology()){
+	if((t = libtorque_get_topology()) == NULL){
+		fprintf(stderr,"Couldn't look up topology\n");
+		return EXIT_FAILURE;
+	}
+	if(print_topology(t)){
 		goto done;
 	}
 	if((mem_nodecount = libtorque_mem_nodecount()) <= 0){

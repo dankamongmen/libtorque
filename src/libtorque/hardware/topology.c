@@ -11,88 +11,18 @@ static struct {
 } cpu_map[CPU_SETSIZE];
 static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 
-// The lowest level for any scheduling hierarchy is OS-schedulable entities.
-// This definition is independent of "threads", "cores", "packages", etc. Our
-// base composition and isomorphisms arise from schedulable entities. Should
-// a single execution state ever have "multiple levels", this still works.
-static struct sgroup {
-	cpu_set_t schedulable;
-	unsigned groupid;		// x86: Core for multicores, or package
-	struct sgroup *next,*sub;
-} *sched_zone;
+static libtorque_topt *sched_zone;
 
-// development code
-#include <stdio.h>
-
-static const char *depth_terms[] = { "Package", "Core", "Thread", NULL };
-
-static int
-print_cpuset(struct sgroup *s,unsigned depth){
-	unsigned z;
-	int r = 0;
-
-	if(s){
-		unsigned i,lastset,total;
-		int ret;
-
-		i = 0;
-		do{
-			if((ret = printf("\t")) < 0){
-				return -1;
-			}
-			r += ret;
-		}while(i++ < depth);
-		if((ret = printf("%s %u: ",depth_terms[depth],s->groupid)) < 0){
-			return -1;
-		}
-		r += ret;
-		lastset = CPU_SETSIZE;
-		total = 0;
-		for(z = 0 ; z < CPU_SETSIZE ; ++z){
-			if(CPU_ISSET(z,&s->schedulable)){
-				++total;
-				lastset = z;
-				if(s->sub == NULL){
-					if((ret = printf("%3u ",z)) < 0){
-						return -1;
-					}
-					r += ret;
-				}
-			}
-		}
-		if(total == 0 || lastset == CPU_SETSIZE){
-			return -1;
-		}
-		if(s->sub == NULL){
-			ret = printf("(%ux processor type %u)\n",total,affinityid_map[lastset] + 1);
-		}else{
-			ret = printf("(%u threads total)\n",total);
-		}
-		if(ret < 0){
-			return -1;
-		}
-		r += ret;
-		if((ret = print_cpuset(s->sub,depth + 1)) < 0){
-			return -1;
-		}
-		r += ret;
-		if((ret = print_cpuset(s->next,depth)) < 0){
-			return -1;
-		}
-		r += ret;
-	}
-	return r;
+unsigned libtorque_affinitymapping(unsigned aid){
+	return affinityid_map[aid];
 }
 
-int print_topology(void){
-	if(print_cpuset(sched_zone,0) < 0){
-		return -1;
-	}
-	return 0;
+libtorque_topt *libtorque_get_topology(void){
+	return sched_zone;
 }
 
-static struct sgroup *
-find_sched_group(struct sgroup *sz,unsigned id,unsigned *existing){
+static libtorque_topt *
+find_sched_group(libtorque_topt *sz,unsigned id,unsigned *existing){
 	*existing = 0;
 	while(sz){
 		*existing = sz->groupid;
@@ -104,9 +34,9 @@ find_sched_group(struct sgroup *sz,unsigned id,unsigned *existing){
 	return sz;
 }
 
-static struct sgroup *
+static libtorque_topt *
 create_zone(unsigned id){
-	struct sgroup *s;
+	libtorque_topt *s;
 
 	if( (s = malloc(sizeof(*s))) ){
 		CPU_ZERO(&s->schedulable);
@@ -117,7 +47,7 @@ create_zone(unsigned id){
 }
 
 static int
-share_pkg(struct sgroup *sz,unsigned core){
+share_pkg(libtorque_topt *sz,unsigned core){
 	unsigned z;
 
 	for(z = 0 ; z < CPU_SETSIZE ; ++z){
@@ -133,7 +63,7 @@ share_pkg(struct sgroup *sz,unsigned core){
 // We must be currently pinned to the processor being associated
 int associate_affinityid(unsigned aid,unsigned idx,unsigned thread,
 				unsigned core,unsigned pkg){
-	struct sgroup *sg;
+	libtorque_topt *sg;
 	unsigned extant;
 
 	if(aid >= sizeof(affinityid_map) / sizeof(*affinityid_map)){

@@ -59,11 +59,16 @@ free_cpudetails(libtorque_cput *details){
 //  - /proc/cpuinfo (linux only)
 //  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
 static int
-detect_cpudetails(int id,libtorque_cput *details){
+detect_cpudetails(unsigned id,libtorque_cput *details,unsigned *thread,
+			unsigned *core,unsigned *pkg){
 	if(pin_thread(id)){
 		return -1;
 	}
 	if(x86cpuid(details)){
+		free_cpudetails(details);
+		return -1;
+	}
+	if(x86topology(details,thread,core,pkg)){
 		free_cpudetails(details);
 		return -1;
 	}
@@ -118,19 +123,26 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 // CPU mask if necessary after a call.
 static int
 detect_cputypes(unsigned *cputc,libtorque_cput **types){
-	int totalpe,z;
+	unsigned totalpe,z,cpu;
+	cpu_set_t mask;
 
 	*cputc = 0;
 	*types = NULL;
-	if((totalpe = detect_cpucount()) <= 0){
+	if((totalpe = detect_cpucount(&mask)) <= 0){
 		goto err;
 	}
-	for(z = 0 ; z < totalpe ; ++z){
+	for(z = 0, cpu = 0 ; z < totalpe ; ++z){
 		libtorque_cput cpudetails;
 		unsigned thread,core,pkg;
 		typeof(*types) cputype;
 
-		if(detect_cpudetails(z,&cpudetails)){
+		while(cpu < CPU_SETSIZE && !CPU_ISSET(cpu,&mask)){
+			++cpu;
+		}
+		if(cpu == CPU_SETSIZE){
+			goto err;
+		}
+		if(detect_cpudetails(cpu,&cpudetails,&thread,&core,&pkg)){
 			goto err;
 		}
 		if( (cputype = match_cputype(*cputc,*types,&cpudetails)) ){
@@ -143,14 +155,11 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
-		if(x86topology(cputype,&thread,&core,&pkg)){
+		if(associate_affinityid(cpu,(unsigned)(cputype - *types),
+					thread,core,pkg)){
 			goto err;
 		}
-		if(associate_affinityid((unsigned)z,
-				(unsigned)(cputype - *types),
-				thread,core,pkg)){
-			goto err;
-		}
+		++cpu;
 	}
 	if(unpin_thread()){
 		goto err;
