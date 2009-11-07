@@ -1032,13 +1032,10 @@ amd_cache_presentp(uint32_t reg){
 }
 
 static unsigned
-amd_l23assoc(unsigned idx,uintmax_t lines){
+amd_l23assoc(unsigned idx,unsigned lines){
 
-	if(lines > UINT_MAX){
-		return 0;
-	}
 	switch(idx){
-		case 0xf: return (unsigned)lines; // fully associative
+		case 0xf: return lines; // fully associative
 		case 0xe: return 128;
 		case 0xd: return 96;
 		case 0xc: return 64;
@@ -1067,9 +1064,15 @@ decode_amd_l23tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents
 static int
 decode_amd_l23cache(uint32_t reg,uintmax_t *size,unsigned *assoc,unsigned *lsize,
 			unsigned shift,unsigned mul){
+	unsigned lines;
+
 	*size = (reg >> shift) * 1024 * mul;
 	*lsize = reg & 0xffu;
-	*assoc = amd_l23assoc((reg >> 12u) & 0xf,*size / *lsize);
+	if(*size / *lsize > UINT_MAX){
+		return -1;
+	}
+	lines = (unsigned)(*size / *lsize);
+	*assoc = amd_l23assoc((reg >> 12u) & 0xf,lines);
 	return (*size && *assoc && *lsize) ? 0 : -1;
 }
 
