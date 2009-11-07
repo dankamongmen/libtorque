@@ -78,7 +78,7 @@ detail_memory(const libtorque_memt *mem){
 		return -1;
 	}
 	if(mem->totalsize <= 0){
-		fprintf(stderr,"Error: memory total size of %u\n",mem->totalsize);
+		fprintf(stderr,"Error: memory total size of %ju\n",mem->totalsize);
 		return -1;
 	}
 	if(mem->linesize <= 0){

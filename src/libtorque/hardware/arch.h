@@ -26,7 +26,8 @@ typedef struct libtorque_tlbt {
 } libtorque_tlbt;
 
 typedef struct libtorque_memt {
-	unsigned totalsize,linesize,associativity,sharedways;
+	unsigned linesize,associativity,sharedways;
+	uintmax_t totalsize;
 	libtorque_memtypet memtype;
 	unsigned level;
 } libtorque_memt;
