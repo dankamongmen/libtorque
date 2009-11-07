@@ -18,9 +18,13 @@ libtorque_topt *libtorque_get_topology(void){
 
 static libtorque_topt *
 find_sched_group(libtorque_topt *sz,unsigned id,unsigned *existing){
-	*existing = 0;
+	if(existing){
+		*existing = 0;
+	}
 	while(sz){
-		*existing = sz->groupid;
+		if(existing){
+			*existing = sz->groupid;
+		}
 		if(sz->groupid == id){
 			break;
 		}
@@ -63,7 +67,9 @@ int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
 	if(CPU_ISSET(aid,&validmap)){
 		return -1;
 	}
-	// FIXME need to handle same core ID on different packages!
+	cpu_map[aid].thread = thread;
+	cpu_map[aid].core = core;
+	cpu_map[aid].package = pkg;
 	if((sg = find_sched_group(sched_zone,pkg,&extant)) == NULL){
 		if((sg = create_zone(pkg)) == NULL){
 			return -1;
@@ -76,12 +82,12 @@ int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
 	if(share_pkg(sg,core) == 0){
 		typeof(*sg) *sc;
 
-		if((sc = find_sched_group(sg->sub,core,&extant)) == NULL){
+		if((sc = find_sched_group(sg->sub,core,NULL)) == NULL){
 			if((sc = create_zone(core)) == NULL){
 				return -1;
 			}
 			if((sc->next = sg->sub) == NULL){
-				if((sc->next = create_zone(extant)) == NULL){
+				if((sc->next = create_zone(cpu_map[extant].core)) == NULL){
 					free(sc);
 					return -1;
 				}
@@ -93,9 +99,6 @@ int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
 		CPU_SET(aid,&sc->schedulable);
 	}
 	CPU_SET(aid,&sg->schedulable);
-	cpu_map[aid].thread = thread;
-	cpu_map[aid].core = core;
-	cpu_map[aid].package = pkg;
 	CPU_SET(aid,&validmap);
 	return 0;
 }
