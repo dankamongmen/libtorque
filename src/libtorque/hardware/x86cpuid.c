@@ -871,7 +871,7 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 		for(y = 0 ; y < 4 ; ++y){
 			unsigned descriptor;
 
-			if( (descriptor = (gpregs[z] & mask) >> ((3 - y) * 8u)) ){
+			if( (descriptor = (gpregs[z] & mask) >> ((3u - y) * 8u)) ){
 				libtorque_memt mem;
 				libtorque_tlbt tlb;
 
@@ -957,7 +957,7 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			unsigned lev,cpp;
 
 			cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
-			lev = (gpregs[0] >> 5) & 0x7u; // AX[7..5]
+			lev = (gpregs[0] >> 5u) & 0x7u; // AX[7..5]
 			cachet = gpregs[0] & 0x1fu; // AX[4..0]
 			if(cachet == DATACACHE){ // Memory type is in AX[4..0]
 				mem.memtype = MEMTYPE_DATA;
@@ -980,15 +980,15 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			mem.linesize = (gpregs[1] & 0xfffu) + 1;
 			// EAX[9]: direct, else (EBX[31..22] + 1)-assoc
 			mem.associativity = (gpregs[0] & 0x200u) ? 1 :
-				(((gpregs[1] >> 22) & 0x3ffu) + 1);
+				(((gpregs[1] >> 22u) & 0x3ffu) + 1);
 			// Partitions = EBX[21:12] + 1, sets = ECX + 1
 			mem.totalsize = mem.associativity *
-				(((gpregs[1] >> 12) & 0x1ffu) + 1) *
+				(((gpregs[1] >> 12u) & 0x1ffu) + 1) *
 				mem.linesize * (gpregs[2] + 1);
-			mem.sharedways = ((gpregs[0] >> 14) & 0xfffu) + 1;
+			mem.sharedways = ((gpregs[0] >> 14u) & 0xfffu) + 1;
 			mem.level = lev;
 			// Cores per package = EAX[31:26] + 1
-			if((cpp = ((gpregs[0] >> 26) & 0x3fu) + 1) == 0){
+			if((cpp = ((gpregs[0] >> 26u) & 0x3fu) + 1) == 0){
 				return -1;
 			}
 			if(cpu->coresperpackage == 0){
@@ -1015,14 +1015,14 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 
 // FIXME we need to check the presence of either/or; right now, we break if
 // only one is present (because later we try to add both)
-static inline unsigned
+static inline int
 amd_tlb_presentp(uint32_t reg){
-	return (((reg >> 12u) & 0xf) || (reg >> 28u));
+	return (((reg >> 12u) & 0xfu) || (reg >> 28u));
 }
 
-static inline unsigned
+static inline int
 amd_cache_presentp(uint32_t reg){
-	return !!((reg >> 12u) & 0xf);
+	return !!((reg >> 12u) & 0xfu);
 }
 
 static unsigned
@@ -1285,7 +1285,7 @@ id_x86_topology(uint32_t maxfunc,libtorque_cput *cpu){
 	// processors that report CPUID.1:EBX[23:16] as reserved (i.e. 0), the
 	// processor supports only one level of topology." EBX[23:16] on AMD is
 	// "LogicalProcessorCount", *iff* CPUID1.EDX[HTT] is 1 FIXME.
-	if((cpu->threadspercore = (gpregs[1] >> 16) & 0xffu) == 0){
+	if((cpu->threadspercore = (gpregs[1] >> 16u) & 0xffu) == 0){
 		cpu->threadspercore = 1; // can't have 0 threads
 	}
 	// Round it to the nearest >= power of 2...
@@ -1310,14 +1310,14 @@ id_intel_topology(uint32_t maxfunc,libtorque_cput *cpu){
 		return id_x86_topology(maxfunc,cpu);
 	}
 	cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
-	if(((gpregs[2] >> 8) & 0xffu) != 1u){
+	if(((gpregs[2] >> 8u) & 0xffu) != 1u){
 		return -1;
 	}
 	if((cpu->threadspercore = (gpregs[1] & 0xffffu)) == 0){
 		return -1;
 	}
 	cpuid(CPUID_STANDARD_TOPOLOGY,1,gpregs);
-	if(((gpregs[2] >> 8) & 0xffu) != 2u){
+	if(((gpregs[2] >> 8u) & 0xffu) != 2u){
 		return -1;
 	}
 	if((cpu->coresperpackage = (gpregs[1] & 0xffffu)) == 0){
@@ -1335,11 +1335,11 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	} // CPUID1.EAX is the same on Intel and AMD
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
 	cpu->stepping = gpregs[0] & 0xfu; // Stepping: EAX[3..0]
-	cpu->x86type = (gpregs[0] >> 12) & 0x2u; // Processor type: EAX[13..12]
+	cpu->x86type = (gpregs[0] >> 12u) & 0x2u; // Processor type: EAX[13..12]
 	// Extended model is EAX[19..16]. Model is EAX[7..4].
-	cpu->model = ((gpregs[0] >> 12) & 0xf0u) | ((gpregs[0] >> 4) & 0xfu);
+	cpu->model = ((gpregs[0] >> 12u) & 0xf0u) | ((gpregs[0] >> 4u) & 0xfu);
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
-	cpu->family = ((gpregs[0] >> 17) & 0x7f8u) | ((gpregs[0] >> 8) & 0xfu);
+	cpu->family = ((gpregs[0] >> 17u) & 0x7f8u) | ((gpregs[0] >> 8u) & 0xfu);
 	return 0;
 }
 
@@ -1352,7 +1352,7 @@ x86apic(unsigned maxlevel,uint32_t *apic){
 		return -1; // FIXME any other way to get local APIC?
 	}
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
-	*apic = (gpregs[1] >> 24) & 0xffu; 	// 8-bit legacy APIC
+	*apic = (gpregs[1] >> 24u) & 0xffu; 	// 8-bit legacy APIC
 	// AMD doesn't have extended APIC as of 25481-Revision 2.28 FIXME
 	if(maxlevel < CPUID_STANDARD_TOPOLOGY){ // We only have legacy APIC
 		return 0;
@@ -1364,7 +1364,7 @@ x86apic(unsigned maxlevel,uint32_t *apic){
 	}
 	*apic = gpregs[3];
 	// ECX[15..8] holds "Level type": 0 == invalid, 1 == thread, 2 == core
-	while( (lev = (gpregs[2] >> 8) & 0xffu) ){
+	while( (lev = (gpregs[2] >> 8u) & 0xffu) ){
 		switch(lev){
 			case 0x2: // core
 				break;
