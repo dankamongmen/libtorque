@@ -21,12 +21,6 @@ typedef struct tdata {
 	} status;
 } tdata;
 
-#ifdef CPU_ALLOC_SIZE
-#define CPUSET_BYTES CPU_ALLOC_SIZE
-#else
-#define CPUSET_BYTES sizeof(cpu_set_t)
-#endif
-
 static pthread_once_t cpucount_once = PTHREAD_ONCE_INIT;
 // Set whenever detect_cpucount() is called, which generally only happens once.
 // Who knows what hotpluggable CPUs the future brings, and what interfaces
@@ -153,7 +147,7 @@ initialize_cpucount(void){
 
 static inline void
 copy_cpumask(cpu_set_t *dst,const cpu_set_t *src){
-	memcpy(dst,src,CPUSET_BYTES);
+	memcpy(dst,src,sizeof(*dst));
 }
 
 // Ought be called before any other scheduling functions are used, and again
