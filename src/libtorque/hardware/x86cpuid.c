@@ -52,6 +52,7 @@ typedef enum {
 	CPUID_AMD_L1CACHE_TLB		=       0x80000005, // l1, tlb0 (AMD)
 	CPUID_EXTENDED_L23CACHE_TLB	=       0x80000006, // l2,3, tlb1
 	CPUID_EXTENDED_ENHANCEDPOWER	=       0x80000006, // epm support
+	CPUID_EXTENDED_TOPOLOGY         =       0x80000008, // topology (AMD)
 } cpuid_class;
 
 // Uses all four primary general-purpose 32-bit registers (e[abcd]x), returning
@@ -79,11 +80,14 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 typedef struct known_x86_vendor {
 	const char *signet;
 	int (*memfxn)(uint32_t,libtorque_cput *);
+	int (*topfxn)(uint32_t,libtorque_cput *);
 } known_x86_vendor;
 
 static int id_amd_caches(uint32_t,libtorque_cput *);
 static int id_via_caches(uint32_t,libtorque_cput *);
 static int id_intel_caches(uint32_t,libtorque_cput *);
+static int id_amd_topology(uint32_t,libtorque_cput *);
+static int id_intel_topology(uint32_t,libtorque_cput *);
 
 // There's also: (Collect them all! Impress your friends!)
 //      " UMC UMC UMC" "CyriteadxIns" "NexGivenenDr"
@@ -91,12 +95,15 @@ static int id_intel_caches(uint32_t,libtorque_cput *);
 static const known_x86_vendor vendors[] = {
 	{       .signet = "GenuntelineI",
 		.memfxn = id_intel_caches,
+		.topfxn = id_intel_topology,
 	},
 	{       .signet = "AuthcAMDenti",
 		.memfxn = id_amd_caches,
+		.topfxn = id_amd_topology,
 	},
 	{       .signet = "CentaulsaurH",
 		.memfxn = id_via_caches,
+		.topfxn = NULL,
 	},
 };
 
@@ -1095,12 +1102,67 @@ x86_getbrandname(libtorque_cput *cpudesc){
 }
 
 static int
-x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
+id_x86_topology(uint32_t maxfunc,libtorque_cput *cpu){
 	uint32_t gpregs[4];
 
 	if(maxfunc < CPUID_CPU_VERSION){
 		return -1;
 	}
+	cpuid(CPUID_CPU_VERSION,0,gpregs);
+	// http://software.intel.com/en-us/articles/intel-64-architecture-processor-topology-enumeration/
+	// EBX[23..16] is "the maximum number of addressable ID's that can be
+	// assigned to logical processors in a physical package." Also: "For
+	// processors that report CPUID.1:EBX[23:16] as reserved (i.e. 0), the
+	// processor supports only one level of topology." EBX[23:16] on AMD is
+	// "LogicalProcessorCount".
+	if((cpu->threadspercore = (gpregs[1] >> 16) & 0xffu) == 0){
+		cpu->threadspercore = 1; // can't have 0 threads
+	}
+	// Round it to the nearest >= power of 2...
+	while(cpu->threadspercore & (cpu->threadspercore - 1)){
+		++cpu->threadspercore;
+	}
+	// ...then divide by EAX[31:26] with CPUID_STANDARD_CACHECONF. We
+	// do this in id_intel_caches(), if it's available.
+	return 0;
+}
+
+static int
+id_amd_topology(uint32_t maxfunc,libtorque_cput *cpu){
+	return id_x86_topology(maxfunc,cpu);
+}
+
+static int
+id_intel_topology(uint32_t maxfunc,libtorque_cput *cpu){
+	uint32_t gpregs[4];
+
+	if(maxfunc < CPUID_STANDARD_TOPOLOGY){
+		return id_x86_topology(maxfunc,cpu);
+	}
+	cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
+	if(((gpregs[2] >> 8) & 0xffu) != 1u){
+		return -1;
+	}
+	if((cpu->threadspercore = (gpregs[1] & 0xffffu)) == 0){
+		return -1;
+	}
+	cpuid(CPUID_STANDARD_TOPOLOGY,1,gpregs);
+	if(((gpregs[2] >> 8) & 0xffu) != 2u){
+		return -1;
+	}
+	if((cpu->coresperpackage = (gpregs[1] & 0xffffu)) == 0){
+		return -1;
+	}
+	return 0;
+}
+
+static int
+x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
+	uint32_t gpregs[4];
+
+	if(maxfunc < CPUID_CPU_VERSION){
+		return -1;
+	} // CPUID1.EAX is the same on Intel and AMD
 	cpuid(CPUID_CPU_VERSION,0,gpregs);
 	cpu->stepping = gpregs[0] & 0xfu; // Stepping: EAX[3..0]
 	cpu->x86type = (gpregs[0] >> 12) & 0x2u; // Processor type: EAX[13..12]
@@ -1108,37 +1170,6 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	cpu->model = ((gpregs[0] >> 12) & 0xf0u) | ((gpregs[0] >> 4) & 0xfu);
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
 	cpu->family = ((gpregs[0] >> 17) & 0x7f8u) | ((gpregs[0] >> 8) & 0xfu);
-	if(maxfunc < CPUID_STANDARD_TOPOLOGY){
-		// http://software.intel.com/en-us/articles/intel-64-architecture-processor-topology-enumeration/
-		// "The maximum number of addressable ID's that can be assigned
-		// to logical processors in a physical package." is EBX[23..16]
-		// "For processors that report CPUID.1:EBX[23:16] as reserved
-		// (i.e. 0), the processor supports only one level of topology."
-		if((cpu->threadspercore = (gpregs[1] >> 16) & 0xffu) == 0){
-			cpu->threadspercore = 1;
-		}
-		// Round this to the nearest >= power of 2
-		if(cpu->threadspercore & (cpu->threadspercore - 1)){
-			return -1; // FIXME
-		}
-		// Then divide by EAX[31:26] with CPUID_STANDARD_CACHECONF. We
-		// do this in id_intel_caches(), if it's available.
-	}else{
-		cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
-		if(((gpregs[2] >> 8) & 0xffu) != 1u){
-			return -1;
-		}
-		if((cpu->threadspercore = (gpregs[1] & 0xffffu)) == 0){
-			return -1;
-		}
-		cpuid(CPUID_STANDARD_TOPOLOGY,1,gpregs);
-		if(((gpregs[2] >> 8) & 0xffu) != 2u){
-			return -1;
-		}
-		if((cpu->coresperpackage = (gpregs[1] & 0xffffu)) == 0){
-			return -1;
-		}
-	}
 	return 0;
 }
 
@@ -1234,6 +1265,9 @@ int x86cpuid(libtorque_cput *cpudesc,unsigned *thread,unsigned *core,
 		return -1;
 	}
 	if(x86_getprocsig(maxlevel,cpudesc)){
+		return -1;
+	}
+	if(vendor->topfxn && vendor->topfxn(maxlevel,cpudesc)){
 		return -1;
 	}
 	if(vendor->memfxn(maxlevel,cpudesc)){
