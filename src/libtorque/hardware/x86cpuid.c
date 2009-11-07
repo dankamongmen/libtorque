@@ -41,7 +41,7 @@ typedef enum {
 	CPUID_STANDARD_POWERMAN		=       0x00000006, // power management
 	CPUID_STANDARD_DIRECTCACHE	=       0x00000009, // DCA access setup
 	CPUID_STANDARD_PERFMON		=       0x0000000a, // performance ctrs
-	CPUID_STANDARD_TOPOLOGY		=       0x0000000b, // topology config
+	CPUID_STANDARD_TOPOLOGY		=       0x0000000b, // topology, x2apic
 	CPUID_STANDARD_XSTATE		=       0x0000000d, // XSAVE/XRSTOR
 	// these are primarily AMD
 	CPUID_EXTENDED_MAX_SUPPORT	=       0x80000000, // max ext. level
@@ -1014,29 +1014,92 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 }
 
 static int
-id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
-	uint32_t maxexlevel,gpregs[4];
-	libtorque_memt l1amd;
+decode_amd_tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents,
+					unsigned *ients){
+	*dassoc = reg >> 24u;
+	*iassoc = (reg >> 8u) & 0xffu;
+	*dents = (reg >> 16u) & 0xffu;
+	*ients = reg & 0xffu;
+	return (*dassoc && *iassoc && *dents && *ients) ? 0 : -1;
+}
 
-	if((maxexlevel = identify_extended_cpuid()) < CPUID_AMD_L1CACHE_TLB){
-		return -1;
-	}
-	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
-	cpuid(CPUID_AMD_L1CACHE_TLB,0,gpregs);
-	l1amd.linesize = gpregs[2] & 0x000000ffu;
-	l1amd.associativity = 0;		// FIXME
-	l1amd.totalsize = 0;			// FIXME
-	l1amd.sharedways = 0;			// FIXME
-	l1amd.memtype = MEMTYPE_UNKNOWN;	// FIXME
-	l1amd.level = 1;
-	if(add_hwmem(&cpud->memories,&cpud->memdescs,&l1amd) == NULL){
-		return -1;
-	}
+static int
+decode_amd_cache(uint32_t reg,unsigned *size,unsigned *assoc,unsigned *lsize){
+	*size = (reg >> 24u) * 1024u;
+	*assoc = (reg >> 16u) & 0xffu;
+	*lsize = reg & 0xffu;
+	return (*size && *assoc && *lsize) ? 0 : -1;
+}
+
+static int
+id_amd_23caches(uint32_t maxexlevel){
 	if(maxexlevel < CPUID_EXTENDED_L23CACHE_TLB){
 		return 0;
 	}
 	// FIXME get L2, L3
 	return -1;
+}
+
+static int
+id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
+	libtorque_tlbt tlb,tlb24,itlb,itlb24;
+	libtorque_memt l1dcache,l1icache;
+	uint32_t maxex,gpregs[4];
+
+	if((maxex = identify_extended_cpuid()) < CPUID_AMD_L1CACHE_TLB){
+		return -1;
+	}
+	// EAX/EBX: 2/4MB / 4KB TLB descriptors ECX: DL1 EDX: CL1
+	cpuid(CPUID_AMD_L1CACHE_TLB,0,gpregs);
+	if(decode_amd_cache(gpregs[2],&l1icache.totalsize,&l1icache.associativity,
+				&l1icache.linesize)){
+		return -1;
+	}
+	if(decode_amd_cache(gpregs[3],&l1dcache.totalsize,&l1dcache.associativity,
+				&l1dcache.linesize)){
+		return -1;
+	}
+	l1icache.sharedways = l1dcache.sharedways = 1;	// FIXME
+	l1icache.level = l1dcache.level = 1;
+	l1icache.memtype = MEMTYPE_CODE;
+	l1dcache.memtype = MEMTYPE_DATA;
+	if(decode_amd_tlb(gpregs[0],&tlb24.associativity,&itlb24.associativity,
+				&tlb24.entries,&itlb24.entries)){
+		return -1;
+	}
+	if(decode_amd_tlb(gpregs[0],&tlb.associativity,&itlb.associativity,
+				&tlb.entries,&itlb.entries)){
+		return -1;
+	}
+	tlb.pagesize = itlb.pagesize = 4096;
+	tlb24.pagesize = itlb24.pagesize = 1024 * 2096; // FIXME
+	tlb.sharedways = itlb.sharedways = 1;		// FIXME
+	tlb24.sharedways = itlb24.sharedways = 1;	// FIXME
+	tlb.level = itlb.level = tlb24.level = itlb24.level = 1;
+	tlb.tlbtype = tlb24.tlbtype = MEMTYPE_DATA;
+	itlb.tlbtype = itlb24.tlbtype = MEMTYPE_CODE;
+	if(add_hwmem(&cpud->memories,&cpud->memdescs,&l1icache) == NULL){
+		return -1;
+	}
+	if(add_hwmem(&cpud->memories,&cpud->memdescs,&l1dcache) == NULL){
+		return -1;
+	}
+	if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb) == NULL){
+		return -1;
+	}
+	if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb24) == NULL){
+		return -1;
+	}
+	if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb) == NULL){
+		return -1;
+	}
+	if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb24) == NULL){
+		return -1;
+	}
+	if(id_amd_23caches(maxex)){
+		return -1;
+	}
+	return 0;
 }
 
 static int
@@ -1114,7 +1177,7 @@ id_x86_topology(uint32_t maxfunc,libtorque_cput *cpu){
 	// assigned to logical processors in a physical package." Also: "For
 	// processors that report CPUID.1:EBX[23:16] as reserved (i.e. 0), the
 	// processor supports only one level of topology." EBX[23:16] on AMD is
-	// "LogicalProcessorCount".
+	// "LogicalProcessorCount", *iff* CPUID1.EDX[HTT] is 1 FIXME.
 	if((cpu->threadspercore = (gpregs[1] >> 16) & 0xffu) == 0){
 		cpu->threadspercore = 1; // can't have 0 threads
 	}
