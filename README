@@ -96,13 +96,22 @@ NUMA is properly supported, devices/system/node* directories will be
 present in mounted sysfs filesystems. FreeBSD does not, to my knowledge, expose
 NUMA details as of 7.2.
 
+--doc requirements----------------------------------------------------------
+
+Building the documentation (distributed in Docbook XML) requires xsltproc
+(part of the GNOME project's libxslt). A network connection is required if
+the Docbook DTD's and XSL stylesheets are not installed; building the
+documentation will be much faster with local copies. Install:
+
+ - docbook-xml, docbook-xsl, xsltproc (Debian)
+ - textproc/docbook-xml, textproc/docbook-xsl, textproc/xsltproc (FreeBSD)
+
 --misc requirements---------------------------------------------------------
 
-xsltproc is required to build the documentation. Exuberant Ctags are required
-to build the tagfile. On FreeBSD, the associated Ports are:
+Exuberant Ctags are required to build the tagfile. Install:
 
- - devel/ctags
- - textproc/xsltproc
+ - devel/ctags (FreeBSD)
+ - exuberant-ctags (Debian)
 
 ----------------------------------------------------------------libtorque-----
 -=+ III. Building libtorque +=-
