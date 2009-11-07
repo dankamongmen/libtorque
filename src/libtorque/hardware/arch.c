@@ -74,8 +74,6 @@ detect_cpudetails(unsigned id,libtorque_cput *details,unsigned *thread,
 static int
 compare_cpudetails(const libtorque_cput * restrict a,
 			const libtorque_cput * restrict b){
-	unsigned n;
-
 	if(a->family != b->family || a->model != b->model ||
 		a->stepping != b->stepping || a->x86type != b->x86type){
 		return -1;
@@ -89,10 +87,10 @@ compare_cpudetails(const libtorque_cput * restrict a,
 	if(strcmp(a->strdescription,b->strdescription)){
 		return -1;
 	}
-	if(memcmp(a->tlbdescs + n,b->tlbdescs + n,a->tlbs * sizeof(*a->tlbdescs))){
+	if(memcmp(a->tlbdescs,b->tlbdescs,a->tlbs * sizeof(*a->tlbdescs))){
 		return -1;
 	}
-	if(memcmp(a->memdescs + n,b->memdescs + n,a->memories * sizeof(*a->memdescs))){
+	if(memcmp(a->memdescs,b->memdescs,a->memories * sizeof(*a->memdescs))){
 		return -1;
 	}
 	return 0;
