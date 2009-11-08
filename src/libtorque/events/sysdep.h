@@ -28,22 +28,6 @@ struct kevent { // each element an array, each array the same number of members
 	kevententry *events; // array of kevententries
 };
 
-// State necessary for changing the domain of events and/or having them
-// reported. One is required to do any event handling, under any scheme, and
-// many plausible schemes will employ multiple evectorss.
-typedef struct evectors {
-	// compat-<OS>.h provides a kqueue-like interface (in terms of change
-	// vectorization, which linux doesn't support) for non-BSD's
-#ifdef LIBTORQUE_LINUX
-	struct kevent eventv,changev;
-#elif defined(LIBTORQUE_FREEBSD)
-	struct kevent *eventv,*changev;
-#else
-#error "No operating system support for event notification"
-#endif
-	int vsizes,changesqueued;
-} evectors;
-
 // Emulation of FreeBSD's kevent(2) notification mechanism. Timeout values are
 // specified differently between the two, so we just disable them entirely
 // (since we're never using them anyway). If they need be restored, just
@@ -86,6 +70,8 @@ typedef struct kevent kevententry;
 #define KEVENTENTRY_FD(kptr) ((int)(k)->ident)
 #define KEVENTENTRY_SIG(kptr) ((int)(k)->ident) // Doesn't exist on Linux
 
+#include <pthread.h>
+
 // A pthread_testcancel() has been added at the entry, since epoll() is a
 // cancellation point on Linux. Perhaps better to disable cancellation across
 // both, as we have timeouts?
@@ -103,6 +89,22 @@ Kevent(int kq,struct kevent *changelist,int nchanges,
 	return ret;
 }
 #endif
+
+// State necessary for changing the domain of events and/or having them
+// reported. One is required to do any event handling, under any scheme, and
+// many plausible schemes will employ multiple evectorss.
+typedef struct evectors {
+	// compat-<OS>.h provides a kqueue-like interface (in terms of change
+	// vectorization, which linux doesn't support) for non-BSD's
+#ifdef LIBTORQUE_LINUX
+	struct kevent eventv,changev;
+#elif defined(LIBTORQUE_FREEBSD)
+	struct kevent *eventv,*changev;
+#else
+#error "No operating system support for event notification"
+#endif
+	int vsizes,changesqueued;
+} evectors;
 
 int add_evector_kevents(struct evectors *,const struct kevent *,int);
 
