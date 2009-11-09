@@ -88,9 +88,10 @@ endif
 INSTALL:=install -v
 
 # Codenames are factored out, to accommodate changing them later.
-TORQUE:=torque
-PERCPU:=percpu
 ARCHDETECT:=archdetect
+PERCPU:=percpu
+SSLSRV:=torquessl
+TORQUE:=torque
 
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
 # paths against overlong total path names.
@@ -99,9 +100,10 @@ SRCDIR:=src
 TOOLDIR:=tools
 MANDIR:=doc/man
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
-PERCPUDIRS:=$(SRCDIR)/$(PERCPU)
-TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 ARCHDETECTDIRS:=$(SRCDIR)/$(ARCHDETECT)
+PERCPUDIRS:=$(SRCDIR)/$(PERCPU)
+SSLSRVDIRS:=$(SRCDIR)/$(SSLSRV)
+TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
@@ -120,14 +122,16 @@ PKGCONFIG:=$(TOOLDIR)/lib$(TORQUE).pc
 # the per-language directory specifications above.
 CSRC:=$(shell find $(CSRCDIRS) -type f -name \*.c -print)
 CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
-TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
-TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
-PERCPUSRC:=$(foreach dir, $(PERCPUDIRS), $(filter $(dir)/%, $(CSRC)))
-PERCPUOBJ:=$(addprefix $(OUT)/,$(PERCPUSRC:%.c=%.o))
 ARCHDETECTSRC:=$(foreach dir, $(ARCHDETECTDIRS), $(filter $(dir)/%, $(CSRC)))
 ARCHDETECTOBJ:=$(addprefix $(OUT)/,$(ARCHDETECTSRC:%.c=%.o))
+PERCPUSRC:=$(foreach dir, $(PERCPUDIRS), $(filter $(dir)/%, $(CSRC)))
+PERCPUOBJ:=$(addprefix $(OUT)/,$(PERCPUSRC:%.c=%.o))
+SSLSRVSRC:=$(foreach dir, $(SSLSRVDIRS), $(filter $(dir)/%, $(CSRC)))
+SSLSRVOBJ:=$(addprefix $(OUT)/,$(SSLSRVSRC:%.c=%.o))
+TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
+TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
-BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(PERCPU))
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(PERCPU) $(SSLSRV))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
@@ -192,12 +196,14 @@ CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLA
 LIBFLAGS+=-lpthread
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc
-TORQUECFLAGS:=$(CFLAGS) -shared
-TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 ARCHDETECTCFLAGS:=$(CFLAGS)
 ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 PERCPUCFLAGS:=$(CFLAGS)
 PERCPULFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
+SSLSRVCFLAGS:=$(CFLAGS)
+SSLSRVLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
+TORQUECFLAGS:=$(CFLAGS) -shared
+TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 LFLAGS+=$(LIBFLAGS)
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
@@ -241,6 +247,10 @@ $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 $(BINOUT)/$(PERCPU): $(PERCPUOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(PERCPUCFLAGS) -o $@ $(PERCPUOBJ) $(PERCPULFLAGS)
+
+$(BINOUT)/$(SSLSRV): $(SSLSRVOBJ) $(LIBS)
+	@mkdir -p $(@D)
+	$(CC) $(SSLSRVCFLAGS) -o $@ $(SSLSRVOBJ) $(SSLSRVLFLAGS)
 
 $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
