@@ -1019,11 +1019,14 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 	return id_intel_caches_old(maxlevel,cpu);
 }
 
-// FIXME we need to check the presence of either/or; right now, we break if
-// only one is present (because later we try to add both)
 static inline int
-amd_tlb_presentp(uint32_t reg){
-	return (((reg >> 12u) & 0xfu) || (reg >> 28u));
+amd_dtlb_presentp(uint32_t reg){
+	return (reg >> 28u);
+}
+
+static inline int
+amd_itlb_presentp(uint32_t reg){
+	return ((reg >> 12u) & 0xfu);
 }
 
 static inline int
@@ -1032,13 +1035,10 @@ amd_cache_presentp(uint32_t reg){
 }
 
 static unsigned
-amd_l23assoc(unsigned idx,uintmax_t lines){
+amd_l23assoc(unsigned idx,unsigned lines){
 
-	if(lines > UINT_MAX){
-		return 0;
-	}
 	switch(idx){
-		case 0xf: return (unsigned)lines; // fully associative
+		case 0xf: return lines; // fully associative
 		case 0xe: return 128;
 		case 0xd: return 96;
 		case 0xc: return 64;
@@ -1055,21 +1055,31 @@ amd_l23assoc(unsigned idx,uintmax_t lines){
 }
 
 static int
-decode_amd_l23tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents,
-					unsigned *ients){
+decode_amd_l23dtlb(uint32_t reg,unsigned *dassoc,unsigned *dents){
 	*dents = (reg >> 16u) & 0xfffu;
-	*ients = reg & 0xfffu;
 	*dassoc = amd_l23assoc(reg >> 28u,*dents);
+	return (*dents && *dassoc) ? 0 : -1;
+}
+
+static int
+decode_amd_l23itlb(uint32_t reg,unsigned *iassoc,unsigned *ients){
+	*ients = reg & 0xfffu;
 	*iassoc = amd_l23assoc((reg >> 12u) & 0xf,*ients);
-	return (*dents && *ients && *dassoc && *iassoc) ? 0 : -1;
+	return (*ients && *iassoc) ? 0 : -1;
 }
 
 static int
 decode_amd_l23cache(uint32_t reg,uintmax_t *size,unsigned *assoc,unsigned *lsize,
 			unsigned shift,unsigned mul){
+	unsigned lines;
+
 	*size = (reg >> shift) * 1024 * mul;
 	*lsize = reg & 0xffu;
-	*assoc = amd_l23assoc((reg >> 12u) & 0xf,*size / *lsize);
+	if(*size / *lsize > UINT_MAX){
+		return -1;
+	}
+	lines = (unsigned)(*size / *lsize);
+	*assoc = amd_l23assoc((reg >> 12u) & 0xf,lines);
 	return (*size && *assoc && *lsize) ? 0 : -1;
 }
 
@@ -1090,24 +1100,32 @@ id_amd_gbtlbs(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
 	itlb2.level = tlb2.level = 2;
 	tlb.tlbtype = tlb2.tlbtype = MEMTYPE_DATA;
 	itlb.tlbtype = itlb2.tlbtype = MEMTYPE_CODE;
-	if(amd_tlb_presentp(gpregs[0])){
-		if(decode_amd_l23tlb(gpregs[0],&tlb.associativity,&itlb.associativity,
-					&tlb.entries,&itlb.entries)){
+	if(amd_dtlb_presentp(gpregs[0])){
+		if(decode_amd_l23dtlb(gpregs[0],&tlb.associativity,&tlb.entries)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb) == NULL){
+			return -1;
+		}
+	}
+	if(amd_itlb_presentp(gpregs[0])){
+		if(decode_amd_l23itlb(gpregs[0],&itlb.associativity,&itlb.entries)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb) == NULL){
 			return -1;
 		}
 	}
-	if(amd_tlb_presentp(gpregs[1])){
-		if(decode_amd_l23tlb(gpregs[1],&tlb2.associativity,&itlb2.associativity,
-					&tlb2.entries,&itlb2.entries)){
+	if(amd_dtlb_presentp(gpregs[1])){
+		if(decode_amd_l23dtlb(gpregs[1],&tlb2.associativity,&tlb2.entries)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb2) == NULL){
+			return -1;
+		}
+	}
+	if(amd_itlb_presentp(gpregs[1])){
+		if(decode_amd_l23itlb(gpregs[1],&itlb2.associativity,&itlb2.entries)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb2) == NULL){
@@ -1156,24 +1174,32 @@ id_amd_23caches(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
 	tlb.level = itlb.level = tlb24.level = itlb24.level = 2;
 	tlb.tlbtype = tlb24.tlbtype = MEMTYPE_DATA;
 	itlb.tlbtype = itlb24.tlbtype = MEMTYPE_CODE;
-	if(amd_tlb_presentp(gpregs[0])){
-		if(decode_amd_l23tlb(gpregs[0],&tlb24.associativity,&itlb24.associativity,
-					&tlb24.entries,&itlb24.entries)){
+	if(amd_dtlb_presentp(gpregs[0])){
+		if(decode_amd_l23dtlb(gpregs[0],&tlb24.associativity,&tlb24.entries)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb24) == NULL){
+			return -1;
+		}
+	}
+	if(amd_itlb_presentp(gpregs[0])){
+		if(decode_amd_l23itlb(gpregs[0],&itlb24.associativity,&itlb24.entries)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb24) == NULL){
 			return -1;
 		}
 	}
-	if(amd_tlb_presentp(gpregs[1])){
-		if(decode_amd_l23tlb(gpregs[1],&tlb.associativity,&itlb.associativity,
-					&tlb.entries,&itlb.entries)){
+	if(amd_dtlb_presentp(gpregs[1])){
+		if(decode_amd_l23dtlb(gpregs[1],&tlb.associativity,&tlb.entries)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb) == NULL){
+			return -1;
+		}
+	}
+	if(amd_itlb_presentp(gpregs[1])){
+		if(decode_amd_l23itlb(gpregs[1],&itlb.associativity,&itlb.entries)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb) == NULL){

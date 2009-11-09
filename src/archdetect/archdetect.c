@@ -101,7 +101,7 @@ detail_memory(const libtorque_memt *mem){
 		return -1;
 	}
 	printf(" total, ");
-	if(fprintf_bunit(stdout,"B",mem->linesize) < 0){
+	if(fprintf_bunit(stdout,"B",(uintmax_t)mem->linesize) < 0){
 		return -1;
 	}
 	printf(" line, %u-assoc, ",mem->associativity);
@@ -142,11 +142,11 @@ detail_tlb(const libtorque_tlbt *tlb){
 		fprintf(stderr,"Error: TLB level of %u\n",tlb->level);
 		return -1;
 	}
-	if(fprintf_bunit(stdout,"B",tlb->pagesize) < 0){
+	if(fprintf_bunit(stdout,"B",(uintmax_t)tlb->pagesize) < 0){
 		return -1;
 	}
 	printf(" pages, ");
-	if(fprintf_bunit(stdout,"-entry",tlb->entries) < 0){
+	if(fprintf_bunit(stdout,"-entry",(uintmax_t)tlb->entries) < 0){
 		return -1;
 	}
 	printf(", %u-assoc, ",tlb->associativity);
