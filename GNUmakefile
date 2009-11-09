@@ -1,5 +1,6 @@
 .DELETE_ON_ERROR:
-.PHONY: all test hardtest docs clean install unsafe-install deinstall
+.PHONY: all test testarchdetect testpercpu hardtest docs clean install \
+	unsafe-install deinstall
 .DEFAULT_GOAL:=test
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
@@ -88,6 +89,7 @@ INSTALL:=install -v
 
 # Codenames are factored out, to accommodate changing them later.
 TORQUE:=torque
+PERCPU:=percpu
 ARCHDETECT:=archdetect
 
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
@@ -97,6 +99,7 @@ SRCDIR:=src
 TOOLDIR:=tools
 MANDIR:=doc/man
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
+PERCPUDIRS:=$(SRCDIR)/$(PERCPU)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 ARCHDETECTDIRS:=$(SRCDIR)/$(ARCHDETECT)
 
@@ -119,10 +122,12 @@ CSRC:=$(shell find $(CSRCDIRS) -type f -name \*.c -print)
 CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
+PERCPUSRC:=$(foreach dir, $(PERCPUDIRS), $(filter $(dir)/%, $(CSRC)))
+PERCPUOBJ:=$(addprefix $(OUT)/,$(PERCPUSRC:%.c=%.o))
 ARCHDETECTSRC:=$(foreach dir, $(ARCHDETECTDIRS), $(filter $(dir)/%, $(CSRC)))
 ARCHDETECTOBJ:=$(addprefix $(OUT)/,$(ARCHDETECTSRC:%.c=%.o))
 SRC:=$(CSRC)
-BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(PERCPU))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
@@ -191,6 +196,8 @@ TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 ARCHDETECTCFLAGS:=$(CFLAGS)
 ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
+PERCPUCFLAGS:=$(CFLAGS)
+PERCPULFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 LFLAGS+=$(LIBFLAGS)
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
@@ -199,14 +206,21 @@ all: test docs
 
 docs: $(DOCS)
 
-test: $(BINS) $(LIBS)
+test: $(BINS) $(LIBS) testarchdetect testpercpu
+
+testarchdetect: $(BINOUT)/$(ARCHDETECT)
 	@echo -n "Testing $(ARCHDETECT): "
-	env LD_LIBRARY_PATH=$(LIBOUT) $(BINOUT)/$(ARCHDETECT)
+	env LD_LIBRARY_PATH=$(LIBOUT) $<
+
+testpercpu: $(BINOUT)/$(PERCPU)
+	@echo -n "Testing $(PERCPU): "
+	env LD_LIBRARY_PATH=$(LIBOUT) $< echo "percpu"
 
 VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v 
 hardtest: test
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
+	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(PERCPU)
 
 $(LIBOUT)/$(TORQUESOL): $(LIBOUT)/$(TORQUEREAL)
 	@mkdir -p $(@D)
@@ -223,6 +237,10 @@ $(LIBOUT)/$(TORQUEREAL): $(TORQUEOBJ)
 $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(ARCHDETECTCFLAGS) -o $@ $(ARCHDETECTOBJ) $(ARCHDETECTLFLAGS)
+
+$(BINOUT)/$(PERCPU): $(PERCPUOBJ) $(LIBS)
+	@mkdir -p $(@D)
+	$(CC) $(PERCPUCFLAGS) -o $@ $(PERCPUOBJ) $(PERCPULFLAGS)
 
 $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
