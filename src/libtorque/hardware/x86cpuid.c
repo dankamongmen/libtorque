@@ -1021,12 +1021,12 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 
 static inline int
 amd_dtlb_presentp(uint32_t reg){
-	return (reg >> 28u);
+	return !!(reg >> 28u);
 }
 
 static inline int
 amd_itlb_presentp(uint32_t reg){
-	return ((reg >> 12u) & 0xfu);
+	return !!((reg >> 12u) & 0xfu);
 }
 
 static inline int

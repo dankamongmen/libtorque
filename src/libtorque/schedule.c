@@ -78,7 +78,7 @@ int associate_affinityid(unsigned aid,unsigned idx){
 // FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
 // setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
 static inline unsigned
-portable_cpuset_count(cpu_set_t *mask){
+portable_cpuset_count(const cpu_set_t *mask){
 #ifdef CPU_COUNT // what if it's a function, not a macro? it'll go unused...
 	int ret;
 
