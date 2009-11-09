@@ -21,10 +21,15 @@ typedef struct tdata {
 	} status;
 } tdata;
 
+static pthread_once_t tidcount_once = PTHREAD_ONCE_INIT;
+static pthread_mutex_t tidlock = PTHREAD_MUTEX_INITIALIZER;
+// Set whenever spawn_threads() is called (enforced via a pthread_once_t).
+static unsigned tidcount;
+
 static pthread_once_t cpucount_once = PTHREAD_ONCE_INIT;
 // Set whenever detect_cpucount() is called, which generally only happens once.
 // Who knows what hotpluggable CPUs the future brings, and what interfaces
-// we'll need? For now, ensure this via a pthread_once_t.
+// we'll need? For now, this is ensured via a pthread_once_t.
 static unsigned cpucount;
 static cpu_set_t origmask;
 // This is fairly wasteful, and broken for libcpuset (which requires us to use
@@ -156,11 +161,11 @@ copy_cpumask(cpu_set_t *dst,const cpu_set_t *src){
 // at once in the process's cpuset, or -1 on discovery failure.
 unsigned detect_cpucount(cpu_set_t *map){
 	CPU_ZERO(map);
-	if(pthread_once(&cpucount_once,initialize_cpucount) == 0){
+	pthread_once(&cpucount_once,initialize_cpucount);
+	if(cpucount){
 		copy_cpumask(map,&origmask);
-		return cpucount;
 	}
-	return 0;
+	return cpucount;
 }
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
@@ -255,9 +260,11 @@ earlyerr:
 	return NULL;
 }
 
-int spawn_threads(void){
+static void
+initialize_threads(void){
 	unsigned z;
 
+	tidcount = 0;
 	for(z = 0 ; z < cpucount ; ++z){
 		if(pthread_mutex_init(&tiddata[z].lock,NULL)){
 			goto err;
@@ -283,21 +290,41 @@ int spawn_threads(void){
 		}
 		pthread_mutex_unlock(&tiddata[z].lock);
 	}
-	return 0;
+	tidcount = z;
+	return;
 
 err:
 	while(z--){
 		reap_thread(tids[z],&tiddata[z]);
 	}
-	return -1;
+}
+
+int spawn_threads(void){
+	unsigned tcount;
+
+	if(pthread_mutex_lock(&tidlock)){
+		return -1;
+	}
+	pthread_once(&tidcount_once,initialize_threads);
+	tcount = tidcount;
+	pthread_mutex_unlock(&tidlock);
+	if(tcount == 0){
+		return -1;
+	}
+	return 0;
 }
 
 int reap_threads(void){
 	int ret = 0;
 	unsigned z;
 
-	for(z = 0 ; z < cpucount ; ++z){
+	if(pthread_mutex_lock(&tidlock)){
+		return -1;
+	}
+	for(z = 0 ; z < tidcount ; ++z){
 		ret |= reap_thread(tids[z],&tiddata[z]);
 	}
+	tidcount = 0;
+	pthread_mutex_unlock(&tidlock);
 	return ret;
 }
