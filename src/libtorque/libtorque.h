@@ -11,6 +11,18 @@ extern "C" {
 // one thread may call libtorque_init().
 int libtorque_init(void) __attribute__ ((visibility("default")));
 
+// Returning anything other than 0 will see the descriptor closed, and removed
+// from the evhandler's notification queue.
+// FIXME maybe ought be using a uintptr_t instead of void *?
+typedef void (*libtorque_evcbfxn)(unsigned,void *);
+struct libtorque_evsource;
+
+// Add an event source. It won't be acted upon until a successful call to
+// libtorque_spawn(). Event sources may be added after calling
+// libtorque_spawn(), but not after calling libtorque_stop().
+int libtorque_addevent(const struct libtorque_evsource *)
+	__attribute__ ((visibility("default")));
+
 // Spawn event-handling threads. Currently, this function returns immediately
 // following a per-CPU spawning. Future designs might see the calling thread
 // become the event-handling thread on its CPU, only returning when the event

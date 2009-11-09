@@ -5,10 +5,9 @@
 extern "C" {
 #endif
 
-// Returning anything other than 0 will see the descriptor closed, and removed
-// from the evhandler's notification queue.
-// FIXME maybe ought be using a uintptr_t instead of void *?
-typedef void (*evcbfxn)(unsigned,void *);
+#include <libtorque/libtorque.h>
+
+typedef libtorque_evcbfxn evcbfxn;
 
 struct evsource;
 
