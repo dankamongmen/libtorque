@@ -12,7 +12,7 @@ static struct {
 
 static libtorque_topt *sched_zone;
 
-libtorque_topt *libtorque_get_topology(void){
+const libtorque_topt *libtorque_get_topology(void){
 	return sched_zone;
 }
 

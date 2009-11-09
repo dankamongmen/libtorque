@@ -269,7 +269,7 @@ detail_memory_nodes(unsigned mem_nodecount){
 static const char *depth_terms[] = { "Package", "Core", "Thread", NULL };
 
 static int
-print_cpuset(libtorque_topt *s,unsigned depth){
+print_cpuset(const libtorque_topt *s,unsigned depth){
 	unsigned z;
 	int r = 0;
 
@@ -328,7 +328,7 @@ print_cpuset(libtorque_topt *s,unsigned depth){
 }
 
 static inline int
-print_topology(libtorque_topt *t){
+print_topology(const libtorque_topt *t){
 	if(print_cpuset(t,0) < 0){
 		return -1;
 	}
@@ -337,8 +337,8 @@ print_topology(libtorque_topt *t){
 
 int main(void){
 	unsigned cpu_typecount,mem_nodecount;
+	const libtorque_topt *t;
 	int ret = EXIT_FAILURE;
-	libtorque_topt *t;
 
 	if(libtorque_init()){
 		fprintf(stderr,"Couldn't initialize libtorque\n");

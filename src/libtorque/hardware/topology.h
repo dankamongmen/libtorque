@@ -55,8 +55,8 @@ typedef struct libtorque_topt {
 	struct libtorque_topt *next,*sub;
 } libtorque_topt;
 
-// FIXME return a const! what's up with CPU_ISSET? :/
-libtorque_topt *libtorque_get_topology(void) __attribute__ ((visibility("default")));
+const libtorque_topt *libtorque_get_topology(void)
+	__attribute__ ((visibility("default")));
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
 int topologize(unsigned,unsigned,unsigned,unsigned);
