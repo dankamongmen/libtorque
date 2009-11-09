@@ -1,5 +1,6 @@
 .DELETE_ON_ERROR:
-.PHONY: all test hardtest docs clean install unsafe-install deinstall
+.PHONY: all test testarchdetect testpercpu hardtest docs clean install \
+	unsafe-install deinstall
 .DEFAULT_GOAL:=test
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
@@ -75,10 +76,12 @@ ifeq ($(UNAME),Linux)
 DFLAGS+=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 LFLAGS:=-Wl,--warn-shared-textrel
 MANBIN:=mandb
+LDCONFIG:=ldconfig -n
 else
 ifeq ($(UNAME),FreeBSD)
 DFLAGS+=-DLIBTORQUE_FREEBSD -D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 MANBIN:=makewhatis
+LDCONFIG:=ldconfig -m
 endif
 endif
 
@@ -86,6 +89,7 @@ INSTALL:=install -v
 
 # Codenames are factored out, to accommodate changing them later.
 TORQUE:=torque
+PERCPU:=percpu
 ARCHDETECT:=archdetect
 
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
@@ -95,6 +99,7 @@ SRCDIR:=src
 TOOLDIR:=tools
 MANDIR:=doc/man
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
+PERCPUDIRS:=$(SRCDIR)/$(PERCPU)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 ARCHDETECTDIRS:=$(SRCDIR)/$(ARCHDETECT)
 
@@ -117,10 +122,12 @@ CSRC:=$(shell find $(CSRCDIRS) -type f -name \*.c -print)
 CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
+PERCPUSRC:=$(foreach dir, $(PERCPUDIRS), $(filter $(dir)/%, $(CSRC)))
+PERCPUOBJ:=$(addprefix $(OUT)/,$(PERCPUSRC:%.c=%.o))
 ARCHDETECTSRC:=$(foreach dir, $(ARCHDETECTDIRS), $(filter $(dir)/%, $(CSRC)))
 ARCHDETECTOBJ:=$(addprefix $(OUT)/,$(ARCHDETECTSRC:%.c=%.o))
 SRC:=$(CSRC)
-BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(PERCPU))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
@@ -189,6 +196,8 @@ TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 ARCHDETECTCFLAGS:=$(CFLAGS)
 ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
+PERCPUCFLAGS:=$(CFLAGS)
+PERCPULFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 LFLAGS+=$(LIBFLAGS)
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
@@ -197,14 +206,21 @@ all: test docs
 
 docs: $(DOCS)
 
-test: $(BINS) $(LIBS)
+test: $(BINS) $(LIBS) testarchdetect testpercpu
+
+testarchdetect: $(BINOUT)/$(ARCHDETECT)
 	@echo -n "Testing $(ARCHDETECT): "
-	env LD_LIBRARY_PATH=$(LIBOUT) $(BINOUT)/$(ARCHDETECT)
+	env LD_LIBRARY_PATH=$(LIBOUT) $<
+
+testpercpu: $(BINOUT)/$(PERCPU)
+	@echo -n "Testing $(PERCPU): "
+	env LD_LIBRARY_PATH=$(LIBOUT) $< echo "percpu"
 
 VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v 
 hardtest: test
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
+	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(PERCPU)
 
 $(LIBOUT)/$(TORQUESOL): $(LIBOUT)/$(TORQUEREAL)
 	@mkdir -p $(@D)
@@ -221,6 +237,10 @@ $(LIBOUT)/$(TORQUEREAL): $(TORQUEOBJ)
 $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(ARCHDETECTCFLAGS) -o $@ $(ARCHDETECTOBJ) $(ARCHDETECTLFLAGS)
+
+$(BINOUT)/$(PERCPU): $(PERCPUOBJ) $(LIBS)
+	@mkdir -p $(@D)
+	$(CC) $(PERCPUCFLAGS) -o $@ $(PERCPUOBJ) $(PERCPULFLAGS)
 
 $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
@@ -262,6 +282,7 @@ install: test unsafe-install
 unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@mkdir -p $(PREFIX)/lib
 	@$(INSTALL) -m 0644 $(realpath $(REALSOS)) $(PREFIX)/lib
+	@(cd $(PREFIX)/lib ; ln -s $(notdir $(REALSOS) $(TORQUESOL)))
 	@mkdir -p $(PREFIX)/bin
 	@$(INSTALL) $(BINS) $(PREFIX)/bin
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
@@ -269,7 +290,7 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@mkdir -p $(DOCPREFIX)/man1 $(DOCPREFIX)/man3
 	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
 	@$(INSTALL) -m 0644 $(MAN3OBJ) $(DOCPREFIX)/man3
-	@echo "Running ldconfig..." && ldconfig
+	@echo "Running $(LDCONFIG)..." && $(LDCONFIG) $(PREFIX)/lib
 	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
 
 deinstall:
@@ -278,6 +299,6 @@ deinstall:
 	@rm -fv $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
 	@rm -fv $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
-	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS)))
-	@echo "Running ldconfig..." && ldconfig
+	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS) $(TORQUESOL)))
+	@echo "Running $(LDCONFIG)..." && $(LDCONFIG) $(PREFIX)/lib
 	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
