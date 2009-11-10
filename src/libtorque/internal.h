@@ -69,6 +69,17 @@ typedef struct libtorque_cput {
 	libtorque_memt *memdescs;	// Memory descriptors, never NULL
 } libtorque_cput;
 
+typedef struct tdata { // FIXME opaqify!
+	unsigned affinity_id;
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
+	enum {
+		THREAD_UNLAUNCHED = 0,
+		THREAD_PREFAIL,
+		THREAD_STARTED,
+	} status;
+} tdata;
+
 // Whenever a field is added to this structure, make sure it's
 //  a) initialized in create_libtorque_ctx(), and
 //  b) free()d (and reset) in the appropriate cleanup
@@ -89,6 +100,9 @@ typedef struct libtorque_ctx {
 		unsigned core;
 		unsigned package;
 	} cpu_map[CPU_SETSIZE];	
+	// Allocate these upon detecting cpu count, and opaqify tdata FIXME
+	tdata tiddata[CPU_SETSIZE];
+	pthread_t tids[CPU_SETSIZE];
 } libtorque_ctx;
 
 #endif

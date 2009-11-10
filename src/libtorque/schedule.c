@@ -4,18 +4,6 @@
 #include <libtorque/internal.h>
 #include <libtorque/events/thread.h>
 
-typedef struct tdata {
-	unsigned affinity_id;
-	pthread_mutex_t lock;
-	pthread_cond_t cond;
-	enum {
-		THREAD_UNLAUNCHED = 0,
-		THREAD_PREFAIL,
-		THREAD_STARTED,
-	} status;
-} tdata;
-
-static pthread_once_t tidcount_once = PTHREAD_ONCE_INIT;
 static pthread_mutex_t tidlock = PTHREAD_MUTEX_INITIALIZER;
 // Set whenever spawn_threads() is called (enforced via a pthread_once_t).
 static unsigned tidcount;
@@ -26,10 +14,6 @@ static pthread_once_t cpucount_once = PTHREAD_ONCE_INIT;
 // we'll need? For now, this is ensured via a pthread_once_t.
 static unsigned cpucount;
 static cpu_set_t origmask;
-// This is fairly wasteful, and broken for libcpuset (which requires us to use
-// cpuset_size()). Allocate them upon detecting cpu count FIXME.
-static tdata tiddata[CPU_SETSIZE];
-static pthread_t tids[CPU_SETSIZE];
 
 // Returns the cputype index (for use with libtorque_cpu_getdesc() of a given
 // affinity ID. FIXME we ought return the cpudesc itself. That way, we could
@@ -223,51 +207,51 @@ earlyerr:
 }
 
 static void
-initialize_threads(void){
+initialize_threads(libtorque_ctx *ctx){
 	unsigned z;
 
 	tidcount = 0;
 	for(z = 0 ; z < cpucount ; ++z){
-		if(pthread_mutex_init(&tiddata[z].lock,NULL)){
+		if(pthread_mutex_init(&ctx->tiddata[z].lock,NULL)){
 			goto err;
 		}
-		if(pthread_cond_init(&tiddata[z].cond,NULL)){
-			pthread_mutex_destroy(&tiddata[z].lock);
+		if(pthread_cond_init(&ctx->tiddata[z].cond,NULL)){
+			pthread_mutex_destroy(&ctx->tiddata[z].lock);
 			goto err;
 		}
-		if(pthread_create(&tids[z],NULL,thread,&tiddata[z])){
-			pthread_mutex_destroy(&tiddata[z].lock);
-			pthread_cond_destroy(&tiddata[z].cond);
+		if(pthread_create(&ctx->tids[z],NULL,thread,&ctx->tiddata[z])){
+			pthread_mutex_destroy(&ctx->tiddata[z].lock);
+			pthread_cond_destroy(&ctx->tiddata[z].cond);
 			goto err;
 		}
-		pthread_mutex_lock(&tiddata[z].lock);
-		while(tiddata[z].status == THREAD_UNLAUNCHED){
-			pthread_cond_wait(&tiddata[z].cond,&tiddata[z].lock);
+		pthread_mutex_lock(&ctx->tiddata[z].lock);
+		while(ctx->tiddata[z].status == THREAD_UNLAUNCHED){
+			pthread_cond_wait(&ctx->tiddata[z].cond,&ctx->tiddata[z].lock);
 		}
-		if(tiddata[z].status != THREAD_STARTED){
-			pthread_join(tids[z],NULL);
-			pthread_mutex_destroy(&tiddata[z].lock);
-			pthread_cond_destroy(&tiddata[z].cond);
+		if(ctx->tiddata[z].status != THREAD_STARTED){
+			pthread_join(ctx->tids[z],NULL);
+			pthread_mutex_destroy(&ctx->tiddata[z].lock);
+			pthread_cond_destroy(&ctx->tiddata[z].cond);
 			goto err;
 		}
-		pthread_mutex_unlock(&tiddata[z].lock);
+		pthread_mutex_unlock(&ctx->tiddata[z].lock);
 	}
 	tidcount = z;
 	return;
 
 err:
 	while(z--){
-		reap_thread(tids[z],&tiddata[z]);
+		reap_thread(ctx->tids[z],&ctx->tiddata[z]);
 	}
 }
 
-int spawn_threads(void){
+int spawn_threads(libtorque_ctx *ctx){
 	unsigned tcount;
 
 	if(pthread_mutex_lock(&tidlock)){
 		return -1;
 	}
-	pthread_once(&tidcount_once,initialize_threads);
+	initialize_threads(ctx);
 	tcount = tidcount;
 	pthread_mutex_unlock(&tidlock);
 	if(tcount == 0){
@@ -276,7 +260,7 @@ int spawn_threads(void){
 	return 0;
 }
 
-int reap_threads(void){
+int reap_threads(libtorque_ctx *ctx){
 	int ret = 0;
 	unsigned z;
 
@@ -284,7 +268,7 @@ int reap_threads(void){
 		return -1;
 	}
 	for(z = 0 ; z < tidcount ; ++z){
-		ret |= reap_thread(tids[z],&tiddata[z]);
+		ret |= reap_thread(ctx->tids[z],&ctx->tiddata[z]);
 	}
 	tidcount = 0;
 	pthread_mutex_unlock(&tidlock);

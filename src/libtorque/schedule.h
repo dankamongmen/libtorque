@@ -23,8 +23,8 @@ unsigned detect_cpucount(cpu_set_t *);
 int associate_affinityid(struct libtorque_ctx *,unsigned,unsigned);
 int pin_thread(unsigned);
 int unpin_thread(void);
-int spawn_threads(void);
-int reap_threads(void);
+int spawn_threads(struct libtorque_ctx *);
+int reap_threads(struct libtorque_ctx *);
 
 #ifdef __cplusplus
 }

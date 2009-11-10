@@ -40,19 +40,19 @@ libtorque_ctx *libtorque_init(void){
 	return ctx;
 }
 
-int libtorque_spawn(void){
-	return spawn_threads();
+int libtorque_spawn(libtorque_ctx *ctx){
+	return spawn_threads(ctx);
 }
 
-int libtorque_reap(void){
-	return reap_threads();
+int libtorque_reap(libtorque_ctx *ctx){
+	return reap_threads(ctx);
 }
 
 int libtorque_stop(libtorque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx){
-		ret |= reap_threads();
+		ret |= reap_threads(ctx);
 		free_libtorque_ctx(ctx);
 	}
 	return 0;
