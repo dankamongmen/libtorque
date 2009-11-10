@@ -129,6 +129,7 @@ MAN3SRC:=$(shell find $(MANDIR)/man3/ -type f -print)
 MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1))
 MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3))
 DOCS:=$(MAN1OBJ) $(MAN3OBJ)
+INCINSTALL:=$(SRCDIR)/lib$(TORQUE)/lib$(TORQUE).h
 
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
@@ -288,8 +289,8 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@(cd $(PREFIX)/lib ; ln -s $(notdir $(REALSOS) $(TORQUESOL)))
 	@mkdir -p $(PREFIX)/bin
 	@$(INSTALL) $(BINS) $(PREFIX)/bin
-	@mkdir -p $(PREFIX)/include
-	@$(INSTALL) -m 0644 $(INCINSTALL) $(PREFIX)/include
+	mkdir -p $(PREFIX)/include
+	$(INSTALL) -m 0644 $(INCINSTALL) $(PREFIX)/include
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
 		$(INSTALL) -m 0644 $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
 	@mkdir -p $(DOCPREFIX)/man1 $(DOCPREFIX)/man3
@@ -301,6 +302,7 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 deinstall:
 	@rm -fv $(addprefix $(DOCPREFIX)/man3/,$(notdir $(MAN3OBJ)))
 	@rm -fv $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
+	@rm -fv $(addprefix $(PREFIX)/include/,$(notdir $(INCINSTALL)))
 	@rm -fv $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
 	@rm -fv $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
