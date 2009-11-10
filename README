@@ -50,7 +50,7 @@ everything from the Pentium Pro onwards). Further hardware support is intended.
 
 --operating system requirements-----------------------------------------------
 
-libtorque has been tested on Linux (version 2.6.32), and FreeBSD (version 7.1).
+libtorque has been tested on Linux (version 2.6.31), and FreeBSD (version 7.1).
 It might work on earlier versions of Linux. Support for other operating
 systems, and earlier versions, is intended.
 
@@ -64,11 +64,14 @@ explicitly supported or recommended.
 --libc/pthreads requirements--------------------------------------------------
 
 On Linux, the GNU C Library is required, using the NPTL threading
-implementation. Version 2.9 has been tested.
+implementation. Version 2.9 has been tested. NPTL is the default on 2.6 kernels
+since GNU libc 2.3.2.
 
 On FreeBSD, only the libthr threading implementation is explicitly supported or
-recommended. If rebuilding world, ensure NO_LIBTHR is not active in make.conf.
-Bind libpthread references to libthr via the following /etc/libmap.conf:
+recommended (this is the default in FreeBSD 7). If rebuilding world, ensure
+NO_LIBTHR is not active in make.conf. If using another pthread library as the
+default, bind libpthread references to libthr via the following entries in
+/etc/libmap.conf:
 
 	libpthread.so.2         libthr.so.2
 	libpthread.so           libthr.so
@@ -79,14 +82,21 @@ necessary (this author recommends general use of the libthr implementation).
 
 --cpuset requirements---------------------------------------------------------
 
-On Linux, the libcpuset library (http://oss.sgi.com/projects/cpusets/) is used.
-Version 1.0 has been tested. CONFIG_CGROUPS must be enabled in the kernel; if
-cpusets are properly supported, the file self/cpuset will be present in mounted
-procfs filesystems, and a "cpuset" or "cgroups" filesystem will be mounted on
-/dev/cpuset. A root cpuset must have been created (see the Linux kernel's
-Documentation/cpusets.txt and libtorque bug #14:
-http://dank.qemfd.net/bugzilla/show_bug.cgi?id=14)). On FreeBSD, the native
-code added in 7.1 is used.
+On FreeBSD, the native code added during 7.1 development is used.
+
+On Linux, administrative support for cpusets requires CONFIG_CPUSET to be
+enabled in the kernel (if cpuset partitioning is in effect, a "cpuset" or
+"cgroups" filesystem will be mounted on /dev/cpuset). Affinities can and will
+still be used by libtorque without this support, but it will be difficult to
+partition processing and memory elements up among processes. Affinities have
+been part of Linux since 2.5.8. See the Linux kernel's
+Documentation/cpusets.txt and libtorque bug #14 
+(http://dank.qemfd.net/bugzilla/show_bug.cgi?id=14) for more info. If cgroups
+are used, you likely also want CONFIG_GROUP_SCHED.
+
+The SGI libcpuset library (http://oss.sgi.com/projects/cpusets/) was evaluated,
+but I decided against it due to stability, portability and maintenance issues.
+Version 1.0 was tested.
 
 --numa requirements---------------------------------------------------------
 
@@ -120,15 +130,17 @@ Exuberant Ctags are required to build the tagfile. Install:
 Environment variables can affect the build by overriding defaults:
 
  PREFIX (Installation prefix. Default: /usr/local)
+ DOCPREFIX (Doc installation prefix. Default: /usr/local/share (Linux),
+						/usr/local (FreeBSD))
  CC (C compiler executable. Default: gcc-4.4 (Linux), gcc44 (FreeBSD))
  TAGBIN (Source tag generator. Default: exctags if on path, otherwise ctags)
  XSLTPROC (XSL processor. Default: xsltproc)
+ MARCH/MTUNE (Code generation settings. See below)
 
 Policy decisions can be made by defining certain variables:
 
- LIBTORQUE_WITH_CPUSET (If defined, build in and use libcpuset support)
- LIBTORQUE_WITHOUT_ADNS (If defined, do not build in GNU adns support)
- LIBTORQUE_WITHOUT_OPENSSL (If defined, do not build in OpenSSL support)
+ LIBTORQUE_WITHOUT_ADNS (if defined, do not build in GNU adns support)
+ LIBTORQUE_WITHOUT_OPENSSL (if defined, do not build in OpenSSL support)
 
 Changing environment variables ought be followed by the 'clean' target;
 this is one of the very few times the 'clean' target must be used.
