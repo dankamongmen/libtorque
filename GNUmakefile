@@ -1,6 +1,6 @@
 .DELETE_ON_ERROR:
-.PHONY: all test testarchdetect testpercpu hardtest docs clean install \
-	unsafe-install deinstall
+.PHONY: all test testarchdetect testpercpu hardtest docs clean mrproper \
+	install unsafe-install deinstall
 .DEFAULT_GOAL:=test
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
@@ -280,7 +280,10 @@ $(TAGS): $(SRC) $(CINC) $(MAKEFILE_LIST)
 	$(TAGBIN) -f $@ $^
 
 clean:
-	@rm -rfv $(OUT) $(TAGS)
+	@rm -rfv $(OUT)
+
+mrproper: clean
+	@rm -rfv $(TAGS)
 
 install: test unsafe-install
 
