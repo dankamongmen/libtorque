@@ -212,15 +212,16 @@ testarchdetect: $(BINOUT)/$(ARCHDETECT)
 	@echo -n "Testing $(ARCHDETECT): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $<
 
+PERCPUARGS:="echo percpu"
 testpercpu: $(BINOUT)/$(PERCPU)
 	@echo -n "Testing $(PERCPU): "
-	env LD_LIBRARY_PATH=$(LIBOUT) $< echo "percpu"
+	env LD_LIBRARY_PATH=$(LIBOUT) $< $(PERCPUARGS)
 
 VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v 
 hardtest: test
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
-	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(PERCPU)
+	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(PERCPU) $(PERCPUARGS)
 
 $(LIBOUT)/$(TORQUESOL): $(LIBOUT)/$(TORQUEREAL)
 	@mkdir -p $(@D)
