@@ -23,13 +23,12 @@ struct libtorque_evsource;
 int libtorque_addevent(const struct libtorque_evsource *)
 	__attribute__ ((visibility("default")));
 
-// Spawn event-handling threads. Currently, this function returns immediately
-// following a per-CPU spawning. Future designs might see the calling thread
-// become the event-handling thread on its CPU, only returning when the event
-// handling terminates via internal call to libtorque_reap().
+// Spawn event-handling threads. They'll run until a call is made to
+// libtorque_reap(), which may be performed from within a callback function.
 int libtorque_spawn(void) __attribute__ ((visibility("default")));
 
-// Reap event-handling threads.
+// Reap event-handling threads. May be called externally, or by a callback
+// function. More than one thread may safely call libtorque_reap() at once.
 int libtorque_reap(void) __attribute__ ((visibility("default")));
 
 // Reset the library, destroying all associated threads and state and returning
