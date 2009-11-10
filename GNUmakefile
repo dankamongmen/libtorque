@@ -98,11 +98,6 @@ PERCPUDIRS:=$(SRCDIR)/$(PERCPU)
 SSLSRVDIRS:=$(SRCDIR)/$(SSLSRV)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 
-# Anything that all source->object translations ought dep on. We currently
-# include all header files in this list; it'd be nice to refine that FIXME.
-TAGS:=.tags
-GLOBOBJDEPS:=$(TAGS) $(CINC)
-
 # Simple compositions from here on out
 LIBOUT:=$(OUT)/lib
 BINOUT:=$(OUT)/bin
@@ -134,6 +129,11 @@ MAN3SRC:=$(shell find $(MANDIR)/man3/ -type f -print)
 MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1))
 MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3))
 DOCS:=$(MAN1OBJ) $(MAN3OBJ)
+
+# Anything that all source->object translations ought dep on. We currently
+# include all header files in this list; it'd be nice to refine that FIXME.
+TAGS:=.tags
+GLOBOBJDEPS:=$(TAGS) $(CINC)
 
 # Debugging flags. These aren't normally used.
 DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
@@ -288,6 +288,8 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@(cd $(PREFIX)/lib ; ln -s $(notdir $(REALSOS) $(TORQUESOL)))
 	@mkdir -p $(PREFIX)/bin
 	@$(INSTALL) $(BINS) $(PREFIX)/bin
+	@mkdir -p $(PREFIX)/include
+	@$(INSTALL) -m 0644 $(INCINSTALL) $(PREFIX)/include
 	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
 		$(INSTALL) -m 0644 $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
 	@mkdir -p $(DOCPREFIX)/man1 $(DOCPREFIX)/man3
