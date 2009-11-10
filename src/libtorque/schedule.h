@@ -5,9 +5,6 @@
 extern "C" {
 #endif
 
-#if defined(LIBTORQUE_WITH_CPUSET)
-#include <cpuset.h>
-#endif
 #if defined(LIBTORQUE_LINUX)
 #include <sched.h>
 #elif defined(LIBTORQUE_FREEBSD)

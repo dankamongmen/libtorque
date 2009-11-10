@@ -171,9 +171,6 @@ err:
 
 void free_architecture(libtorque_ctx *ctx){
 	reset_topology(ctx);
-#ifdef LIBTORQUE_WITH_CPUSET
-	ctx->use_libcpuset = 0;
-#endif
 	while(ctx->cpu_typecount--){
 		free_cpudetails(&ctx->cpudescs[ctx->cpu_typecount]);
 	}

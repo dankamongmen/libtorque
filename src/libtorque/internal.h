@@ -87,13 +87,6 @@ typedef struct libtorque_ctx {
 		unsigned core;
 		unsigned package;
 	} cpu_map[CPU_SETSIZE];		// FIXME wasteful!
-#ifdef LIBTORQUE_WITH_CPUSET
-	// We dynamically determine whether or not advanced cpuset support (SGI
-	// libcpuset plus cgroups) is available on Linux (ENOSYS or ENODEV
-	// indicate nay) during CPU enumeration, and only use libcpuset if so.
-	// This is ugly (http://dank.qemfd.net/bugzilla/show_bug.cgi?id=54) :/.
-	unsigned use_libcpuset;
-#endif
 } libtorque_ctx;
 
 #endif

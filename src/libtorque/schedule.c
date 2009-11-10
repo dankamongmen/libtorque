@@ -101,38 +101,19 @@ detect_cpucount_internal(cpu_set_t *mask){
 #ifdef LIBTORQUE_FREEBSD
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 				sizeof(*mask),mask) == 0){
-		unsigned count;
-
-		if((count = portable_cpuset_count(mask)) > 0){
-			return count;
-		}
-	}
 #elif defined(LIBTORQUE_LINUX)
-	unsigned csize;
-
 	// We might be only a subthread of a larger application; use the
 	// affinity mask of the thread which initializes us.
 	if(pthread_getaffinity_np(pthread_self(),sizeof(*mask),mask) == 0){
-		if((csize = portable_cpuset_count(mask)) > 0){
-#ifdef LIBTORQUE_WITH_CPUSET
-			int cs;
-
-			if((cs = cpuset_size()) <= 0){
-				// Fall through if cpusets aren't supported, or aren't in use
-				if(csize == 0 || (errno != ENOSYS && errno != ENODEV)){
-					return 0;
-				}
-			}else if(cs != csize){ // ensure equality of counts
-				return 0;
-			}
-			use_cpusets = 1;
+#else
+#error "No affinity detection method defined for this OS"
 #endif
+		unsigned csize;
+
+		if((csize = portable_cpuset_count(mask)) > 0){
 			return csize;
 		}
 	}
-#else
-#error "No CPU detection method defined for this OS"
-#endif
 	return 0;
 }
 
@@ -164,9 +145,6 @@ unsigned detect_cpucount(cpu_set_t *map){
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
 int pin_thread(unsigned aid){
-#ifdef LIBTORQUE_WITH_CPUSET
-	return cpuset_pin(cpuid);
-#else
 	cpu_set_t mask;
 
 	CPU_ZERO(&mask);
@@ -180,14 +158,10 @@ int pin_thread(unsigned aid){
 		return -1;
 	}
 	return 0;
-#endif
 }
 
 // Undoes any prior pinning of this thread.
 int unpin_thread(void){
-#ifdef LIBTORQUE_WITH_CPUSET
-	return cpuset_unpin();
-#else
 #ifdef LIBTORQUE_FREEBSD
 	if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
 				sizeof(origmask),&origmask)){
@@ -197,7 +171,6 @@ int unpin_thread(void){
 		return -1;
 	}
 	return 0;
-#endif
 }
 
 static int
