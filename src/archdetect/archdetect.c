@@ -270,7 +270,7 @@ detail_memory_nodes(const libtorque_ctx *ctx,unsigned mem_nodecount){
 static const char *depth_terms[] = { "Package", "Core", "Thread", NULL };
 
 static int
-print_cpuset(const libtorque_topt *s,unsigned depth){
+print_cpuset(const libtorque_ctx *ctx,const libtorque_topt *s,unsigned depth){
 	unsigned z;
 	int r = 0;
 
@@ -308,7 +308,7 @@ print_cpuset(const libtorque_topt *s,unsigned depth){
 		}
 		if(s->sub == NULL){
 			ret = printf("(%ux processor type %u)\n",total,
-				libtorque_affinitymapping(lastset) + 1);
+				libtorque_affinitymapping(ctx,lastset) + 1);
 		}else{
 			ret = printf("(%u threads total)\n",total);
 		}
@@ -316,11 +316,11 @@ print_cpuset(const libtorque_topt *s,unsigned depth){
 			return -1;
 		}
 		r += ret;
-		if((ret = print_cpuset(s->sub,depth + 1)) < 0){
+		if((ret = print_cpuset(ctx,s->sub,depth + 1)) < 0){
 			return -1;
 		}
 		r += ret;
-		if((ret = print_cpuset(s->next,depth)) < 0){
+		if((ret = print_cpuset(ctx,s->next,depth)) < 0){
 			return -1;
 		}
 		r += ret;
@@ -329,8 +329,8 @@ print_cpuset(const libtorque_topt *s,unsigned depth){
 }
 
 static inline int
-print_topology(const libtorque_topt *t){
-	if(print_cpuset(t,0) < 0){
+print_topology(const libtorque_ctx *ctx,const libtorque_topt *t){
+	if(print_cpuset(ctx,t,0) < 0){
 		return -1;
 	}
 	return 0;
@@ -350,7 +350,7 @@ int main(void){
 		fprintf(stderr,"Couldn't look up topology\n");
 		goto done;
 	}
-	if(print_topology(t)){
+	if(print_topology(ctx,t)){
 		goto done;
 	}
 	if((mem_nodecount = libtorque_mem_nodecount(ctx)) <= 0){

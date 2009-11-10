@@ -30,15 +30,17 @@ static cpu_set_t origmask;
 // cpuset_size()). Allocate them upon detecting cpu count FIXME.
 static tdata tiddata[CPU_SETSIZE];
 static pthread_t tids[CPU_SETSIZE];
-static unsigned affinityid_map[CPU_SETSIZE];	// maps into the cpu desc table
 
-unsigned libtorque_affinitymapping(unsigned aid){
-	return affinityid_map[aid];
+// Returns the cputype index (for use with libtorque_cpu_getdesc() of a given
+// affinity ID. FIXME we ought return the cpudesc itself. That way, we could
+// check the validity mask, and return NULL if it's a bad affinity ID.
+unsigned libtorque_affinitymapping(const libtorque_ctx *ctx,unsigned aid){
+	return ctx->affinmap[aid];
 }
 
-int associate_affinityid(unsigned aid,unsigned idx){
-	if(aid < sizeof(affinityid_map) / sizeof(*affinityid_map)){
-		affinityid_map[aid] = idx;
+int associate_affinityid(libtorque_ctx *ctx,unsigned aid,unsigned idx){
+	if(aid < sizeof(ctx->affinmap) / sizeof(*ctx->affinmap)){
+		ctx->affinmap[aid] = idx;
 		return 0;
 	}
 	return -1;

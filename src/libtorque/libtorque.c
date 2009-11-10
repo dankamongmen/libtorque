@@ -10,11 +10,12 @@ create_libtorque_ctx(void){
 
 	if( (ret = malloc(sizeof(*ret))) ){
 		memset(&ret->cpu_map,0,sizeof(ret->cpu_map));
-		ret->sched_zone = NULL;
+		memset(&ret->affinmap,0,sizeof(ret->affinmap));
 		CPU_ZERO(&ret->validmap);
-		ret->cpu_typecount = 0;
+		ret->sched_zone = NULL;
 		ret->cpudescs = NULL;
 		ret->manodes = NULL;
+		ret->cpu_typecount = 0;
 		ret->nodecount = 0;
 	}
 	return ret;
