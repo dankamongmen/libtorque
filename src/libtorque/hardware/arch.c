@@ -104,7 +104,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 
 	*cputc = 0;
 	*types = NULL;
-	if((totalpe = detect_cpucount(&mask)) <= 0){
+	if((totalpe = detect_cpucount(ctx,&mask)) <= 0){
 		goto err;
 	}
 	for(z = 0, cpu = 0 ; z < totalpe ; ++z){
@@ -139,13 +139,13 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 		}
 		++cpu;
 	}
-	if(unpin_thread()){
+	if(unpin_thread(ctx)){
 		goto err;
 	}
 	return 0;
 
 err:
-	unpin_thread();
+	unpin_thread(ctx);
 	while((*cputc)--){
 		free_cpudetails((*types) + ctx->cpu_typecount);
 	}

@@ -4,13 +4,6 @@
 #include <libtorque/internal.h>
 #include <libtorque/events/thread.h>
 
-static pthread_once_t cpucount_once = PTHREAD_ONCE_INIT;
-// Set whenever detect_cpucount() is called, which generally only happens once.
-// Who knows what hotpluggable CPUs the future brings, and what interfaces
-// we'll need? For now, this is ensured via a pthread_once_t.
-static unsigned cpucount;
-static cpu_set_t origmask;
-
 // Returns the cputype index (for use with libtorque_cpu_getdesc() of a given
 // affinity ID. FIXME we ought return the cpudesc itself. That way, we could
 // check the validity mask, and return NULL if it's a bad affinity ID.
@@ -99,12 +92,15 @@ detect_cpucount_internal(cpu_set_t *mask){
 	return 0;
 }
 
-static void
-initialize_cpucount(void){
-	CPU_ZERO(&origmask);
-	if((cpucount = detect_cpucount_internal(&origmask)) <= 0){
-		CPU_ZERO(&origmask);
+static unsigned
+initialize_cpucount(libtorque_ctx *ctx){
+	unsigned cpucount;
+
+	CPU_ZERO(&ctx->origmask);
+	if((cpucount = detect_cpucount_internal(&ctx->origmask)) <= 0){
+		CPU_ZERO(&ctx->origmask);
 	}
+	return cpucount;
 }
 
 static inline void
@@ -116,13 +112,17 @@ copy_cpumask(cpu_set_t *dst,const cpu_set_t *src){
 // after any hardware/software reconfiguration which results in a different CPU
 // configuration. Returns the number of running threads which can be scheduled
 // at once in the process's cpuset, or -1 on discovery failure.
-unsigned detect_cpucount(cpu_set_t *map){
+unsigned detect_cpucount(libtorque_ctx *ctx,cpu_set_t *map){
+	unsigned ret;
+
 	CPU_ZERO(map);
-	pthread_once(&cpucount_once,initialize_cpucount);
-	if(cpucount){
-		copy_cpumask(map,&origmask);
+	CPU_ZERO(&ctx->origmask);
+	if((ret = initialize_cpucount(ctx)) <= 0u){
+		CPU_ZERO(&ctx->origmask);
+	}else{
+		copy_cpumask(map,&ctx->origmask);
 	}
-	return cpucount;
+	return ret;
 }
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
@@ -143,12 +143,13 @@ int pin_thread(unsigned aid){
 }
 
 // Undoes any prior pinning of this thread.
-int unpin_thread(void){
+int unpin_thread(const libtorque_ctx *ctx){
 #ifdef LIBTORQUE_FREEBSD
 	if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
-				sizeof(origmask),&origmask)){
+				sizeof(ctx->origmask),&ctx->origmask)){
 #else
-	if(pthread_setaffinity_np(pthread_self(),sizeof(origmask),&origmask)){
+	if(pthread_setaffinity_np(pthread_self(),
+				sizeof(ctx->origmask),&ctx->origmask)){
 #endif
 		return -1;
 	}
@@ -207,7 +208,7 @@ int spawn_threads(libtorque_ctx *ctx){
 	unsigned z;
 
 	ctx->tidcount = 0;
-	for(z = 0 ; z < cpucount ; ++z){
+	for(z = 0 ; z < ctx->cpucount ; ++z){
 		if(pthread_mutex_init(&ctx->tiddata[z].lock,NULL)){
 			goto err;
 		}
