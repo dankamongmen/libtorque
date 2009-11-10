@@ -1,14 +1,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
-#include <libtorque/schedule.h>
+#include <libtorque/internal.h>
 #include <libtorque/events/thread.h>
-
-// Set to 1 if we are using cpusets. Currently, this is determined at runtime
-// (when built with libcpuset support, anyway). We perhaps ought just make
-// libcpuset-enabled builds unconditionally use libcpuset, but that will be a
-// hassle for package construction. As stands, this complicates logic FIXME.
-static unsigned use_cpusets;
 
 typedef struct tdata {
 	unsigned affinity_id;
@@ -170,46 +164,39 @@ unsigned detect_cpucount(cpu_set_t *map){
 
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
 int pin_thread(unsigned aid){
-	if(use_cpusets == 0){
-		cpu_set_t mask;
-
-		CPU_ZERO(&mask);
-		CPU_SET(aid,&mask);
-#ifdef LIBTORQUE_FREEBSD
-		if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
-					sizeof(mask),&mask)){
-#else
-		if(pthread_setaffinity_np(pthread_self(),sizeof(mask),&mask)){
-#endif
-			return -1;
-		}
-		return 0;
-	}
 #ifdef LIBTORQUE_WITH_CPUSET
 	return cpuset_pin(cpuid);
 #else
-	return -1;
+	cpu_set_t mask;
+
+	CPU_ZERO(&mask);
+	CPU_SET(aid,&mask);
+#ifdef LIBTORQUE_FREEBSD
+	if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
+				sizeof(mask),&mask)){
+#else
+	if(pthread_setaffinity_np(pthread_self(),sizeof(mask),&mask)){
+#endif
+		return -1;
+	}
+	return 0;
 #endif
 }
 
 // Undoes any prior pinning of this thread.
 int unpin_thread(void){
-	if(use_cpusets == 0){
-#ifdef LIBTORQUE_FREEBSD
-		if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
-					sizeof(origmask),&origmask)){
-#else
-		if(pthread_setaffinity_np(pthread_self(),sizeof(origmask),
-						&origmask)){
-#endif
-			return -1;
-		}
-		return 0;
-	}
 #ifdef LIBTORQUE_WITH_CPUSET
 	return cpuset_unpin();
 #else
-	return -1;
+#ifdef LIBTORQUE_FREEBSD
+	if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
+				sizeof(origmask),&origmask)){
+#else
+	if(pthread_setaffinity_np(pthread_self(),sizeof(origmask),&origmask)){
+#endif
+		return -1;
+	}
+	return 0;
 #endif
 }
 

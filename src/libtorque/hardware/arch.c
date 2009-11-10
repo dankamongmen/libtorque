@@ -7,13 +7,6 @@
 #include <libtorque/hardware/x86cpuid.h>
 #include <libtorque/hardware/topology.h>
 
-// We dynamically determine whether or not advanced cpuset support (cgroups and
-// the SGI libcpuset library) is available on Linux (ENOSYS or ENODEV indicate
-// nay) during CPU enumeration, and only use those methods if so.
-static unsigned use_cpusets;
-
-// LibNUMA looks like the only real candidate for NUMA discovery (linux only)
-
 // Returns the slot we just added to the end, or NULL on failure. Pointers
 // will be shallow-copied; dynamically allocate them, and do not free them
 // explicitly (they'll be handled by free_cpudetails()).
@@ -52,8 +45,8 @@ free_cpudetails(libtorque_cput *details){
 //  - /proc/cpuinfo (linux only)
 //  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
 static int
-detect_cpudetails(unsigned id,libtorque_cput *details,unsigned *thread,
-			unsigned *core,unsigned *pkg){
+detect_cpudetails(unsigned id,libtorque_cput *details,
+			unsigned *thread,unsigned *core,unsigned *pkg){
 	if(pin_thread(id)){
 		return -1;
 	}
@@ -178,7 +171,9 @@ err:
 
 void free_architecture(libtorque_ctx *ctx){
 	reset_topology(ctx);
-	use_cpusets = 0;
+#ifdef LIBTORQUE_WITH_CPUSET
+	ctx->use_libcpuset = 0;
+#endif
 	while(ctx->cpu_typecount--){
 		free_cpudetails(&ctx->cpudescs[ctx->cpu_typecount]);
 	}

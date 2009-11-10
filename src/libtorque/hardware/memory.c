@@ -5,6 +5,8 @@
 #include <libtorque/internal.h>
 #include <libtorque/hardware/memory.h>
 
+// LibNUMA looks like the only real candidate for NUMA discovery (linux only)
+
 static libtorque_nodet *
 add_node(unsigned *count,libtorque_nodet **nodes,const libtorque_nodet *node){
 	size_t s = (*count + 1) * sizeof(**nodes);
