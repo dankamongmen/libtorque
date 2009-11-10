@@ -4,10 +4,6 @@
 #include <libtorque/internal.h>
 #include <libtorque/events/thread.h>
 
-static pthread_mutex_t tidlock = PTHREAD_MUTEX_INITIALIZER;
-// Set whenever spawn_threads() is called (enforced via a pthread_once_t).
-static unsigned tidcount;
-
 static pthread_once_t cpucount_once = PTHREAD_ONCE_INIT;
 // Set whenever detect_cpucount() is called, which generally only happens once.
 // Who knows what hotpluggable CPUs the future brings, and what interfaces
@@ -206,11 +202,11 @@ earlyerr:
 	return NULL;
 }
 
-static void
-initialize_threads(libtorque_ctx *ctx){
+// FIXME launch these as we're skipping around CPU's in initial detection!
+int spawn_threads(libtorque_ctx *ctx){
 	unsigned z;
 
-	tidcount = 0;
+	ctx->tidcount = 0;
 	for(z = 0 ; z < cpucount ; ++z){
 		if(pthread_mutex_init(&ctx->tiddata[z].lock,NULL)){
 			goto err;
@@ -237,41 +233,23 @@ initialize_threads(libtorque_ctx *ctx){
 		}
 		pthread_mutex_unlock(&ctx->tiddata[z].lock);
 	}
-	tidcount = z;
-	return;
+	ctx->tidcount = z;
+	return 0;
 
 err:
 	while(z--){
 		reap_thread(ctx->tids[z],&ctx->tiddata[z]);
 	}
-}
-
-int spawn_threads(libtorque_ctx *ctx){
-	unsigned tcount;
-
-	if(pthread_mutex_lock(&tidlock)){
-		return -1;
-	}
-	initialize_threads(ctx);
-	tcount = tidcount;
-	pthread_mutex_unlock(&tidlock);
-	if(tcount == 0){
-		return -1;
-	}
-	return 0;
+	return -1;
 }
 
 int reap_threads(libtorque_ctx *ctx){
 	int ret = 0;
 	unsigned z;
 
-	if(pthread_mutex_lock(&tidlock)){
-		return -1;
-	}
-	for(z = 0 ; z < tidcount ; ++z){
+	for(z = 0 ; z < ctx->tidcount ; ++z){
 		ret |= reap_thread(ctx->tids[z],&ctx->tiddata[z]);
 	}
-	tidcount = 0;
-	pthread_mutex_unlock(&tidlock);
+	ctx->tidcount = 0;
 	return ret;
 }
