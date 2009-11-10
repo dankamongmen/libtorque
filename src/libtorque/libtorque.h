@@ -5,11 +5,14 @@
 extern "C" {
 #endif
 
+struct libtorque_ctx;
+
 // Initialize the library, returning 0 on success. No libtorque functions may
 // be called before a successful call to libtorque_init(). libtorque_init() may
 // not be called again until libtorque_stop() has been called. Implicitly, only
 // one thread may call libtorque_init().
-int libtorque_init(void) __attribute__ ((visibility("default")));
+struct libtorque_ctx *libtorque_init(void)
+	__attribute__ ((visibility("default")));
 
 // Returning anything other than 0 will see the descriptor closed, and removed
 // from the evhandler's notification queue.
@@ -37,7 +40,8 @@ int libtorque_reap(void) __attribute__ ((visibility("default")));
 // libtorque_init() must not be called from multiple threads, or while another
 // thread is calling a libtorque function. A successful return guarantees that
 // no further callbacks will be issued.
-int libtorque_stop(void) __attribute__ ((visibility("default")));
+int libtorque_stop(struct libtorque_ctx *)
+	__attribute__ ((visibility("default")));
 
 #ifdef __cplusplus
 }

@@ -6,6 +6,7 @@
 #include <libtorque/libtorque.h>
 
 int main(void){
+	struct libtorque_ctx *ctx = NULL;
 	sigset_t termset;
 	int sig;
 
@@ -15,26 +16,30 @@ int main(void){
 		fprintf(stderr,"Couldn't set signal mask\n");
 		return EXIT_FAILURE;
 	}
-	if(libtorque_init()){
+	if((ctx = libtorque_init()) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
-		return EXIT_FAILURE;
+		goto err;
 	}
-	// FIXME add SIGTERM handler
 	if(libtorque_spawn()){
 		fprintf(stderr,"Couldn't spawn libtorque threads\n");
-		libtorque_stop();
-		return EXIT_FAILURE;
+		goto err;
 	}
 	if(sigwait(&termset,&sig)){
 		fprintf(stderr,"Couldn't wait on signals\n");
-		libtorque_stop();
-		return EXIT_FAILURE;
+		goto err;
 	}
 	printf("Got signal %d (%s), closing down...\n",sig,strsignal(sig));
-	if(libtorque_stop()){
+	if(libtorque_stop(ctx)){
 		fprintf(stderr,"Couldn't shutdown libtorque\n");
 		return EXIT_FAILURE;
 	}
 	printf("Successfully cleaned up.\n");
 	return EXIT_SUCCESS;
+
+err:
+	if(libtorque_stop(ctx)){
+		fprintf(stderr,"Couldn't shutdown libtorque\n");
+		return EXIT_FAILURE;
+	}
+	return EXIT_FAILURE;
 }

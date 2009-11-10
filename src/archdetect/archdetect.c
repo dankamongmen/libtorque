@@ -337,16 +337,17 @@ print_topology(const libtorque_topt *t){
 
 int main(void){
 	unsigned cpu_typecount,mem_nodecount;
+	struct libtorque_ctx *ctx = NULL;
 	const libtorque_topt *t;
 	int ret = EXIT_FAILURE;
 
-	if(libtorque_init()){
+	if((ctx = libtorque_init()) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
-		return EXIT_FAILURE;
+		goto done;
 	}
 	if((t = libtorque_get_topology()) == NULL){
 		fprintf(stderr,"Couldn't look up topology\n");
-		return EXIT_FAILURE;
+		goto done;
 	}
 	if(print_topology(t)){
 		goto done;
@@ -368,9 +369,9 @@ int main(void){
 	ret = EXIT_SUCCESS;
 
 done:
-	if(libtorque_stop()){
+	if(libtorque_stop(ctx)){
 		fprintf(stderr,"Couldn't destroy libtorque\n");
-		return EXIT_FAILURE;
+		ret = EXIT_FAILURE;
 	}
 	return ret;
 }

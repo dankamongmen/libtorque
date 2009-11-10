@@ -1,12 +1,37 @@
+#include <stdlib.h>
 #include <libtorque/schedule.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/hardware/arch.h>
 
-int libtorque_init(void){
-	if(detect_architecture()){
-		return -1;
+typedef struct libtorque_ctx {
+} libtorque_ctx;
+
+static inline libtorque_ctx *
+create_libtorque_ctx(void){
+	libtorque_ctx *ret;
+
+	if( (ret = malloc(sizeof(*ret))) ){
 	}
-	return 0;
+	return ret;
+}
+
+static void
+free_libtorque_ctx(libtorque_ctx *ctx){
+	free_architecture();
+	free(ctx);
+}
+
+libtorque_ctx *libtorque_init(void){
+	libtorque_ctx *ctx;
+
+	if((ctx = create_libtorque_ctx()) == NULL){
+		return NULL;
+	}
+	if(detect_architecture()){
+		free_libtorque_ctx(ctx);
+		return NULL;
+	}
+	return ctx;
 }
 
 int libtorque_spawn(void){
@@ -17,10 +42,12 @@ int libtorque_reap(void){
 	return reap_threads();
 }
 
-int libtorque_stop(void){
+int libtorque_stop(libtorque_ctx *ctx){
 	int ret = 0;
 
-	ret |= reap_threads();
-	free_architecture();
+	if(ctx){
+		ret |= reap_threads();
+		free_libtorque_ctx(ctx);
+	}
 	return 0;
 }
