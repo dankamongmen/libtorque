@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libtorque/internal.h>
 #include <libtorque/schedule.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/memory.h>
@@ -112,7 +113,7 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
 static int
-detect_cputypes(unsigned *cputc,libtorque_cput **types){
+detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 	unsigned totalpe,z,cpu;
 	cpu_set_t mask;
 
@@ -148,7 +149,7 @@ detect_cputypes(unsigned *cputc,libtorque_cput **types){
 		if(associate_affinityid(cpu,(unsigned)(cputype - *types)) < 0){
 			goto err;
 		}
-		if(topologize(cpu,thread,core,pkg)){
+		if(topologize(ctx,cpu,thread,core,pkg)){
 			goto err;
 		}
 		++cpu;
@@ -169,22 +170,22 @@ err:
 	return -1;
 }
 
-int detect_architecture(void){
+int detect_architecture(libtorque_ctx *ctx){
 	if(detect_memories()){
 		goto err;
 	}
-	if(detect_cputypes(&cpu_typecount,&cpudescs)){
+	if(detect_cputypes(ctx,&cpu_typecount,&cpudescs)){
 		goto err;
 	}
 	return 0;
 
 err:
-	free_architecture();
+	free_architecture(ctx);
 	return -1;
 }
 
-void free_architecture(void){
-	reset_topology();
+void free_architecture(libtorque_ctx *ctx){
+	reset_topology(ctx);
 	CPU_ZERO(&orig_cpumask);
 	use_cpusets = 0;
 	while(cpu_typecount--){

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/memory.h>
@@ -345,7 +346,7 @@ int main(void){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto done;
 	}
-	if((t = libtorque_get_topology()) == NULL){
+	if((t = libtorque_get_topology(ctx)) == NULL){
 		fprintf(stderr,"Couldn't look up topology\n");
 		goto done;
 	}

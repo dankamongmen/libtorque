@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <libtorque/internal.h>
 #include <libtorque/schedule.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/x86cpuid.h>
@@ -10,10 +11,8 @@ static struct {
 	unsigned thread,core,package;
 } cpu_map[CPU_SETSIZE];
 
-static libtorque_topt *sched_zone;
-
-const libtorque_topt *libtorque_get_topology(void){
-	return sched_zone;
+const libtorque_topt *libtorque_get_topology(libtorque_ctx *ctx){
+	return ctx->sched_zone;
 }
 
 static inline libtorque_topt *
@@ -78,7 +77,8 @@ first_aid(cpu_set_t *cs){
 }
 
 // We must be currently pinned to the processor being associated
-int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
+int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
+					unsigned pkg){
 	libtorque_topt *sg;
 
 	if(aid >= CPU_SETSIZE){
@@ -87,7 +87,7 @@ int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
 	if(CPU_ISSET(aid,&validmap)){
 		return -1;
 	}
-	if((sg = find_sched_group(&sched_zone,pkg)) == NULL){
+	if((sg = find_sched_group(&ctx->sched_zone,pkg)) == NULL){
 		return -1;
 	}
 	// If we share the package, it mustn't be a new package. Quod, we
@@ -120,11 +120,11 @@ int topologize(unsigned aid,unsigned thread,unsigned core,unsigned pkg){
 	return 0;
 }
 
-void reset_topology(void){
-	typeof(*sched_zone) *sz;
+void reset_topology(libtorque_ctx *ctx){
+	typeof(*ctx->sched_zone) *sz;
 
-	while( (sz = sched_zone) ){
-		sched_zone = sz->next;
+	while( (sz = ctx->sched_zone) ){
+		ctx->sched_zone = sz->next;
 		free(sz);
 	}
 	CPU_ZERO(&validmap);

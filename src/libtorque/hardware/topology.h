@@ -7,7 +7,9 @@ extern "C" {
 
 #include <libtorque/schedule.h>
 
+struct libtorque_ctx;
 struct libtorque_cput;
+struct libtorque_topt;
 
 // We are not considering distributed systems in this model.
 //
@@ -49,21 +51,13 @@ struct libtorque_cput;
 //  - DMA connects to a memory
 //  - DCA connects to a cache
 //  - PIO connects to a processor
-typedef struct libtorque_topt {
-	cpu_set_t schedulable;
-	unsigned groupid;		// x86: Core for multicores, or package
-	unsigned memories,tlbs;
-	struct libtorque_memt *memdescs;
-	struct libtorque_tlbt *tlbdescs;
-	struct libtorque_topt *next,*sub;
-} libtorque_topt;
 
-const libtorque_topt *libtorque_get_topology(void)
+const struct libtorque_topt *libtorque_get_topology(struct libtorque_ctx *)
 	__attribute__ ((visibility("default")));
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int topologize(unsigned,unsigned,unsigned,unsigned);
-void reset_topology(void);
+int topologize(struct libtorque_ctx *,unsigned,unsigned,unsigned,unsigned);
+void reset_topology(struct libtorque_ctx *);
 
 #ifdef __cplusplus
 }
