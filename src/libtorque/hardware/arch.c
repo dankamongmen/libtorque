@@ -11,8 +11,6 @@
 // the SGI libcpuset library) is available on Linux (ENOSYS or ENODEV indicate
 // nay) during CPU enumeration, and only use those methods if so.
 static unsigned use_cpusets;
-// This is only filled in if we're using the sched_{get,set}affinity API.
-static cpu_set_t orig_cpumask;
 
 // These are valid and non-zero following a successful call of
 // detect_architecture(), up until a call to free_architecture().
@@ -185,7 +183,6 @@ err:
 
 void free_architecture(libtorque_ctx *ctx){
 	reset_topology(ctx);
-	CPU_ZERO(&orig_cpumask);
 	use_cpusets = 0;
 	while(cpu_typecount--){
 		free_cpudetails(&cpudescs[cpu_typecount]);
