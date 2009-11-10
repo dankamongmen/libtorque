@@ -229,6 +229,7 @@ initialize_threads(libtorque_ctx *ctx){
 			pthread_cond_wait(&ctx->tiddata[z].cond,&ctx->tiddata[z].lock);
 		}
 		if(ctx->tiddata[z].status != THREAD_STARTED){
+			pthread_mutex_unlock(&ctx->tiddata[z].lock);
 			pthread_join(ctx->tids[z],NULL);
 			pthread_mutex_destroy(&ctx->tiddata[z].lock);
 			pthread_cond_destroy(&ctx->tiddata[z].cond);
