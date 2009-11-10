@@ -19,6 +19,11 @@ typedef struct libtorque_topt {
 typedef struct libtorque_ctx {
 	libtorque_topt *sched_zone;
 	cpu_set_t validmap;		// affinityid_map validity map
+	struct {
+		unsigned thread;	// FIXME hw-genericize via dynarray
+		unsigned core;
+		unsigned package;
+	} cpu_map[CPU_SETSIZE];
 } libtorque_ctx;
 
 #endif

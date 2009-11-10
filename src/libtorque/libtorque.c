@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <libtorque/internal.h>
 #include <libtorque/schedule.h>
 #include <libtorque/libtorque.h>
@@ -9,6 +10,7 @@ create_libtorque_ctx(void){
 	libtorque_ctx *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
+		memset(&ret->cpu_map,0,sizeof(ret->cpu_map));
 		ret->sched_zone = NULL;
 		CPU_ZERO(&ret->validmap);
 	}

@@ -6,10 +6,6 @@
 #include <libtorque/hardware/x86cpuid.h>
 #include <libtorque/hardware/topology.h>
 
-static struct {
-	unsigned thread,core,package;
-} cpu_map[CPU_SETSIZE];
-
 const libtorque_topt *libtorque_get_topology(libtorque_ctx *ctx){
 	return ctx->sched_zone;
 }
@@ -50,12 +46,12 @@ find_sched_group(libtorque_topt **sz,unsigned id){
 }
 
 static int
-share_pkg(libtorque_topt *sz,unsigned core){
+share_pkg(libtorque_ctx *ctx,libtorque_topt *sz,unsigned core){
 	unsigned z;
 
 	for(z = 0 ; z < CPU_SETSIZE ; ++z){
 		if(CPU_ISSET(z,&sz->schedulable)){
-			if(core != cpu_map[z].core){
+			if(core != ctx->cpu_map[z].core){
 				return 0;
 			}
 		}
@@ -90,8 +86,9 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 		return -1;
 	}
 	// If we share the package, it mustn't be a new package. Quod, we
-	// needn't worry about free()ing it, and can stroll on down...
-	if(share_pkg(sg,core) == 0){
+	// needn't worry about free()ing it, and can stroll on down...FIXME
+	// genericize this for deeper topologies (see cpu_map[] definition)
+	if(share_pkg(ctx,sg,core) == 0){
 		typeof(*sg) *sc;
 
 		if(sg->sub == NULL){
@@ -100,7 +97,8 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 			if((oid = first_aid(&sg->schedulable)) >= CPU_SETSIZE){
 				return -1;
 			}
-			if((sg->sub = create_zone(cpu_map[oid].core)) == NULL){
+			sg->sub = create_zone(ctx->cpu_map[oid].core);
+			if(sg->sub == NULL){
 				return -1;
 			}
 			CPU_SET(oid,&sg->sub->schedulable);
@@ -112,9 +110,9 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 		CPU_SET(aid,&sc->schedulable);
 	}
 	CPU_SET(aid,&sg->schedulable);
-	cpu_map[aid].thread = thread;
-	cpu_map[aid].core = core;
-	cpu_map[aid].package = pkg;
+	ctx->cpu_map[aid].thread = thread;
+	ctx->cpu_map[aid].core = core;
+	ctx->cpu_map[aid].package = pkg;
 	CPU_SET(aid,&ctx->validmap);
 	return 0;
 }
@@ -127,5 +125,5 @@ void reset_topology(libtorque_ctx *ctx){
 		free(sz);
 	}
 	CPU_ZERO(&ctx->validmap);
-	memset(cpu_map,0,sizeof(cpu_map));
+	memset(ctx->cpu_map,0,sizeof(ctx->cpu_map));
 }
