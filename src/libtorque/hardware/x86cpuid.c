@@ -69,7 +69,7 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 		  "=&c" (gpregs[2]), "=d" (gpregs[3])
 		: "0" (level), "2" (subparam)
 #else
-		"pushl %%ebx\n\t" // can't assume use of ebx on 32-bit
+		"pushl %%ebx\n\t" // can't assume use of ebx on 32-bit with PIC
 		"cpuid\n\t" // serializing instruction
 		"movl %%ebx,%[spill]\n\t"
 		"popl %%ebx\n\t"
