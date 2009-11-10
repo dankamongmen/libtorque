@@ -88,7 +88,6 @@ typedef struct tdata { // FIXME opaqify!
 // our cpuset, and only those NUMA nodes which we can reach).
 typedef struct libtorque_ctx {
 	unsigned cpucount;		// number of processing elements
-	unsigned tidcount;		// these two are the same; purge one
 	unsigned nodecount;		// number of NUMA nodes
 	unsigned cpu_typecount;		// number of processing element types
 	libtorque_cput *cpudescs;	// dynarray of cpu_typecount elements

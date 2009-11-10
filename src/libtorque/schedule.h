@@ -24,7 +24,7 @@ int associate_affinityid(struct libtorque_ctx *,unsigned,unsigned);
 int pin_thread(unsigned);
 int unpin_thread(const struct libtorque_ctx *);
 int spawn_threads(struct libtorque_ctx *);
-int reap_threads(struct libtorque_ctx *);
+int reap_threads(struct libtorque_ctx *,unsigned);
 
 #ifdef __cplusplus
 }

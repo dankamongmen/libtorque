@@ -198,7 +198,6 @@ earlyerr:
 int spawn_threads(libtorque_ctx *ctx){
 	unsigned z;
 
-	ctx->tidcount = 0;
 	for(z = 0 ; z < ctx->cpucount ; ++z){
 		if(pthread_mutex_init(&ctx->tiddata[z].lock,NULL)){
 			goto err;
@@ -225,7 +224,6 @@ int spawn_threads(libtorque_ctx *ctx){
 		}
 		pthread_mutex_unlock(&ctx->tiddata[z].lock);
 	}
-	ctx->tidcount = z;
 	return 0;
 
 err:
@@ -235,13 +233,12 @@ err:
 	return -1;
 }
 
-int reap_threads(libtorque_ctx *ctx){
+int reap_threads(libtorque_ctx *ctx,unsigned tidcount){
 	int ret = 0;
 	unsigned z;
 
-	for(z = 0 ; z < ctx->tidcount ; ++z){
+	for(z = 0 ; z < tidcount ; ++z){
 		ret |= reap_thread(ctx->tids[z],&ctx->tiddata[z]);
 	}
-	ctx->tidcount = 0;
 	return ret;
 }
