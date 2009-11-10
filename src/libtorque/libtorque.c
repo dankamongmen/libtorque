@@ -10,6 +10,7 @@ create_libtorque_ctx(void){
 
 	if( (ret = malloc(sizeof(*ret))) ){
 		ret->sched_zone = NULL;
+		CPU_ZERO(&ret->validmap);
 	}
 	return ret;
 }

@@ -6,7 +6,6 @@
 #include <libtorque/hardware/x86cpuid.h>
 #include <libtorque/hardware/topology.h>
 
-static cpu_set_t validmap;			// affinityid_map validity map
 static struct {
 	unsigned thread,core,package;
 } cpu_map[CPU_SETSIZE];
@@ -84,7 +83,7 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 	if(aid >= CPU_SETSIZE){
 		return -1;
 	}
-	if(CPU_ISSET(aid,&validmap)){
+	if(CPU_ISSET(aid,&ctx->validmap)){
 		return -1;
 	}
 	if((sg = find_sched_group(&ctx->sched_zone,pkg)) == NULL){
@@ -116,7 +115,7 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 	cpu_map[aid].thread = thread;
 	cpu_map[aid].core = core;
 	cpu_map[aid].package = pkg;
-	CPU_SET(aid,&validmap);
+	CPU_SET(aid,&ctx->validmap);
 	return 0;
 }
 
@@ -127,6 +126,6 @@ void reset_topology(libtorque_ctx *ctx){
 		ctx->sched_zone = sz->next;
 		free(sz);
 	}
-	CPU_ZERO(&validmap);
+	CPU_ZERO(&ctx->validmap);
 	memset(cpu_map,0,sizeof(cpu_map));
 }
