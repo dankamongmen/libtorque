@@ -12,6 +12,8 @@ create_libtorque_ctx(void){
 		memset(&ret->cpu_map,0,sizeof(ret->cpu_map));
 		ret->sched_zone = NULL;
 		CPU_ZERO(&ret->validmap);
+		ret->cpu_typecount = 0;
+		ret->cpudescs = NULL;
 		ret->manodes = NULL;
 		ret->nodecount = 0;
 	}

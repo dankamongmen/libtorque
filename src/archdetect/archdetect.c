@@ -219,13 +219,13 @@ detail_processing_unit(const libtorque_cput *pudesc){
 }
 
 static int
-detail_processing_units(unsigned cpu_typecount){
+detail_processing_units(const libtorque_ctx *ctx,unsigned cpu_typecount){
 	unsigned n;
 
 	for(n = 0 ; n < cpu_typecount ; ++n){
 		const libtorque_cput *pudesc;
 
-		if((pudesc = libtorque_cpu_getdesc(n)) == NULL){
+		if((pudesc = libtorque_cpu_getdesc(ctx,n)) == NULL){
 			fprintf(stderr,"Couldn't look up CPU type %u\n",n);
 			return EXIT_FAILURE;
 		}
@@ -360,11 +360,11 @@ int main(void){
 	if(detail_memory_nodes(ctx,mem_nodecount)){
 		goto done;
 	}
-	if((cpu_typecount = libtorque_cpu_typecount()) <= 0){
+	if((cpu_typecount = libtorque_cpu_typecount(ctx)) <= 0){
 		fprintf(stderr,"Got invalid CPU type count: %u\n",cpu_typecount);
 		goto done;
 	}
-	if(detail_processing_units(cpu_typecount)){
+	if(detail_processing_units(ctx,cpu_typecount)){
 		goto done;
 	}
 	ret = EXIT_SUCCESS;

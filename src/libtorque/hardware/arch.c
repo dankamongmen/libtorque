@@ -12,11 +12,6 @@
 // nay) during CPU enumeration, and only use those methods if so.
 static unsigned use_cpusets;
 
-// These are valid and non-zero following a successful call of
-// detect_architecture(), up until a call to free_architecture().
-static unsigned cpu_typecount;
-static libtorque_cput *cpudescs; // dynarray of cpu_typecount elements
-
 // LibNUMA looks like the only real candidate for NUMA discovery (linux only)
 
 // Returns the slot we just added to the end, or NULL on failure. Pointers
@@ -159,7 +154,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 err:
 	unpin_thread();
 	while((*cputc)--){
-		free_cpudetails((*types) + cpu_typecount);
+		free_cpudetails((*types) + ctx->cpu_typecount);
 	}
 	*cputc = 0;
 	free(*types);
@@ -171,7 +166,7 @@ int detect_architecture(libtorque_ctx *ctx){
 	if(detect_memories(ctx)){
 		goto err;
 	}
-	if(detect_cputypes(ctx,&cpu_typecount,&cpudescs)){
+	if(detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)){
 		goto err;
 	}
 	return 0;
@@ -184,23 +179,23 @@ err:
 void free_architecture(libtorque_ctx *ctx){
 	reset_topology(ctx);
 	use_cpusets = 0;
-	while(cpu_typecount--){
-		free_cpudetails(&cpudescs[cpu_typecount]);
+	while(ctx->cpu_typecount--){
+		free_cpudetails(&ctx->cpudescs[ctx->cpu_typecount]);
 	}
-	cpu_typecount = 0;
-	free(cpudescs);
-	cpudescs = NULL;
+	ctx->cpu_typecount = 0;
+	free(ctx->cpudescs);
+	ctx->cpudescs = NULL;
 	free_memories(ctx);
 }
 
-unsigned libtorque_cpu_typecount(void){
-	return cpu_typecount;
+unsigned libtorque_cpu_typecount(const libtorque_ctx *ctx){
+	return ctx->cpu_typecount;
 }
 
 // Takes a description ID
-const libtorque_cput *libtorque_cpu_getdesc(unsigned n){
-	if(n >= cpu_typecount){
+const libtorque_cput *libtorque_cpu_getdesc(const libtorque_ctx *ctx,unsigned n){
+	if(n >= ctx->cpu_typecount){
 		return NULL;
 	}
-	return &cpudescs[n];
+	return &ctx->cpudescs[n];
 }
