@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libtorque/internal.h>
-#include <libtorque/schedule.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/hardware/arch.h>
 
@@ -13,6 +12,8 @@ create_libtorque_ctx(void){
 		memset(&ret->cpu_map,0,sizeof(ret->cpu_map));
 		ret->sched_zone = NULL;
 		CPU_ZERO(&ret->validmap);
+		ret->manodes = NULL;
+		ret->nodecount = 0;
 	}
 	return ret;
 }

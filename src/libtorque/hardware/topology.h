@@ -5,10 +5,7 @@
 extern "C" {
 #endif
 
-#include <libtorque/schedule.h>
-
 struct libtorque_ctx;
-struct libtorque_cput;
 struct libtorque_topt;
 
 // We are not considering distributed systems in this model.

@@ -2,10 +2,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/resource.h>
+#include <libtorque/internal.h>
 #include <libtorque/hardware/memory.h>
-
-static unsigned nodecount;
-static libtorque_nodet *manodes;
 
 static libtorque_nodet *
 add_node(unsigned *count,libtorque_nodet **nodes,const libtorque_nodet *node){
@@ -53,7 +51,7 @@ determine_pagesize(void){
 	return (size_t)psize;
 }
 
-int detect_memories(void){
+int detect_memories(libtorque_ctx *ctx){
 	libtorque_nodet umamem;
 
 	if((umamem.psize = determine_pagesize()) <= 0){
@@ -64,25 +62,25 @@ int detect_memories(void){
 	}
 	umamem.nodeid = 0;
 	umamem.count = 1;
-	if(add_node(&nodecount,&manodes,&umamem) == NULL){
+	if(add_node(&ctx->nodecount,&ctx->manodes,&umamem) == NULL){
 		return -1;
 	}
 	return 0;
 }
 
-void free_memories(void){
-	free(manodes);
-	manodes = NULL;
-	nodecount = 0;
+void free_memories(libtorque_ctx *ctx){
+	free(ctx->manodes);
+	ctx->manodes = NULL;
+	ctx->nodecount = 0;
 }
 
-unsigned libtorque_mem_nodecount(void){
-	return nodecount;
+unsigned libtorque_mem_nodecount(const libtorque_ctx *ctx){
+	return ctx->nodecount;
 }
 
-const libtorque_nodet *libtorque_node_getdesc(unsigned n){
-	if(n < nodecount){
-		return &manodes[n];
+const libtorque_nodet *libtorque_node_getdesc(const libtorque_ctx *ctx,unsigned n){
+	if(n < ctx->nodecount){
+		return &ctx->manodes[n];
 	}
 	return NULL;
 }

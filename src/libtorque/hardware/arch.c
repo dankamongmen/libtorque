@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libtorque/internal.h>
-#include <libtorque/schedule.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/memory.h>
 #include <libtorque/hardware/x86cpuid.h>
@@ -171,7 +170,7 @@ err:
 }
 
 int detect_architecture(libtorque_ctx *ctx){
-	if(detect_memories()){
+	if(detect_memories(ctx)){
 		goto err;
 	}
 	if(detect_cputypes(ctx,&cpu_typecount,&cpudescs)){
@@ -194,7 +193,7 @@ void free_architecture(libtorque_ctx *ctx){
 	cpu_typecount = 0;
 	free(cpudescs);
 	cpudescs = NULL;
-	free_memories();
+	free_memories(ctx);
 }
 
 unsigned libtorque_cpu_typecount(void){

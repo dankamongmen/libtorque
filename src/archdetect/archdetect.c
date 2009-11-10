@@ -243,13 +243,13 @@ detail_processing_units(unsigned cpu_typecount){
 }
 
 static int
-detail_memory_nodes(unsigned mem_nodecount){
+detail_memory_nodes(const libtorque_ctx *ctx,unsigned mem_nodecount){
 	unsigned n;
 
 	for(n = 0 ; n < mem_nodecount ; ++n){
 		const libtorque_nodet *mdesc;
 
-		if((mdesc = libtorque_node_getdesc(n)) == NULL){
+		if((mdesc = libtorque_node_getdesc(ctx,n)) == NULL){
 			fprintf(stderr,"Couldn't look up mem node %u\n",n);
 			return EXIT_FAILURE;
 		}
@@ -353,11 +353,11 @@ int main(void){
 	if(print_topology(t)){
 		goto done;
 	}
-	if((mem_nodecount = libtorque_mem_nodecount()) <= 0){
+	if((mem_nodecount = libtorque_mem_nodecount(ctx)) <= 0){
 		fprintf(stderr,"Got invalid memory node count: %u\n",mem_nodecount);
 		goto done;
 	}
-	if(detail_memory_nodes(mem_nodecount)){
+	if(detail_memory_nodes(ctx,mem_nodecount)){
 		goto done;
 	}
 	if((cpu_typecount = libtorque_cpu_typecount()) <= 0){

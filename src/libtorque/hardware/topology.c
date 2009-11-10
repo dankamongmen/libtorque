@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libtorque/internal.h>
-#include <libtorque/schedule.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/x86cpuid.h>
 #include <libtorque/hardware/topology.h>

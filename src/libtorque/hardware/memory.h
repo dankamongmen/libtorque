@@ -5,25 +5,19 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
+struct libtorque_ctx;
+struct libtorque_nodet;
 
-// A node is defined as an area where all memory has the same speed as seen
-// from some arbitrary set of CPUs (ignoring caches).
-typedef struct libtorque_nodet {
-	size_t psize;
-	uintmax_t size;
-	unsigned count;
-	unsigned nodeid;
-} libtorque_nodet;
+unsigned libtorque_mem_nodecount(const struct libtorque_ctx *)
+	__attribute__ ((visibility("default")));
 
-unsigned libtorque_mem_nodecount(void) __attribute__ ((visibility("default")));
-
-const libtorque_nodet *libtorque_node_getdesc(unsigned)
+const struct libtorque_nodet *
+libtorque_node_getdesc(const struct libtorque_ctx *,unsigned)
 	__attribute__ ((visibility("default")));
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int detect_memories(void);
-void free_memories(void);
+int detect_memories(struct libtorque_ctx *);
+void free_memories(struct libtorque_ctx *);
 
 #ifdef __cplusplus
 }
