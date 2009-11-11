@@ -1260,7 +1260,7 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
 		return -1;
 	}
 	tlb.pagesize = itlb.pagesize = 4096;
-	tlb24.pagesize = itlb24.pagesize = 1024 * 2096; // FIXME
+	tlb24.pagesize = itlb24.pagesize = 1024 * 2048; // FIXME can be 4MB
 	tlb.sharedways = itlb.sharedways = cpud->threadspercore;
 	tlb24.sharedways = itlb24.sharedways = cpud->threadspercore;
 	tlb.level = itlb.level = tlb24.level = itlb24.level = 1;
