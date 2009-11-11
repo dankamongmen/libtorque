@@ -2,7 +2,9 @@
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <pthread.h>
+#include <sys/socket.h>
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/libtorque.h>
 
@@ -15,6 +17,17 @@ ssl_conn_handler(int fd,void *v){
 		return -1;
 	}
 	return 0;
+}
+
+static int
+make_ssl_fd(int domain){
+	int sd;
+
+	if((sd = socket(domain,SOCK_STREAM,0)) < 0){
+		return -1;
+	}
+	// FIXME
+	return sd;
 }
 
 int main(void){
@@ -30,6 +43,10 @@ int main(void){
 		return EXIT_FAILURE;
 	}
 	if((ctx = libtorque_init()) == NULL){
+		fprintf(stderr,"Couldn't initialize libtorque\n");
+		goto err;
+	}
+	if((sd = make_ssl_fd(AF_INET)) < 0){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}
@@ -64,6 +81,10 @@ err:
 	}
 	if(stop_ssl()){
 		fprintf(stderr,"Couldn't shutdown OpenSSL\n");
+		return EXIT_FAILURE;
+	}
+	if(close(sd)){
+		fprintf(stderr,"Couldn't close SSL socket %d\n",sd);
 		return EXIT_FAILURE;
 	}
 	return EXIT_FAILURE;
