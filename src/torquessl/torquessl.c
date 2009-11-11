@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <getopt.h>
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -11,12 +12,7 @@
 
 static int
 ssl_conn_handler(int fd,void *v){
-	if(fd < 0){
-		return -1;
-	}
-	if(v == NULL){
-		return -1;
-	}
+	printf("SSL connection on fd %d, state %p\n",fd,v);
 	return 0;
 }
 
@@ -36,7 +32,52 @@ make_ssl_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 
 #define DEFAULT_PORT ((uint16_t)7443)
 
-int main(void){
+static void
+usage(const char *argv0){
+	fprintf(stderr,"usage: %s [ options ]\n",argv0);
+	fprintf(stderr,"\t-h: print this message\n");
+	fprintf(stderr,"\t-C cafile: provide additional certificate authority\n");
+	fprintf(stderr,"\t-k keyfile: provide server key (requires -c)\n");
+	fprintf(stderr,"\t-c certfile: provide server cert (requires -k)\n");
+}
+
+static int
+parse_args(int argc,char **argv,const char **certfile,const char **keyfile,
+			const char **cafile){
+#define SET_ARG_ONCE(opt,arg) do{ if(!*(arg)){ *arg = optarg; }\
+	else{ fprintf(stderr,"Provided '%c' twice\n",(opt)); goto err; }} while(0)
+
+	const char *argv0 = *argv;
+	int c;
+
+	while((c = getopt(argc,argv,"c:k:C:h")) > 0){
+		switch(c){
+		case 'c':
+			SET_ARG_ONCE('c',certfile);
+			break;
+		case 'k':
+			SET_ARG_ONCE('k',keyfile);
+			break;
+		case 'C':
+			SET_ARG_ONCE('C',cafile);
+			break;
+		case 'h':
+			usage(argv0);
+			exit(EXIT_SUCCESS);
+		default:
+			goto err;
+		}
+	}
+	return 0;
+
+err:
+	usage(argv0);
+	return -1;
+#undef SET_ARG_ONCE
+}
+
+int main(int argc,char **argv){
+	const char *certfile = NULL,*keyfile = NULL,*cafile = NULL;
 	struct libtorque_ctx *ctx = NULL;
 	struct sockaddr_in sin;
 	sigset_t termset;
@@ -47,6 +88,9 @@ int main(void){
 	sigaddset(&termset,SIGINT);
 	sigaddset(&termset,SIGTERM);
 	memset(&sin,0,sizeof(sin));
+	if(parse_args(argc,argv,&certfile,&keyfile,&cafile)){
+		return EXIT_FAILURE;
+	}
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(DEFAULT_PORT); // FIXME ugh
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
