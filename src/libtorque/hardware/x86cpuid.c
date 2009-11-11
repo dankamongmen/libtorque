@@ -782,7 +782,7 @@ add_hwmem(unsigned *memories,libtorque_memt **mems,
 		return NULL;
 	}
 	*mems = tmp;
-	while(tmp - *mems < *memories){
+	while((unsigned)(tmp - *mems) < *memories){
 		if(compare_memdetails(tmp,amem) > 0){
 			memmove(tmp + 1,tmp,sizeof(*tmp) *
 				(*memories - (unsigned)(tmp - *mems)));
@@ -822,7 +822,7 @@ add_tlb(unsigned *tlbs,libtorque_tlbt **tlbdescs,const libtorque_tlbt *tlb){
 		return NULL;
 	}
 	*tlbdescs = tmp;
-	while(tmp - *tlbdescs < *tlbs){
+	while((unsigned)(tmp - *tlbdescs) < *tlbs){
 		if(compare_tlbdetails(tmp,tlb) > 0){
 			memmove(tmp + 1,tmp,sizeof(*tmp) *
 				(*tlbs - (unsigned)(tmp - *tlbdescs)));
