@@ -14,7 +14,7 @@ int main(int argc,char **argv){
 		usage(*argv);
 		return EXIT_FAILURE;
 	}
-	if((ctx = libtorque_init(0)) == NULL){
+	if((ctx = libtorque_init()) == NULL){
 		fprintf(stderr,"Error initializing libtorque.\n");
 		goto err;
 	}

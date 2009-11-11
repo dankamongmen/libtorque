@@ -105,7 +105,6 @@ typedef struct libtorque_ctx {
 	// Allocate these upon detecting cpu count, and opaqify tdata FIXME
 	tdata tiddata[CPU_SETSIZE];
 	pthread_t tids[CPU_SETSIZE];
-	unsigned flags;			// flags to libtorque_init()
 } libtorque_ctx;
 
 #endif

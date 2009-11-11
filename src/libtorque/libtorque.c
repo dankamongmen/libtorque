@@ -5,7 +5,7 @@
 #include <libtorque/hardware/arch.h>
 
 static inline libtorque_ctx *
-create_libtorque_ctx(unsigned flags){
+create_libtorque_ctx(void){
 	libtorque_ctx *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
@@ -17,7 +17,6 @@ create_libtorque_ctx(unsigned flags){
 		ret->manodes = NULL;
 		ret->cpu_typecount = 0;
 		ret->nodecount = 0;
-		ret->flags = flags;
 	}
 	return ret;
 }
@@ -28,10 +27,10 @@ free_libtorque_ctx(libtorque_ctx *ctx){
 	free(ctx);
 }
 
-libtorque_ctx *libtorque_init(unsigned flags){
+libtorque_ctx *libtorque_init(void){
 	libtorque_ctx *ctx;
 
-	if((ctx = create_libtorque_ctx(flags)) == NULL){
+	if((ctx = create_libtorque_ctx()) == NULL){
 		return NULL;
 	}
 	if(detect_architecture(ctx)){
@@ -73,7 +72,7 @@ int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
 	return 0;
 }
 
-int libtorque_addssl(libtorque_ctx *ctx,int fd,struct SSL_CTX *sslctx,
+int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 			libtorque_evcbfxn rx,libtorque_evcbfxn tx,void *state){
 	if(fd <= 0){
 		return -1;

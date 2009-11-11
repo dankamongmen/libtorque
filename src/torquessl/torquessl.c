@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <libtorque/ssl/ssl.h>
 #include <libtorque/libtorque.h>
 
 static int
@@ -19,6 +20,7 @@ ssl_conn_handler(int fd,void *v){
 int main(void){
 	struct libtorque_ctx *ctx = NULL;
 	sigset_t termset;
+	SSL_CTX *sslctx;
 	int sig,sd = -1;
 
 	sigemptyset(&termset);
@@ -27,11 +29,19 @@ int main(void){
 		fprintf(stderr,"Couldn't set signal mask\n");
 		return EXIT_FAILURE;
 	}
-	if((ctx = libtorque_init(0)) == NULL){
+	if((ctx = libtorque_init()) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}
-	if(libtorque_addfd(ctx,sd,ssl_conn_handler,NULL,NULL)){
+	if(init_ssl()){
+		fprintf(stderr,"Couldn't initialize OpenSSL\n");
+		goto err;
+	}
+	if((sslctx = new_ssl_ctx(NULL,NULL,NULL,0))){
+		fprintf(stderr,"Couldn't initialize OpenSSL context\n");
+		goto err;
+	}
+	if(libtorque_addssl(ctx,sd,sslctx,ssl_conn_handler,NULL,NULL)){
 		fprintf(stderr,"Couldn't add SSL sd %d\n",sd);
 		goto err;
 	}
@@ -50,6 +60,10 @@ int main(void){
 err:
 	if(libtorque_stop(ctx)){
 		fprintf(stderr,"Couldn't shutdown libtorque\n");
+		return EXIT_FAILURE;
+	}
+	if(stop_ssl()){
+		fprintf(stderr,"Couldn't shutdown OpenSSL\n");
 		return EXIT_FAILURE;
 	}
 	return EXIT_FAILURE;
