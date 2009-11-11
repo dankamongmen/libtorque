@@ -753,7 +753,25 @@ static const unsigned intel_trace_descriptors[] = {
 	0x73, // 64K uops, 8-way
 };
 
-// Returns the slot we just added to the end, or NULL on failure.
+static inline int
+compare_memdetails(const libtorque_memt * restrict a,
+			const libtorque_memt * restrict b){
+#define CMP(a,b,field) do { if((a)->field < (b)->field){ return -1; } \
+			else if((a)->field > (b)->field){ return 1; } } \
+			while(0)
+	// See match_memtype(); do not evaluate sharing for equality! The order
+	// in which we compare will give rise to the memory ordering.
+	CMP(a,b,level);
+	CMP(a,b,memtype);
+	CMP(a,b,totalsize);
+	CMP(a,b,linesize);
+	CMP(a,b,associativity);
+	return 0;
+#undef CMP
+}
+
+// Returns the slot we just added, or NULL on failure. See compare_memdetails()
+// for ordering.
 static inline libtorque_memt *
 add_hwmem(unsigned *memories,libtorque_memt **mems,
 		const libtorque_memt *amem){
@@ -764,10 +782,59 @@ add_hwmem(unsigned *memories,libtorque_memt **mems,
 		return NULL;
 	}
 	*mems = tmp;
+	while(tmp - *mems < *memories){
+		if(compare_memdetails(tmp,amem) > 0){
+			memmove(tmp + 1,tmp,sizeof(*tmp) *
+				(*memories - (unsigned)(tmp - *mems)));
+			break;
+		}
+		++tmp;
+	}
 	// Needed due to memcmp()-based cpu compare
-	memset((*mems) + *memories,0,sizeof((**mems)));
-	(*mems)[*memories] = *amem;
-	return *mems + (*memories)++;
+	memset(tmp,0,sizeof(*tmp));
+	*tmp = *amem;
+	(*memories)++;
+	return tmp;
+}
+
+static inline int
+compare_tlbdetails(const libtorque_tlbt * restrict a,
+			const libtorque_tlbt * restrict b){
+#define CMP(a,b,field) do { if((a)->field < (b)->field){ return -1; } \
+			else if((a)->field > (b)->field){ return 1; } } \
+			while(0)
+	// The order in which we compare will give rise to the TLB ordering.
+	CMP(a,b,level);
+	CMP(a,b,tlbtype);
+	CMP(a,b,pagesize);
+	CMP(a,b,entries);
+	CMP(a,b,associativity);
+	return 0;
+#undef CMP
+}
+
+static libtorque_tlbt *
+add_tlb(unsigned *tlbs,libtorque_tlbt **tlbdescs,const libtorque_tlbt *tlb){
+	size_t s = (*tlbs + 1) * sizeof(**tlbdescs);
+	typeof(**tlbdescs) *tmp;
+
+	if((tmp = realloc(*tlbdescs,s)) == NULL){
+		return NULL;
+	}
+	*tlbdescs = tmp;
+	while(tmp - *tlbdescs < *tlbs){
+		if(compare_tlbdetails(tmp,tlb) > 0){
+			memmove(tmp + 1,tmp,sizeof(*tmp) *
+				(*tlbs - (unsigned)(tmp - *tlbdescs)));
+			break;
+		}
+		++tmp;
+	}
+	// Needed due to memcmp()-based cpu compare
+	memset(tmp,0,sizeof(*tmp));
+	*tmp = *tlb;
+	(*tlbs)++;
+	return tmp;
 }
 
 static int
@@ -817,33 +884,6 @@ get_intel_trace(unsigned descriptor){
 		}
 	}
 	return -1;
-}
-
-static libtorque_tlbt *
-add_tlb(unsigned *tlbs,libtorque_tlbt **tlbdescs,const libtorque_tlbt *tlb){
-	size_t s = (*tlbs + 1) * sizeof(**tlbdescs);
-	typeof(**tlbdescs) *tmp;
-
-	if((tmp = realloc(*tlbdescs,s)) == NULL){
-		return NULL;
-	}
-	*tlbdescs = tmp;
-	// Needed due to memcmp()-based cpu compare
-	memset((*tlbdescs) + *tlbs,0,sizeof((**tlbdescs)));
-	(*tlbdescs)[*tlbs] = *tlb;
-	return *tlbdescs + (*tlbs)++;
-}
-
-static inline int
-compare_memdetails(const libtorque_memt * restrict a,
-			const libtorque_memt * restrict b){
-	// See match_memtype(); do not evaluate sharing for equality!
-	if(a->totalsize != b->totalsize || a->associativity != b->associativity ||
-			a->level != b->level || a->linesize != b->linesize ||
-			a->memtype != b->memtype){
-		return -1;
-	}
-	return 0;
 }
 
 // *DOES NOT* compare sharing values, since that isn't yet generally detected

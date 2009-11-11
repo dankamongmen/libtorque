@@ -17,8 +17,8 @@
 <!ENTITY dhtitle "libtorque command reference">
   
 <!-- This is the application/package name.                     -->
-<!ENTITY dhucpackage "PERCPU">
-<!ENTITY dhpackage "percpu">
+<!ENTITY dhucpackage "TORQUESSL">
+<!ENTITY dhpackage "torquessl">
 
 <!-- If the application e.g. belongs to a package like X.org,  -->
 <!-- this should be set to the package/suite name instead of   -->
@@ -59,23 +59,23 @@
 	</refmeta>
 	<refnamediv>
 		<refname>&dhpackage;</refname>
-		<refpurpose>Architecture and system discovery</refpurpose>
+		<refpurpose>Serve multithreaded SSL</refpurpose>
 	</refnamediv>
 	<refsynopsisdiv>
 		<cmdsynopsis>
-			<command>percpu</command>
+			<command>torquessl</command>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 	<refsect1 id="description">
 		<title>DESCRIPTION</title>
-		<para><command>&dhpackage;</command> launches an instance of
-			its command line arguments bound to each processing
-			unit. Only those processors in the current cpuset are
-		       	used.</para>
+		<para><command>&dhpackage;</command> efficiently serves
+			multithreaded SSLv3/TLS, splicing each secure tunnel to
+			an instance of its command line arguments. Only those
+			processors in the current cpuset are used.</para>
 	</refsect1>
 	<refsect1 id="options">
 		<title>OPTIONS</title>
-		<para><command>percpu</command> takes no options.</para>
+		<para><command>&dhpackage;</command> takes no options.</para>
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
