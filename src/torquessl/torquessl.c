@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/libtorque.h>
@@ -20,24 +21,34 @@ ssl_conn_handler(int fd,void *v){
 }
 
 static int
-make_ssl_fd(int domain){
+make_ssl_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 	int sd;
 
 	if((sd = socket(domain,SOCK_STREAM,0)) < 0){
 		return -1;
 	}
-	// FIXME
+	if(bind(sd,saddr,slen)){
+		close(sd);
+		return -1;
+	}
 	return sd;
 }
 
+#define DEFAULT_PORT ((uint16_t)7443)
+
 int main(void){
 	struct libtorque_ctx *ctx = NULL;
+	struct sockaddr_in sin;
 	sigset_t termset;
 	SSL_CTX *sslctx;
 	int sig,sd = -1;
 
 	sigemptyset(&termset);
 	sigaddset(&termset,SIGTERM);
+	memset(&sin,0,sizeof(sin));
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(DEFAULT_PORT); // FIXME ugh
+	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 	if(pthread_sigmask(SIG_SETMASK,&termset,NULL)){
 		fprintf(stderr,"Couldn't set signal mask\n");
 		return EXIT_FAILURE;
@@ -46,7 +57,7 @@ int main(void){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}
-	if((sd = make_ssl_fd(AF_INET)) < 0){
+	if((sd = make_ssl_fd(AF_INET,(struct sockaddr *)&sin,sizeof(sin))) < 0){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}

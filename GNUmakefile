@@ -149,15 +149,14 @@ MFLAGS:=-fpic -march=$(MARCH)
 ifdef MTUNE
 MFLAGS+=-mtune=$(MTUNE)
 endif
-# Not using: -Wpadded
+# Not using: -Wpadded, -Wconversion
 WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
         -Wstrict-prototypes -Wmissing-declarations -Wnested-externs \
         -Wsign-compare -Wpointer-arith -Wbad-function-cast -Wcast-qual \
         -Wdeclaration-after-statement -Wfloat-equal -Wpacked -Winvalid-pch \
         -Wdisabled-optimization -Wcast-align -Wformat -Wformat-security \
         -Wold-style-definition -Woverlength-strings -Wwrite-strings \
-	-Wstrict-aliasing=3 -Wconversion -Wunsafe-loop-optimizations \
-	-Wstrict-overflow=5
+	-Wstrict-aliasing=3 -Wunsafe-loop-optimizations -Wstrict-overflow=5
 # We get the following from -O (taken from gcc 4.3 docs)
 # -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop -fdelayed-branch -fdse \
 # -fguess-branch-probability -fif-conversion2 -fif-conversion \
