@@ -44,6 +44,7 @@ int main(void){
 	int sig,sd = -1;
 
 	sigemptyset(&termset);
+	sigaddset(&termset,SIGINT);
 	sigaddset(&termset,SIGTERM);
 	memset(&sin,0,sizeof(sin));
 	sin.sin_family = AF_INET;
