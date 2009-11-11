@@ -28,8 +28,8 @@ typedef struct libtorque_nodet {
 
 typedef enum {
 	MEMTYPE_UNKNOWN,
-	MEMTYPE_DATA,
 	MEMTYPE_CODE,
+	MEMTYPE_DATA,
 	MEMTYPE_UNIFIED
 } libtorque_memtypet;
 
