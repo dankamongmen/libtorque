@@ -20,10 +20,6 @@ int main(void){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}
-	if(libtorque_spawn(ctx)){
-		fprintf(stderr,"Couldn't spawn libtorque threads\n");
-		goto err;
-	}
 	if(sigwait(&termset,&sig)){
 		fprintf(stderr,"Couldn't wait on signals\n");
 		goto err;

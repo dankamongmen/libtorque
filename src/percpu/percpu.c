@@ -18,10 +18,6 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Error initializing libtorque.\n");
 		goto err;
 	}
-	if(libtorque_spawn(ctx)){
-		fprintf(stderr,"Error spawning libtorque.\n");
-		goto err;
-	}
 	if(libtorque_stop(ctx)){
 		fprintf(stderr,"Error shutting down libtorque.\n");
 		return EXIT_FAILURE;

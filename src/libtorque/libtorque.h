@@ -18,17 +18,14 @@ struct libtorque_ctx *libtorque_init(void)
 // from the evhandler's notification queue.
 // FIXME maybe ought be using a uintptr_t instead of void *?
 typedef void (*libtorque_evcbfxn)(unsigned,void *);
-struct libtorque_evsource;
 
-// Add an event source. It won't be acted upon until a successful call to
-// libtorque_spawn(). Event sources may be added after calling
-// libtorque_spawn(), but not after calling libtorque_stop().
-int libtorque_addevent(const struct libtorque_evsource *)
+// Handle the specified signal (we don't use a sigset_t because FreeBSD's
+// kqueue doesn't support it; we could wrap this, though FIXME).
+int libtorque_addsignal(struct libtorque_ctx *,int,libtorque_evcbfxn)
 	__attribute__ ((visibility("default")));
 
-// Spawn event-handling threads. They'll run until a call is made to
-// libtorque_stop(), which may be performed from within a callback function.
-int libtorque_spawn(struct libtorque_ctx *)
+// Handle the specified file descriptor.
+int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn)
 	__attribute__ ((visibility("default")));
 
 // Reset the library, destroying all associated threads and state and returning
