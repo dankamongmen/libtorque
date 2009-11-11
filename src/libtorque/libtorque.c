@@ -55,8 +55,7 @@ int libtorque_addsignal(libtorque_ctx *ctx,int sig,libtorque_evcbfxn fxn,
 	}
 	if(state == NULL){
 		return -1;
-	}
-	// FIXME
+	} // FIXME
 	return 0;
 }
 
@@ -70,8 +69,21 @@ int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
 	}
 	if(state == NULL){
 		return -1;
+	} // FIXME
+	return 0;
+}
+
+int libtorque_addssl(libtorque_ctx *ctx,int fd,struct SSL_CTX *sslctx,
+			libtorque_evcbfxn rx,libtorque_evcbfxn tx,void *state){
+	if(fd <= 0){
+		return -1;
 	}
-	// FIXME
+	if(ctx == NULL || (rx == NULL && tx == NULL)){
+		return -1;
+	}
+	if(state == NULL || sslctx == NULL){
+		return -1;
+	} // FIXME
 	return 0;
 }
 
