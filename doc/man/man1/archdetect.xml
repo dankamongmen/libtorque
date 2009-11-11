@@ -63,7 +63,7 @@
 	</refnamediv>
 	<refsynopsisdiv>
 		<cmdsynopsis>
-			<command>archdetect</command>
+			<command>&dhpackage;</command>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 	<refsect1 id="description">
@@ -75,7 +75,7 @@
 	</refsect1>
 	<refsect1 id="options">
 		<title>OPTIONS</title>
-		<para><command>archdetect</command> takes no options.</para>
+		<para><command>&dhpackage;</command> takes no options.</para>
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>

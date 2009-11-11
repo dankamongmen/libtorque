@@ -59,11 +59,11 @@
 	</refmeta>
 	<refnamediv>
 		<refname>&dhpackage;</refname>
-		<refpurpose>Architecture and system discovery</refpurpose>
+		<refpurpose>Launch a binary per-CPU</refpurpose>
 	</refnamediv>
 	<refsynopsisdiv>
 		<cmdsynopsis>
-			<command>percpu</command>
+			<command>&dhpackage;</command>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 	<refsect1 id="description">
@@ -75,7 +75,7 @@
 	</refsect1>
 	<refsect1 id="options">
 		<title>OPTIONS</title>
-		<para><command>percpu</command> takes no options.</para>
+		<para><command>&dhpackage;</command> takes no options.</para>
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
