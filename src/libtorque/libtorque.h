@@ -25,7 +25,7 @@ int libtorque_addsignal(struct libtorque_ctx *,int,libtorque_evcbfxn)
 	__attribute__ ((visibility("default")));
 
 // Handle the specified file descriptor.
-int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn)
+int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn,libtorque_evcbfxn)
 	__attribute__ ((visibility("default")));
 
 // Reset the library, destroying all associated threads and state and returning
