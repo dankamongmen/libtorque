@@ -4,6 +4,52 @@
 #include <libtorque/internal.h>
 #include <libtorque/events/thread.h>
 
+// OpenSSL requires a numeric identifier for threads. On FreeBSD (using
+// the default or libthr implementations), pthread_self() is insufficient; it
+// seems to return an aggregate... :/
+#ifdef LIBTORQUE_FREEBSD
+static unsigned long openssl_id_idx;
+static pthread_key_t openssl_id_key;
+static pthread_once_t openssl_once = PTHREAD_ONCE_INIT;
+static pthread_mutex_t openssl_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void
+setup_openssl_idkey(void){
+	if(pthread_key_create(&openssl_id_key,free)){
+		// FIXME do what, exactly?
+	}
+}
+
+static unsigned long *setup_new_sslid(void) __attribute__ ((malloc));
+
+static unsigned long *
+setup_new_sslid(void){
+	unsigned long *ret;
+
+	if( (ret = malloc(sizeof(*ret))) ){
+		if(pthread_setspecific(openssl_id_key,ret) == 0){
+			if(pthread_mutex_lock(&openssl_lock) == 0){
+				*ret = ++openssl_id_idx;
+				return ret;
+			}
+			pthread_setspecific(openssl_id_key,NULL);
+		}
+		free(ret);
+	}
+	return NULL;
+}
+
+unsigned long pthread_self_getnumeric(void){
+	unsigned long *key;
+
+	pthread_once(&openssl_once,setup_openssl_idkey);
+	if((key = pthread_getspecific(openssl_id_key)) == NULL)||
+		key = setup_new_sslid(); // what if this fails? FIXME
+	}
+	return *key;
+}
+#endif
+
 // Returns the cputype index (for use with libtorque_cpu_getdesc() of a given
 // affinity ID. FIXME we ought return the cpudesc itself. That way, we could
 // check the validity mask, and return NULL if it's a bad affinity ID.

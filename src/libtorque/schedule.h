@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <pthread.h>
+
 #if defined(LIBTORQUE_LINUX)
 #include <sched.h>
 #elif defined(LIBTORQUE_FREEBSD)
@@ -25,6 +27,15 @@ int pin_thread(unsigned);
 int unpin_thread(const struct libtorque_ctx *);
 int spawn_threads(struct libtorque_ctx *);
 int reap_threads(struct libtorque_ctx *,unsigned);
+
+#ifdef LIBTORQUE_FREEBSD
+unsigned long pthread_self_getnumeric(void);
+#elif defined(LIBTORQUE_LINUX)
+static inline unsigned long
+pthread_self_getnumeric(void){
+	return pthread_self(); // lol
+}
+#endif
 
 #ifdef __cplusplus
 }
