@@ -222,7 +222,7 @@ testpercpu: $(BINOUT)/$(PERCPU)
 	env LD_LIBRARY_PATH=$(LIBOUT) $< $(PERCPUARGS)
 
 VALGRIND:=valgrind
-VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v 
+VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v --track-origins=yes
 hardtest: test
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(PERCPU) $(PERCPUARGS)
