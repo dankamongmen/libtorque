@@ -1037,7 +1037,6 @@ amd_cache_presentp(uint32_t reg){
 
 static unsigned
 amd_l23assoc(unsigned idx,unsigned lines){
-
 	switch(idx){
 		case 0xf: return lines; // fully associative
 		case 0xe: return 128;
@@ -1210,21 +1209,27 @@ id_amd_23caches(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
 	return id_amd_gbtlbs(maxexlevel,gpregs,cpud);
 }
 
+static inline unsigned
+amd_l1assoc(unsigned idx,unsigned lines){
+	// 0xff is fully associative. 0 is reserved. otherwise, direct encode
+	return idx == 0xffu ? lines : idx;
+}
+
 static int
 decode_amd_l1tlb(uint32_t reg,unsigned *dassoc,unsigned *iassoc,unsigned *dents,
 					unsigned *ients){
-	*dassoc = reg >> 24u;
-	*iassoc = (reg >> 8u) & 0xffu;
 	*dents = (reg >> 16u) & 0xffu;
 	*ients = reg & 0xffu;
+	*dassoc = amd_l1assoc(reg >> 24u,*dents);
+	*iassoc = amd_l1assoc((reg >> 8u) & 0xffu,*ients);
 	return (*dassoc && *iassoc && *dents && *ients) ? 0 : -1;
 }
 
 static int
 decode_amd_l1cache(uint32_t reg,uintmax_t *size,unsigned *assoc,unsigned *lsize){
 	*size = (reg >> 24u) * 1024u;
-	*assoc = (reg >> 16u) & 0xffu;
 	*lsize = reg & 0xffu;
+	*assoc = amd_l1assoc((reg >> 16u) & 0xffu,(unsigned)(*size / *lsize));
 	return (*size && *assoc && *lsize) ? 0 : -1;
 }
 
