@@ -47,24 +47,15 @@ int associate_affinityid(libtorque_ctx *ctx,unsigned aid,unsigned idx){
 // FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
 // setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
 static inline unsigned
-portable_cpuset_count(const cpu_set_t *mask){
-#ifdef CPU_COUNT // what if it's a function, not a macro? it'll go unused...
-	int ret;
-
-	if((ret = CPU_COUNT(mask)) <= 0){
-		return 0;
-	}
-	return (unsigned)ret;
-#else
+portable_cpuset_count(libtorque_ctx *ctx,const cpu_set_t *mask){
 	unsigned count = 0,cpu;
 
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
 		if(CPU_ISSET(cpu,mask)){
-			tiddata[count++].affinity_id = cpu;
+			ctx->tiddata[count++].affinity_id = cpu;
 		}
 	}
 	return count;
-#endif
 }
 
 // Returns a positive integer number of processing elements on success. A non-
@@ -72,7 +63,7 @@ portable_cpuset_count(const cpu_set_t *mask){
 // A "processor" is "something on which we can schedule a running thread". On a
 // successful return, mask contains the original affinity mask of the process.
 static inline unsigned
-detect_cpucount_internal(cpu_set_t *mask){
+detect_cpucount_internal(libtorque_ctx *ctx,cpu_set_t *mask){
 #ifdef LIBTORQUE_FREEBSD
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 				sizeof(*mask),mask) == 0){
@@ -85,7 +76,7 @@ detect_cpucount_internal(cpu_set_t *mask){
 #endif
 		unsigned csize;
 
-		if((csize = portable_cpuset_count(mask)) > 0){
+		if((csize = portable_cpuset_count(ctx,mask)) > 0){
 			return csize;
 		}
 	}
@@ -97,7 +88,7 @@ initialize_cpucount(libtorque_ctx *ctx){
 	unsigned cpucount;
 
 	CPU_ZERO(&ctx->origmask);
-	if((cpucount = detect_cpucount_internal(&ctx->origmask)) <= 0){
+	if((cpucount = detect_cpucount_internal(ctx,&ctx->origmask)) <= 0){
 		CPU_ZERO(&ctx->origmask);
 	}
 	return cpucount;
