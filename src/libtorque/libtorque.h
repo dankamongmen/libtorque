@@ -42,7 +42,9 @@ int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn,
 // The SSL_CTX should be set up with the desired authentication parameters etc
 // already (utility functions are provided to do this).
 int libtorque_addssl(struct libtorque_ctx *,int,struct SSL_CTX *,
-			libtorque_evcbfxn,libtorque_evcbfxn,void *);
+			libtorque_evcbfxn,libtorque_evcbfxn,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((nonnull(1,3)));
 
 // Reset the library, destroying all associated threads and state and returning
 // 0 on success. No libtorque functions, save libtorque_init(), may be called
