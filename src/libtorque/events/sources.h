@@ -24,7 +24,7 @@ struct evsource *create_evsources(unsigned)
 // feedback from the callback functions, and nothing needs to call anything
 // upon closing an fd.
 void setup_evsource(struct evsource *,int,evcbfxn,evcbfxn,void *);
-int handle_evsource_read(struct evsource *,unsigned);
+int handle_evsource_read(struct evsource *,int);
 
 int destroy_evsources(struct evsource *,unsigned);
 

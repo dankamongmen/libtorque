@@ -31,7 +31,7 @@ void setup_evsource(evsource *evs,int n,evcbfxn rfxn,evcbfxn tfxn,void *v){
 	evs[n].cbstate = v;
 }
 
-int handle_evsource_read(evsource *evs,unsigned n){
+int handle_evsource_read(evsource *evs,int n){
 	if(evs[n].rxfxn){
 		evs[n].rxfxn(n,evs[n].cbstate);
 		return 0;

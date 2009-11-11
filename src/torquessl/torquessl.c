@@ -5,10 +5,21 @@
 #include <pthread.h>
 #include <libtorque/libtorque.h>
 
+static int
+ssl_conn_handler(int fd,void *v){
+	if(fd < 0){
+		return -1;
+	}
+	if(v == NULL){
+		return -1;
+	}
+	return 0;
+}
+
 int main(void){
 	struct libtorque_ctx *ctx = NULL;
 	sigset_t termset;
-	int sig;
+	int sig,sd = -1;
 
 	sigemptyset(&termset);
 	sigaddset(&termset,SIGTERM);
@@ -18,6 +29,10 @@ int main(void){
 	}
 	if((ctx = libtorque_init()) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
+		goto err;
+	}
+	if(libtorque_addfd(ctx,sd,ssl_conn_handler,NULL,NULL)){
+		fprintf(stderr,"Couldn't add SSL sd %d\n",sd);
 		goto err;
 	}
 	if(sigwait(&termset,&sig)){

@@ -44,11 +44,15 @@ libtorque_ctx *libtorque_init(void){
 	return ctx;
 }
 
-int libtorque_addsignal(libtorque_ctx *ctx,int sig,libtorque_evcbfxn fxn){
+int libtorque_addsignal(libtorque_ctx *ctx,int sig,libtorque_evcbfxn fxn,
+					void *state){
 	if(sig <= 0){
 		return -1;
 	}
 	if(ctx == NULL || fxn == NULL){
+		return -1;
+	}
+	if(state == NULL){
 		return -1;
 	}
 	// FIXME
@@ -56,11 +60,14 @@ int libtorque_addsignal(libtorque_ctx *ctx,int sig,libtorque_evcbfxn fxn){
 }
 
 int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
-					libtorque_evcbfxn tx){
+				libtorque_evcbfxn tx,void *state){
 	if(fd <= 0){
 		return -1;
 	}
 	if(ctx == NULL || (rx == NULL && tx == NULL)){
+		return -1;
+	}
+	if(state == NULL){
 		return -1;
 	}
 	// FIXME

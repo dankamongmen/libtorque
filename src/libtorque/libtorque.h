@@ -12,21 +12,25 @@ struct libtorque_ctx;
 // not be called again until libtorque_stop() has been called. Implicitly, only
 // one thread may call libtorque_init().
 struct libtorque_ctx *libtorque_init(void)
-	__attribute__ ((visibility("default")));
+	__attribute__ ((visibility("default")))
+	__attribute__ ((malloc));
 
 // Returning anything other than 0 will see the descriptor closed, and removed
 // from the evhandler's notification queue.
 // FIXME maybe ought be using a uintptr_t instead of void *?
-typedef void (*libtorque_evcbfxn)(unsigned,void *);
+typedef int (*libtorque_evcbfxn)(int,void *);
 
 // Handle the specified signal (we don't use a sigset_t because FreeBSD's
 // kqueue doesn't support it; we could wrap this, though FIXME).
-int libtorque_addsignal(struct libtorque_ctx *,int,libtorque_evcbfxn)
-	__attribute__ ((visibility("default")));
+int libtorque_addsignal(struct libtorque_ctx *,int,libtorque_evcbfxn,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((nonnull(1,3)));
 
 // Handle the specified file descriptor.
-int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn,libtorque_evcbfxn)
-	__attribute__ ((visibility("default")));
+int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn,
+				libtorque_evcbfxn,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((nonnull(1)));
 
 // Reset the library, destroying all associated threads and state and returning
 // 0 on success. No libtorque functions, save libtorque_init(), may be called
