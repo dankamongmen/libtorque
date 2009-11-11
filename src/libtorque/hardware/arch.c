@@ -104,6 +104,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 
 	*cputc = 0;
 	*types = NULL;
+	// we're basically doing this in the main loop. purge! FIXME
 	if((totalpe = detect_cpucount(ctx,&mask)) <= 0){
 		goto err;
 	}
@@ -135,6 +136,9 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 			goto err;
 		}
 		if(topologize(ctx,cpu,thread,core,pkg)){
+			goto err;
+		}
+		if(spawn_thread(ctx,z)){
 			goto err;
 		}
 		++cpu;

@@ -25,7 +25,7 @@ unsigned detect_cpucount(struct libtorque_ctx *,cpu_set_t *);
 int associate_affinityid(struct libtorque_ctx *,unsigned,unsigned);
 int pin_thread(unsigned);
 int unpin_thread(const struct libtorque_ctx *);
-int spawn_threads(struct libtorque_ctx *);
+int spawn_thread(struct libtorque_ctx *,unsigned);
 int reap_threads(struct libtorque_ctx *,unsigned);
 
 #ifdef LIBTORQUE_FREEBSD

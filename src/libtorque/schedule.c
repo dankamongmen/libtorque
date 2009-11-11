@@ -240,43 +240,33 @@ earlyerr:
 	return NULL;
 }
 
-// FIXME launch these as we're skipping around CPU's in initial detection!
-int spawn_threads(libtorque_ctx *ctx){
-	unsigned z;
-
-	for(z = 0 ; z < ctx->cpucount ; ++z){
-		if(pthread_mutex_init(&ctx->tiddata[z].lock,NULL)){
-			goto err;
-		}
-		if(pthread_cond_init(&ctx->tiddata[z].cond,NULL)){
-			pthread_mutex_destroy(&ctx->tiddata[z].lock);
-			goto err;
-		}
-		if(pthread_create(&ctx->tids[z],NULL,thread,&ctx->tiddata[z])){
-			pthread_mutex_destroy(&ctx->tiddata[z].lock);
-			pthread_cond_destroy(&ctx->tiddata[z].cond);
-			goto err;
-		}
-		pthread_mutex_lock(&ctx->tiddata[z].lock);
-		while(ctx->tiddata[z].status == THREAD_UNLAUNCHED){
-			pthread_cond_wait(&ctx->tiddata[z].cond,&ctx->tiddata[z].lock);
-		}
-		if(ctx->tiddata[z].status != THREAD_STARTED){
-			pthread_mutex_unlock(&ctx->tiddata[z].lock);
-			pthread_join(ctx->tids[z],NULL);
-			pthread_mutex_destroy(&ctx->tiddata[z].lock);
-			pthread_cond_destroy(&ctx->tiddata[z].cond);
-			goto err;
-		}
+// Must be pinned to the desired CPU upon entry! // FIXME verify?
+int spawn_thread(libtorque_ctx *ctx,unsigned z){
+	if(pthread_mutex_init(&ctx->tiddata[z].lock,NULL)){
+		return -1;
+	}
+	if(pthread_cond_init(&ctx->tiddata[z].cond,NULL)){
+		pthread_mutex_destroy(&ctx->tiddata[z].lock);
+		return -1;
+	}
+	if(pthread_create(&ctx->tids[z],NULL,thread,&ctx->tiddata[z])){
+		pthread_mutex_destroy(&ctx->tiddata[z].lock);
+		pthread_cond_destroy(&ctx->tiddata[z].cond);
+		return -1;
+	}
+	pthread_mutex_lock(&ctx->tiddata[z].lock);
+	while(ctx->tiddata[z].status == THREAD_UNLAUNCHED){
+		pthread_cond_wait(&ctx->tiddata[z].cond,&ctx->tiddata[z].lock);
+	}
+	if(ctx->tiddata[z].status != THREAD_STARTED){
 		pthread_mutex_unlock(&ctx->tiddata[z].lock);
+		pthread_join(ctx->tids[z],NULL);
+		pthread_mutex_destroy(&ctx->tiddata[z].lock);
+		pthread_cond_destroy(&ctx->tiddata[z].cond);
+		return -1;
 	}
+	pthread_mutex_unlock(&ctx->tiddata[z].lock);
 	return 0;
-
-err:
-	while(z--){
-		reap_thread(ctx->tids[z],&ctx->tiddata[z]);
-	}
-	return -1;
 }
 
 int reap_threads(libtorque_ctx *ctx,unsigned tidcount){

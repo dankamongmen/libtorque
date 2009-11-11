@@ -37,10 +37,6 @@ libtorque_ctx *libtorque_init(void){
 		free_libtorque_ctx(ctx);
 		return NULL;
 	}
-	if(spawn_threads(ctx)){
-		free_libtorque_ctx(ctx);
-		return NULL;
-	}
 	return ctx;
 }
 
