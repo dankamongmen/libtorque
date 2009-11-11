@@ -342,7 +342,7 @@ int main(void){
 	const libtorque_topt *t;
 	int ret = EXIT_FAILURE;
 
-	if((ctx = libtorque_init()) == NULL){
+	if((ctx = libtorque_init(0)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto done;
 	}

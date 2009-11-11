@@ -27,7 +27,7 @@ int main(void){
 		fprintf(stderr,"Couldn't set signal mask\n");
 		return EXIT_FAILURE;
 	}
-	if((ctx = libtorque_init()) == NULL){
+	if((ctx = libtorque_init(0)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}

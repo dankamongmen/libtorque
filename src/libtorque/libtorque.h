@@ -5,13 +5,20 @@
 extern "C" {
 #endif
 
+struct SSL_CTX;
 struct libtorque_ctx;
 
 // Initialize the library, returning 0 on success. No libtorque functions may
 // be called before a successful call to libtorque_init(). libtorque_init() may
 // not be called again until libtorque_stop() has been called. Implicitly, only
-// one thread may call libtorque_init().
-struct libtorque_ctx *libtorque_init(void)
+// one thread may call libtorque_init(). The flags argument is any combination
+// of the following flags:
+//
+// LIBTORQUE_INIT_NOSSLINIT: Don't perform OpenSSL library initialization,
+//  either because OpenSSL won't be used or it's been initialized elsewhere. In
+//  particular, this won't initialize the threads(3ssl) code.
+#define LIBTORQUE_INIT_NOSSLINIT	0x00000001
+struct libtorque_ctx *libtorque_init(unsigned)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((malloc));
 
@@ -31,6 +38,11 @@ int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn,
 				libtorque_evcbfxn,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((nonnull(1)));
+
+// The SSL_CTX should be set up with the desired authentication parameters etc
+// already (utility functions are provided to do this).
+int libtorque_addssl(struct libtorque_ctx *,int,struct SSL_CTX *,
+			libtorque_evcbfxn,libtorque_evcbfxn,void *);
 
 // Reset the library, destroying all associated threads and state and returning
 // 0 on success. No libtorque functions, save libtorque_init(), may be called
