@@ -6,6 +6,7 @@
 #include <libtorque/events/fds.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/events/sysdep.h>
+#include <libtorque/events/signals.h>
 #include <libtorque/events/sources.h>
 
 static inline libtorque_ctx *
@@ -63,26 +64,12 @@ libtorque_ctx *libtorque_init(void){
 	return ret;
 }
 
-static int
-libtorque_addevent(libtorque_ctx *ctx,const evsource *ev){
-	if(ctx == NULL || ev == NULL){
-		return -1;
-	} // FIXME
-	return 0;
-}
-
 int libtorque_addsignal(libtorque_ctx *ctx,int sig,libtorque_evcbfxn fxn,
 					void *state){
-	evsource ev;
-
 	if(sig <= 0){
 		return -1;
 	}
-	// FIXME
-	ev.rxfxn = fxn;
-	ev.txfxn = NULL;
-	ev.cbstate = state;
-	return libtorque_addevent(ctx,&ev);
+	return add_signal_to_evhandler(ctx->ev,sig,fxn,state);
 }
 
 int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
