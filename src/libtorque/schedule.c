@@ -4,6 +4,16 @@
 #include <libtorque/internal.h>
 #include <libtorque/events/thread.h>
 
+typedef struct tdata { // FIXME opaqify!
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
+	enum {
+		THREAD_UNLAUNCHED = 0,
+		THREAD_PREFAIL,
+		THREAD_STARTED,
+	} status;
+} tdata;
+
 // OpenSSL requires a numeric identifier for threads. On FreeBSD (using
 // the default or libthr implementations), pthread_self() is insufficient; it
 // seems to return an aggregate... :/
@@ -93,12 +103,12 @@ int associate_affinityid(libtorque_ctx *ctx,unsigned aid,unsigned idx){
 // FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
 // setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
 static inline unsigned
-portable_cpuset_count(libtorque_ctx *ctx,const cpu_set_t *mask){
+portable_cpuset_count(const cpu_set_t *mask){
 	unsigned count = 0,cpu;
 
 	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
 		if(CPU_ISSET(cpu,mask)){
-			ctx->tiddata[count++].affinity_id = cpu;
+			++count;
 		}
 	}
 	return count;
@@ -109,7 +119,7 @@ portable_cpuset_count(libtorque_ctx *ctx,const cpu_set_t *mask){
 // A "processor" is "something on which we can schedule a running thread". On a
 // successful return, mask contains the original affinity mask of the process.
 static inline unsigned
-detect_cpucount_internal(libtorque_ctx *ctx,cpu_set_t *mask){
+detect_cpucount_internal(cpu_set_t *mask){
 #ifdef LIBTORQUE_FREEBSD
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 				sizeof(*mask),mask) == 0){
@@ -122,7 +132,7 @@ detect_cpucount_internal(libtorque_ctx *ctx,cpu_set_t *mask){
 #endif
 		unsigned csize;
 
-		if((csize = portable_cpuset_count(ctx,mask)) > 0){
+		if((csize = portable_cpuset_count(mask)) > 0){
 			return csize;
 		}
 	}
@@ -134,7 +144,7 @@ initialize_cpucount(libtorque_ctx *ctx){
 	unsigned cpucount;
 
 	CPU_ZERO(&ctx->origmask);
-	if((cpucount = detect_cpucount_internal(ctx,&ctx->origmask)) <= 0){
+	if((cpucount = detect_cpucount_internal(&ctx->origmask)) <= 0){
 		CPU_ZERO(&ctx->origmask);
 	}
 	return cpucount;
@@ -194,7 +204,7 @@ int unpin_thread(const libtorque_ctx *ctx){
 }
 
 static int
-reap_thread(pthread_t tid,tdata *tstate){
+reap_thread(pthread_t tid){
 	void *joinret;
 	int ret = 0;
 
@@ -206,19 +216,14 @@ reap_thread(pthread_t tid,tdata *tstate){
 	if(pthread_join(tid,&joinret) || joinret != PTHREAD_CANCELED){
 		ret = -1;
 	}
-	ret |= pthread_mutex_destroy(&tstate->lock);
-	ret |= pthread_cond_destroy(&tstate->cond);
-	tstate->status = THREAD_UNLAUNCHED;
 	return 0;
 }
 
+// Ought be restricted to a single processor on entry! // FIXME verify?
 static void *
 thread(void *void_marshal){
 	tdata *marshal = void_marshal;
 
-	if(pin_thread(marshal->affinity_id)){
-		goto earlyerr;
-	}
 	if(pthread_mutex_lock(&marshal->lock)){
 		goto earlyerr;
 	}
@@ -242,31 +247,33 @@ earlyerr:
 
 // Must be pinned to the desired CPU upon entry! // FIXME verify?
 int spawn_thread(libtorque_ctx *ctx,unsigned z){
-	if(pthread_mutex_init(&ctx->tiddata[z].lock,NULL)){
+	tdata tidguard;
+	int ret = 0;
+
+	if(pthread_mutex_init(&tidguard.lock,NULL)){
 		return -1;
 	}
-	if(pthread_cond_init(&ctx->tiddata[z].cond,NULL)){
-		pthread_mutex_destroy(&ctx->tiddata[z].lock);
+	if(pthread_cond_init(&tidguard.cond,NULL)){
+		pthread_mutex_destroy(&tidguard.lock);
 		return -1;
 	}
-	if(pthread_create(&ctx->tids[z],NULL,thread,&ctx->tiddata[z])){
-		pthread_mutex_destroy(&ctx->tiddata[z].lock);
-		pthread_cond_destroy(&ctx->tiddata[z].cond);
+	if(pthread_create(&ctx->tids[z],NULL,thread,&tidguard)){
+		pthread_mutex_destroy(&tidguard.lock);
+		pthread_cond_destroy(&tidguard.cond);
 		return -1;
 	}
-	pthread_mutex_lock(&ctx->tiddata[z].lock);
-	while(ctx->tiddata[z].status == THREAD_UNLAUNCHED){
-		pthread_cond_wait(&ctx->tiddata[z].cond,&ctx->tiddata[z].lock);
+	ret |= pthread_mutex_lock(&tidguard.lock);
+	while(tidguard.status == THREAD_UNLAUNCHED){
+		ret |= pthread_cond_wait(&tidguard.cond,&tidguard.lock);
 	}
-	if(ctx->tiddata[z].status != THREAD_STARTED){
-		pthread_mutex_unlock(&ctx->tiddata[z].lock);
+	if(tidguard.status != THREAD_STARTED){
 		pthread_join(ctx->tids[z],NULL);
-		pthread_mutex_destroy(&ctx->tiddata[z].lock);
-		pthread_cond_destroy(&ctx->tiddata[z].cond);
-		return -1;
+		ret = -1;
 	}
-	pthread_mutex_unlock(&ctx->tiddata[z].lock);
-	return 0;
+	ret |= pthread_mutex_unlock(&tidguard.lock);
+	ret |= pthread_cond_destroy(&tidguard.cond);
+	ret |= pthread_mutex_destroy(&tidguard.lock);
+	return ret;
 }
 
 int reap_threads(libtorque_ctx *ctx,unsigned tidcount){
@@ -274,7 +281,7 @@ int reap_threads(libtorque_ctx *ctx,unsigned tidcount){
 	unsigned z;
 
 	for(z = 0 ; z < tidcount ; ++z){
-		ret |= reap_thread(ctx->tids[z],&ctx->tiddata[z]);
+		ret |= reap_thread(ctx->tids[z]);
 	}
 	return ret;
 }
