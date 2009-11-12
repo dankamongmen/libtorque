@@ -228,10 +228,8 @@ thread(void *void_marshal){
 		goto earlyerr;
 	}
 	marshal->status = THREAD_STARTED;
+	pthread_cond_broadcast(&marshal->cond);
 	if(pthread_mutex_unlock(&marshal->lock)){
-		goto earlyerr;
-	}
-	if(pthread_cond_broadcast(&marshal->cond)){
 		goto earlyerr;
 	}
 	event_thread();
@@ -240,8 +238,8 @@ thread(void *void_marshal){
 earlyerr:
 	pthread_mutex_lock(&marshal->lock); // continue regardless
 	marshal->status = THREAD_PREFAIL;
-	pthread_mutex_unlock(&marshal->lock);
 	pthread_cond_broadcast(&marshal->cond);
+	pthread_mutex_unlock(&marshal->lock);
 	return NULL;
 }
 
