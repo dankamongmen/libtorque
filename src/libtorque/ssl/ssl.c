@@ -33,6 +33,13 @@ create_ssl_accept_cbstate(SSL_CTX *ctx,void *cbstate,evcbfxn rx,evcbfxn tx){
 	return ret;
 }
 
+void free_ssl_accept_cbstate(ssl_accept_cbstate *sac){
+	if(sac){
+		SSL_free(sac->ssl);
+		free(sac);
+	}
+}
+
 int stop_ssl(void){
 	int z,numlocks,ret = 0;
 

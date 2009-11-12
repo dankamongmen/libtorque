@@ -33,6 +33,7 @@ struct ssl_accept_cbstate *
 create_ssl_accept_cbstate(SSL_CTX *,void *,evcbfxn,evcbfxn)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
+void free_ssl_accept_cbstate(struct ssl_accept_cbstate *);
 
 int ssl_accept_rxfxn(int,void *);
 

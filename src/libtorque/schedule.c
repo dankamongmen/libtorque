@@ -2,7 +2,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <libtorque/internal.h>
-#include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
 
 // OpenSSL requires a numeric identifier for threads. On FreeBSD (using
@@ -224,13 +223,13 @@ typedef struct tguard {
 static void *
 thread(void *void_marshal){
 	tguard *marshal = void_marshal;
-	int efd;
+	evhandler *ev = NULL;
 
-	if((efd = Kqueue()) < 0){
+	if((ev = create_evhandler()) == NULL){
 		goto earlyerr;
 	}
 	if(pthread_mutex_lock(&marshal->lock)){
-		close(efd);
+		destroy_evhandler(ev);
 		goto earlyerr;
 	}
 	marshal->status = THREAD_STARTED;
@@ -238,7 +237,8 @@ thread(void *void_marshal){
 	if(pthread_mutex_unlock(&marshal->lock)){
 		goto earlyerr;
 	}
-	event_thread(efd);
+	event_thread(ev);
+	destroy_evhandler(ev);
 	return NULL;
 
 earlyerr:
@@ -246,6 +246,7 @@ earlyerr:
 	marshal->status = THREAD_PREFAIL;
 	pthread_cond_broadcast(&marshal->cond);
 	pthread_mutex_unlock(&marshal->lock);
+	destroy_evhandler(ev);
 	return NULL;
 }
 

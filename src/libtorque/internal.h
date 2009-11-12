@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <libtorque/schedule.h>
 
+struct evhandler;
+
 typedef struct libtorque_topt {
 	cpu_set_t schedulable;
 	unsigned groupid;		// x86: Core for multicores, or package
@@ -76,6 +78,7 @@ typedef struct libtorque_cput {
 // called, and as it was then restricted (ie, only those processing elements in
 // our cpuset, and only those NUMA nodes which we can reach).
 typedef struct libtorque_ctx {
+	struct evhandler *ev;
 	unsigned cpucount;		// number of processing elements
 	unsigned nodecount;		// number of NUMA nodes
 	unsigned cpu_typecount;		// number of processing element types

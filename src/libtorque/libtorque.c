@@ -3,6 +3,7 @@
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
+#include <libtorque/events/fds.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/events/sources.h>
 
@@ -66,16 +67,10 @@ int libtorque_addsignal(libtorque_ctx *ctx,int sig,libtorque_evcbfxn fxn,
 
 int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
 				libtorque_evcbfxn tx,void *state){
-	evsource ev;
-
-	if(fd <= 0){
+	if(fd < 0){
 		return -1;
 	}
-	// FIXME
-	ev.rxfxn = rx;
-	ev.txfxn = tx;
-	ev.cbstate = state;
-	return libtorque_addevent(ctx,&ev);
+	return add_fd_to_evhandler(ctx->ev,fd,rx,tx,state);
 }
 
 int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
@@ -86,7 +81,7 @@ int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 		return -1;
 	}
 	if(libtorque_addfd(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){
-		free(cbs);
+		free_ssl_accept_cbstate(cbs);
 		return -1;
 	}
 	return 0;

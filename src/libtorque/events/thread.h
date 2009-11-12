@@ -5,7 +5,15 @@
 extern "C" {
 #endif
 
-void event_thread(int);
+#include <libtorque/events/sources.h>
+
+evhandler *create_evhandler(void)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((malloc));
+
+int destroy_evhandler(evhandler *);
+
+void event_thread(evhandler *);
 
 #ifdef __cplusplus
 }
