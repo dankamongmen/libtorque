@@ -60,10 +60,15 @@ initialize_evhandler(evhandler *e,int fd){
 		goto lockerr;
 	}*/
 	e->efd = fd;
-	/*e->fdarraysize = determine_max_fds();
+	if((e->fdarraysize = sysconf(_SC_OPEN_MAX)) <= 0){
+		if((e->fdarraysize = getdtablesize()) <= 0){
+			goto conderr;
+		}
+	}
 	if((e->fdarray = create_evsources(e->fdarraysize)) == NULL){
 		goto conderr;
 	}
+	/*
 	// Need we really go all the way through SIGRTMAX? FreeBSD 6 doesn't
 	// even define it argh! FIXME
 #ifdef SIGRTMAX
@@ -82,11 +87,11 @@ initialize_evhandler(evhandler *e,int fd){
 sigerr:
 	destroy_evsources(e->sigarray,e->sigarraysize);
 fderr:
-	destroy_evsources(e->fdarray,e->fdarraysize);
+	destroy_evsources(e->fdarray,e->fdarraysize);*/
 conderr:
-	pthread_cond_destroy(&e->cond);
-lockerr:
-	pthread_mutex_destroy(&e->lock);*/
+	//pthread_cond_destroy(&e->cond);
+//lockerr:
+	pthread_mutex_destroy(&e->lock);
 err:
 	return -1;
 }
