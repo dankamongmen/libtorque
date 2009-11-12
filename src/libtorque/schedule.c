@@ -4,16 +4,6 @@
 #include <libtorque/internal.h>
 #include <libtorque/events/thread.h>
 
-typedef struct tdata { // FIXME opaqify!
-	pthread_mutex_t lock;
-	pthread_cond_t cond;
-	enum {
-		THREAD_UNLAUNCHED = 0,
-		THREAD_PREFAIL,
-		THREAD_STARTED,
-	} status;
-} tdata;
-
 // OpenSSL requires a numeric identifier for threads. On FreeBSD (using
 // the default or libthr implementations), pthread_self() is insufficient; it
 // seems to return an aggregate... :/
@@ -219,10 +209,20 @@ reap_thread(pthread_t tid){
 	return 0;
 }
 
+typedef struct tguard {
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
+	enum {
+		THREAD_UNLAUNCHED = 0,
+		THREAD_PREFAIL,
+		THREAD_STARTED,
+	} status;
+} tguard;
+
 // Ought be restricted to a single processor on entry! // FIXME verify?
 static void *
 thread(void *void_marshal){
-	tdata *marshal = void_marshal;
+	tguard *marshal = void_marshal;
 
 	if(pthread_mutex_lock(&marshal->lock)){
 		goto earlyerr;
@@ -247,7 +247,7 @@ earlyerr:
 
 // Must be pinned to the desired CPU upon entry! // FIXME verify?
 int spawn_thread(libtorque_ctx *ctx,unsigned z){
-	tdata tidguard;
+	tguard tidguard;
 	int ret = 0;
 
 	if(pthread_mutex_init(&tidguard.lock,NULL)){
