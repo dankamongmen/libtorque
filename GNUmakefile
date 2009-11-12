@@ -1,6 +1,6 @@
 .DELETE_ON_ERROR:
-.PHONY: all test testarchdetect testpercpu hardtest docs clean mrproper \
-	install unsafe-install deinstall
+.PHONY: all test testarchdetect testpercpu hardtest testssl docs clean \
+	mrproper install unsafe-install deinstall
 .DEFAULT_GOAL:=test
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
@@ -213,13 +213,18 @@ docs: $(DOCS)
 test: $(BINS) $(LIBS) testarchdetect testpercpu
 
 testarchdetect: $(BINOUT)/$(ARCHDETECT)
-	@echo -n "Testing $(ARCHDETECT): "
+	@echo -n "Testing $(<F): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $<
 
 PERCPUARGS:="echo percpu"
 testpercpu: $(BINOUT)/$(PERCPU)
-	@echo -n "Testing $(PERCPU): "
+	@echo -n "Testing $(<F): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $< $(PERCPUARGS)
+
+testssl: $(BINOUT)/$(SSLSRV)
+	@echo -n "Testing $(<F) (press Ctrl-C to stop): "
+	env LD_LIBRARY_PATH=$(LIBOUT) $<
+
 
 VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v --track-origins=yes
