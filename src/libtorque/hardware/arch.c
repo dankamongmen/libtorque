@@ -99,16 +99,16 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 // CPU mask if necessary after a call.
 static int
 detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
-	unsigned totalpe,z,cpu;
+	unsigned z,cpu;
 	cpu_set_t mask;
 
 	*cputc = 0;
 	*types = NULL;
 	// we're basically doing this in the main loop. purge! FIXME
-	if((totalpe = detect_cpucount(ctx,&mask)) <= 0){
+	if((ctx->cpucount = detect_cpucount(ctx,&mask)) <= 0){
 		goto err;
 	}
-	for(z = 0, cpu = 0 ; z < totalpe ; ++z){
+	for(z = 0, cpu = 0 ; z < ctx->cpucount ; ++z){
 		libtorque_cput cpudetails;
 		unsigned thread,core,pkg;
 		typeof(*types) cputype;
@@ -156,6 +156,7 @@ err:
 	*cputc = 0;
 	free(*types);
 	*types = NULL;
+	ctx->cpucount = 0;
 	return -1;
 }
 
