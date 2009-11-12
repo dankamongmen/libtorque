@@ -53,11 +53,10 @@ add_evhandler_baseevents(evhandler *e){
 
 static int
 initialize_evhandler(evhandler *e,int fd){
-	/*
 	if(pthread_mutex_init(&e->lock,NULL)){
 		goto err;
 	}
-	if(pthread_cond_init(&e->cond,NULL)){
+	/*if(pthread_cond_init(&e->cond,NULL)){
 		goto lockerr;
 	}*/
 	e->efd = fd;
@@ -87,9 +86,9 @@ fderr:
 conderr:
 	pthread_cond_destroy(&e->cond);
 lockerr:
-	pthread_mutex_destroy(&e->lock);
+	pthread_mutex_destroy(&e->lock);*/
 err:
-	return -1;*/
+	return -1;
 }
 
 evhandler *create_evhandler(void){
@@ -149,8 +148,8 @@ int destroy_evhandler(evhandler *e){
 	int ret = 0;
 
 	if(e){
-		/*ret |= pthread_mutex_destroy(&e->lock);
-		ret |= pthread_cond_destroy(&e->cond);*/
+		ret |= pthread_mutex_destroy(&e->lock);
+		//ret |= pthread_cond_destroy(&e->cond);
 		ret |= destroy_evsources(e->sigarray,e->sigarraysize);
 		ret |= destroy_evsources(e->fdarray,e->fdarraysize);
 		destroy_evectors(e->externalvec);

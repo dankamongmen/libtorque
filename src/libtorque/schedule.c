@@ -210,6 +210,7 @@ reap_thread(pthread_t tid){
 }
 
 typedef struct tguard {
+	libtorque_ctx *ctx;
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
 	enum {
@@ -232,6 +233,7 @@ thread(void *void_marshal){
 		destroy_evhandler(ev);
 		goto earlyerr;
 	}
+	marshal->ctx->ev = ev;
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
 	if(pthread_mutex_unlock(&marshal->lock)){
@@ -252,7 +254,9 @@ earlyerr:
 
 // Must be pinned to the desired CPU upon entry! // FIXME verify?
 int spawn_thread(libtorque_ctx *ctx,unsigned z){
-	tguard tidguard;
+	tguard tidguard = {
+		.ctx = ctx,
+	};
 	int ret = 0;
 
 	if(pthread_mutex_init(&tidguard.lock,NULL)){
