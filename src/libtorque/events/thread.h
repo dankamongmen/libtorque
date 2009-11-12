@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-void event_thread(void);
+void event_thread(int);
 
 #ifdef __cplusplus
 }

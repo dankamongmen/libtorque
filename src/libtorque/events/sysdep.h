@@ -33,7 +33,7 @@ static inline int
 Kqueue(void){
 	const int flags = 0;
 
-	return epoll_create(flags);
+	return epoll_create1(flags);
 }
 
 // Emulation of FreeBSD's kevent(2) notification mechanism. Timeout values are

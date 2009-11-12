@@ -5,7 +5,7 @@
 // We're currently cancellable. That isn't generally safe unless we wrap
 // handling with cancellation blocking, which eats a bit of performance. We'd
 // like to encode cancellation into event handling itself FIXME.
-void event_thread(void){
+void event_thread(int efd){
 	int newcstate = PTHREAD_CANCEL_DISABLE;
 
 	while(1){
@@ -14,7 +14,6 @@ void event_thread(void){
 			.vsizes = 0,
 			.changesqueued = 0,
 		}; // FIXME
-		int efd = -1; // FIXME
 
 		events = Kevent(efd,PTR_TO_CHANGEV(&ev),ev.changesqueued,
 				PTR_TO_EVENTV(&ev),ev.vsizes);

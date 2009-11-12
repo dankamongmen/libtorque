@@ -2,6 +2,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <libtorque/internal.h>
+#include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
 
 // OpenSSL requires a numeric identifier for threads. On FreeBSD (using
@@ -217,22 +218,25 @@ typedef struct tguard {
 		THREAD_PREFAIL,
 		THREAD_STARTED,
 	} status;
+	int efd;
 } tguard;
 
 // Ought be restricted to a single processor on entry! // FIXME verify?
 static void *
 thread(void *void_marshal){
 	tguard *marshal = void_marshal;
+	int efd;
 
 	if(pthread_mutex_lock(&marshal->lock)){
 		goto earlyerr;
 	}
+	efd = marshal->efd;
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
 	if(pthread_mutex_unlock(&marshal->lock)){
 		goto earlyerr;
 	}
-	event_thread();
+	event_thread(efd);
 	return NULL;
 
 earlyerr:
@@ -248,16 +252,22 @@ int spawn_thread(libtorque_ctx *ctx,unsigned z){
 	tguard tidguard;
 	int ret = 0;
 
+	if((tidguard.efd = Kqueue()) < 0){
+		return -1;
+	}
 	if(pthread_mutex_init(&tidguard.lock,NULL)){
+		close(tidguard.efd);
 		return -1;
 	}
 	if(pthread_cond_init(&tidguard.cond,NULL)){
 		pthread_mutex_destroy(&tidguard.lock);
+		close(tidguard.efd);
 		return -1;
 	}
 	if(pthread_create(&ctx->tids[z],NULL,thread,&tidguard)){
 		pthread_mutex_destroy(&tidguard.lock);
 		pthread_cond_destroy(&tidguard.cond);
+		close(tidguard.efd);
 		return -1;
 	}
 	ret |= pthread_mutex_lock(&tidguard.lock);
@@ -266,6 +276,7 @@ int spawn_thread(libtorque_ctx *ctx,unsigned z){
 	}
 	if(tidguard.status != THREAD_STARTED){
 		pthread_join(ctx->tids[z],NULL);
+		close(tidguard.efd);
 		ret = -1;
 	}
 	ret |= pthread_mutex_unlock(&tidguard.lock);
