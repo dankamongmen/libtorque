@@ -27,6 +27,10 @@ make_ssl_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 		close(sd);
 		return -1;
 	}
+	if(listen(sd,SOMAXCONN)){
+		close(sd);
+		return -1;
+	}
 	return sd;
 }
 
