@@ -28,6 +28,14 @@ struct kevent { // each element an array, each array the same number of members
 	kevententry *events; // array of kevententries
 };
 
+// Emulation of FreeBSD's kqueue(2) constructor
+static inline int
+Kqueue(void){
+	const int flags = 0;
+
+	return epoll_create(flags);
+}
+
 // Emulation of FreeBSD's kevent(2) notification mechanism. Timeout values are
 // specified differently between the two, so we just disable them entirely
 // (since we're never using them anyway). If they need be restored, just
