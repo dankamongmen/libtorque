@@ -75,7 +75,7 @@
 	</refsect1>
 	<refsect1 id="options">
 		<title>OPTIONS</title>
-		<para><command>&dhpackage;</command> takes no options.</para>
+		<para><command>&dhpackage;</command> takes no options FIXME.</para>
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
