@@ -122,7 +122,7 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't initialize OpenSSL\n");
 		goto err;
 	}
-	if((sslctx = new_ssl_ctx(NULL,NULL,NULL,0)) == NULL){
+	if((sslctx = new_ssl_ctx(certfile,keyfile,cafile,0)) == NULL){
 		fprintf(stderr,"Couldn't initialize OpenSSL context\n");
 		goto err;
 	}
