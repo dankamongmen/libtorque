@@ -6,6 +6,13 @@
 #include <libtorque/events/signals.h>
 #include <libtorque/events/sources.h>
 
+static void
+handle_event(const kevententry *e){
+	if(e->data.fd >= 0){
+		printf("handling %d\n",e->data.fd);
+	}
+}
+
 // We're currently cancellable. That isn't generally safe unless we wrap
 // handling with cancellation blocking, which eats a bit of performance. We'd
 // like to encode cancellation into event handling itself FIXME.
@@ -14,10 +21,13 @@ void event_thread(evhandler *e){
 
 	while(1){
 		evectors *ev = e->externalvec; // FIXME really?
-		int events,oldcstate;
+		int events,oldcstate,z;
 
 		events = Kevent(e->efd,PTR_TO_CHANGEV(ev),ev->changesqueued,
 				PTR_TO_EVENTV(ev),ev->vsizes);
+		for(z = 0 ; z < events ; ++z){
+			handle_event(&PTR_TO_EVENTV(ev)->events[z]);
+		}
 		pthread_setcancelstate(newcstate,&oldcstate);
 		pthread_setcancelstate(oldcstate,&newcstate);
 		pthread_testcancel();
