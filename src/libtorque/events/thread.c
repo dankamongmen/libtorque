@@ -13,14 +13,11 @@ void event_thread(evhandler *e){
 	int newcstate = PTHREAD_CANCEL_DISABLE;
 
 	while(1){
+		evectors *ev = e->externalvec; // FIXME really?
 		int events,oldcstate;
-		evectors ev = {
-			.vsizes = 0,
-			.changesqueued = 0,
-		}; // FIXME
 
-		events = Kevent(e->efd,PTR_TO_CHANGEV(&ev),ev.changesqueued,
-				PTR_TO_EVENTV(&ev),ev.vsizes);
+		events = Kevent(e->efd,PTR_TO_CHANGEV(ev),ev->changesqueued,
+				PTR_TO_EVENTV(ev),ev->vsizes);
 		pthread_setcancelstate(newcstate,&oldcstate);
 		pthread_setcancelstate(oldcstate,&newcstate);
 		pthread_testcancel();
