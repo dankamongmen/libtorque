@@ -125,18 +125,23 @@ SSL_CTX *new_ssl_ctx(const char *certfile,const char *keyfile,
 	if((ret = SSL_CTX_new(SSLv3_method())) == NULL){
 		return NULL;
 	}
+	if(cafile){
 	// The CA's we trust. We must still ensure the certificate chain is
 	// semantically valid, not just syntactically valid! This is done via
 	// checking X509 properties and a CRL in openssl_verify_callback().
-	if(SSL_CTX_load_verify_locations(ret,cafile,NULL) != 1){
-		SSL_CTX_free(ret);
-		return NULL;;
+		if(SSL_CTX_load_verify_locations(ret,cafile,NULL) != 1){
+			SSL_CTX_free(ret);
+			return NULL;;
+		}
 	}
 	if(cliver){
 		SSL_CTX_set_verify(ret,SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
 					openssl_verify_callback);
 	}else{
 		SSL_CTX_set_verify(ret,SSL_VERIFY_NONE,NULL);
+	}
+	if(!(keyfile || certfile)){
+		return ret;
 	}
 	if(SSL_CTX_use_PrivateKey_file(ret,keyfile,SSL_FILETYPE_PEM) == 1){
 		if(SSL_CTX_use_certificate_chain_file(ret,certfile) == 1){
