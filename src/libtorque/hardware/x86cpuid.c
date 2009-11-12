@@ -1032,6 +1032,8 @@ id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
 			mem.totalsize = mem.associativity *
 				(((gpregs[1] >> 12u) & 0x1ffu) + 1) *
 				mem.linesize * (gpregs[2] + 1);
+			// Maximum number of logical processors in a physical
+			// package sharing the cache is EAX[25:14] + 1
 			mem.sharedways = ((gpregs[0] >> 14u) & 0xfffu) + 1;
 			mem.level = lev;
 			// Cores per package = EAX[31:26] + 1

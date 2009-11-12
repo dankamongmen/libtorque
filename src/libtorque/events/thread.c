@@ -1,7 +1,9 @@
 #include <unistd.h>
+#include <signal.h>
 #include <pthread.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
+#include <libtorque/events/signals.h>
 #include <libtorque/events/sources.h>
 
 #define EVTHREAD_SIGNAL SIGURG
@@ -27,29 +29,112 @@ void event_thread(evhandler *e){
 	}
 }
 
-/*static int
+static unsigned long
+max_fds(void){
+	long sc;
+
+	if((sc = sysconf(_SC_OPEN_MAX)) <= 0){
+		if((sc = getdtablesize()) <= 0){ // just checks rlimit
+			sc = FOPEN_MAX; // ugh
+		}
+	}
+	return sc;
+}
+
+#ifdef LIBTORQUE_LINUX
+static int
+create_evector(struct kevent *kv){
+	if((kv->events = malloc(max_fds() * sizeof(*kv->events))) == NULL){
+		return -1;
+	}
+	if((kv->ctldata = malloc(max_fds() * sizeof(*kv->ctldata))) == NULL){
+		free(kv->events);
+		return -1;
+	}
+	return 0;
+}
+#endif
+
+static void
+#ifdef LIBTORQUE_LINUX
+destroy_evector(struct kevent *kv){
+	free(kv->events);
+	free(kv->ctldata);
+#else
+destroy_evector(struct kevent **kv){
+	free(*kv);
+#endif
+}
+
+static evectors *
+create_evectors(void){
+	int maxfds = max_fds();
+	evectors *ret;
+
+
+	if((ret = malloc(sizeof(*ret))) == NULL){
+		return NULL;
+	}
+#ifdef LIBTORQUE_LINUX
+	if(create_evector(&ret->eventv)){
+		free(ret);
+		return NULL;
+	}
+	if(create_evector(&ret->changev)){
+		destroy_evector(&ret->eventv);
+		free(ret);
+		return NULL;
+	}
+#else
+	ret->eventv = malloc(maxfds * sizeof(*ret->eventv));
+	ret->changev = malloc(maxfds * sizeof(*ret->changev));
+	if(!ret->eventv || !ret->changev){
+		free(ret->changev);
+		free(ret->eventv);
+		free(ret);
+		return NULL;
+	}
+#endif
+	ret->changesqueued = 0;
+	ret->vsizes = maxfds;
+	return ret;
+}
+
+static void
+destroy_evectors(evectors *e){
+	if(e){
+		destroy_evector(&e->changev);
+		destroy_evector(&e->eventv);
+		free(e);
+	}
+}
+
+static int
 add_evhandler_baseevents(evhandler *e){
 	evectors *ev;
 
 	if((ev = create_evectors()) == NULL){
 		return -1;
 	}
-	if(add_signal_to_evcore(e,ev,EVTHREAD_SIGNAL,NULL,NULL)){
+	e->externalvec = ev;
+	if(add_signal_to_evhandler(e,EVTHREAD_SIGNAL,NULL,NULL)){
+		e->externalvec = NULL;
 		destroy_evectors(ev);
 		return -1;
 	}
 #ifdef LIBTORQUE_LINUX
-	if(Kevent(e->fd,&ev->changev,ev->changesqueued,NULL,0,NULL)){
+	if(Kevent(e->efd,&ev->changev,ev->changesqueued,NULL,0)){
 #else
-	if(Kevent(e->fd,ev->changev,ev->changesqueued,NULL,0,NULL)){
+	if(Kevent(e->efd,ev->changev,ev->changesqueued,NULL,0)){
 #endif
+		e->externalvec = NULL;
+		ev->changesqueued = 0;
 		destroy_evectors(ev);
 		return -1;
 	}
 	ev->changesqueued = 0;
-	e->externalvec = ev;
 	return 0;
-}*/
+}
 
 static int
 initialize_evhandler(evhandler *e,int fd){
@@ -60,15 +145,10 @@ initialize_evhandler(evhandler *e,int fd){
 		goto lockerr;
 	}*/
 	e->efd = fd;
-	if((e->fdarraysize = sysconf(_SC_OPEN_MAX)) <= 0){
-		if((e->fdarraysize = getdtablesize()) <= 0){
-			goto conderr;
-		}
-	}
+	e->fdarraysize = max_fds();
 	if((e->fdarray = create_evsources(e->fdarraysize)) == NULL){
 		goto conderr;
 	}
-	/*
 	// Need we really go all the way through SIGRTMAX? FreeBSD 6 doesn't
 	// even define it argh! FIXME
 #ifdef SIGRTMAX
@@ -81,13 +161,14 @@ initialize_evhandler(evhandler *e,int fd){
 	}
 	if(add_evhandler_baseevents(e)){
 		goto sigerr;
-	}*/
+	}
 	return 0;
-/*
+
 sigerr:
 	destroy_evsources(e->sigarray,e->sigarraysize);
+	
 fderr:
-	destroy_evsources(e->fdarray,e->fdarraysize);*/
+	destroy_evsources(e->fdarray,e->fdarraysize);
 conderr:
 	//pthread_cond_destroy(&e->cond);
 //lockerr:
@@ -127,26 +208,6 @@ evhandler *create_evhandler(void){
 	}
 	close(fd);
 	return NULL;
-}
-
-static void
-#ifdef LIBTORQUE_LINUX
-destroy_evector(struct kevent *kv){
-	free(kv->events);
-	free(kv->ctldata);
-#elif defined(LIBTORQUE_FREEBSD)
-destroy_evector(struct kevent **kv){
-	free(*kv);
-#endif
-}
-
-static void
-destroy_evectors(evectors *e){
-        if(e){
-		destroy_evector(&e->changev);
-		destroy_evector(&e->eventv);
-		free(e);
-	}
 }
 
 int destroy_evhandler(evhandler *e){

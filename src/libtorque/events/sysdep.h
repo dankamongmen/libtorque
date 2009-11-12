@@ -35,7 +35,7 @@ struct kevent { // each element an array, each array the same number of members
 static inline int
 Kevent(int epfd,struct kevent *changelist,int nchanges,
 		struct kevent *eventlist,int nevents){
-	int ret = 0,n;
+	int n,ret = 0;
 
 	for(n = 0 ; n < nchanges ; ++n){
 		if(epoll_ctl(epfd,changelist->ctldata[n].op,

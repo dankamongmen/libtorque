@@ -3,6 +3,7 @@
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/sources.h>
 
+#include <stdio.h>
 static inline int
 add_fd_event(struct evectors *ev,int fd,evcbfxn rfxn,evcbfxn tfxn){
 #ifdef LIBTORQUE_LINUX
@@ -24,8 +25,10 @@ add_fd_event(struct evectors *ev,int fd,evcbfxn rfxn,evcbfxn tfxn){
 		ee.events |= EPOLLOUT;
 	}
 	if(add_evector_kevents(ev,&k,1)){
+		printf("ADD FAILED\n");
 		return -1;
 	}
+	printf("ADD SUCCEEDED\n");
 #elif defined(LIBTORQUE_FREEBSD)
 	struct kevent k[2];
 
@@ -62,8 +65,10 @@ int add_fd_to_evhandler(evhandler *eh,int fd,evcbfxn rfxn,evcbfxn tfxn,
 	if(pthread_mutex_lock(&eh->lock) == 0){
 		struct evectors *ev = eh->externalvec;
 
+		printf("adding fd\n");
 		if(add_fd_to_evcore(eh,ev,fd,rfxn,tfxn,cbstate) == 0){
 			// flush_evector_changes unlocks on all paths
+			printf("flushing fd\n");
 			return flush_evector_changes(eh,ev);
 		}
 		pthread_mutex_unlock(&eh->lock);
