@@ -81,19 +81,11 @@ int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
 int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 			libtorque_evcbfxn rx,libtorque_evcbfxn tx,void *state){
 	struct ssl_accept_cbstate *cbs;
-	evsource ev;
 
-	if(fd <= 0){
+	if((cbs = create_ssl_accept_cbstate(sslctx,state,rx,tx)) == NULL){
 		return -1;
 	}
-	if((cbs = create_ssl_accept_cbstate(sslctx,state)) == NULL){
-		return -1;
-	}
-	// FIXME
-	ev.rxfxn = rx; // FIXME no, use our SSL layer, then calldowns
-	ev.txfxn = tx;
-	ev.cbstate = cbs;
-	if(libtorque_addevent(ctx,&ev)){
+	if(libtorque_addfd(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){
 		free(cbs);
 		return -1;
 	}

@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <openssl/ssl.h>
+#include <libtorque/events/sources.h>
 
 // Call this only if OpenSSL hasn't already been properly initialized by some
 // other code. If OpenSSL is elsewhere initialized, ensure the threads(3ssl)
@@ -29,9 +30,11 @@ SSL *new_ssl_conn(SSL_CTX *)
 	__attribute__ ((malloc));
 
 struct ssl_accept_cbstate *
-create_ssl_accept_cbstate(SSL_CTX *,void *)
+create_ssl_accept_cbstate(SSL_CTX *,void *,evcbfxn,evcbfxn)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
+
+int ssl_accept_rxfxn(int,void *);
 
 #ifdef __cplusplus
 }

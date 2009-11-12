@@ -12,17 +12,23 @@ struct CRYPTO_dynlock_value {
 };
 
 typedef struct ssl_accept_cbstate {
-	SSL_CTX *sslctx;
+	SSL *ssl;
 	void *cbstate;
+	evcbfxn rxfxn,txfxn;
 } ssl_accept_cbstate;
 
 struct ssl_accept_cbstate *
-create_ssl_accept_cbstate(SSL_CTX *ctx,void *cbstate){
+create_ssl_accept_cbstate(SSL_CTX *ctx,void *cbstate,evcbfxn rx,evcbfxn tx){
 	ssl_accept_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		ret->sslctx = ctx;
+		if((ret->ssl = new_ssl_conn(ctx)) == NULL){
+			free(ret);
+			return NULL;
+		}
 		ret->cbstate = cbstate;
+		ret->rxfxn = rx;
+		ret->txfxn = tx;
 	}
 	return ret;
 }
@@ -183,4 +189,12 @@ int init_ssl(void){
 
 SSL *new_ssl_conn(SSL_CTX *ctx){
 	return SSL_new(ctx);
+}
+
+int ssl_accept_rxfxn(int fd __attribute__ ((unused)),void *cbs){
+	const ssl_accept_cbstate *sac = cbs;
+
+	// FIXME implement
+	SSL_accept(sac->ssl);
+	return 0;
 }
