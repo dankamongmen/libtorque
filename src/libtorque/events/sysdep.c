@@ -1,5 +1,6 @@
 #include <string.h>
 #include <libtorque/events/sysdep.h>
+#include <libtorque/events/sources.h>
 
 // We do not enforce, but do expect and require:
 //  - EV_ADD/EPOLL_CTL_ADD to be used as the control operation
@@ -28,4 +29,18 @@ int add_evector_kevents(evectors *e,const struct kevent *k,int kcount){
 #endif
 	e->changesqueued += kcount;
 	return 0;
+}
+
+int flush_evector_changes(evhandler *eh,evectors *ev){
+	int ret;
+
+#ifdef LIBTORQUE_LINUX
+	ret = Kevent(eh->efd,&ev->changev,ev->changesqueued,NULL,0);
+#else
+	ret = Kevent(eh->efd,ev->changev,ev->changesqueued,NULL,0);
+#endif
+	// FIXME...
+	ev->changesqueued = 0;
+	ret |= pthread_mutex_unlock(&eh->lock);
+	return ret;
 }

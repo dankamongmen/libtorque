@@ -3,6 +3,7 @@
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/hardware/arch.h>
+#include <libtorque/events/sources.h>
 
 static inline libtorque_ctx *
 create_libtorque_ctx(void){
@@ -40,12 +41,8 @@ libtorque_ctx *libtorque_init(void){
 	return ctx;
 }
 
-typedef struct eventreq {
-	void *state;
-} eventreq;
-
 static int
-libtorque_addevent(libtorque_ctx *ctx,const eventreq *ev){
+libtorque_addevent(libtorque_ctx *ctx,const evsource *ev){
 	if(ctx == NULL || ev == NULL){
 		return -1;
 	} // FIXME
@@ -54,49 +51,49 @@ libtorque_addevent(libtorque_ctx *ctx,const eventreq *ev){
 
 int libtorque_addsignal(libtorque_ctx *ctx,int sig,libtorque_evcbfxn fxn,
 					void *state){
-	eventreq ev;
+	evsource ev;
 
 	if(sig <= 0){
 		return -1;
 	}
-	if(ctx == NULL || fxn == NULL){
-		return -1;
-	}
 	// FIXME
-	ev.state = state;
+	ev.rxfxn = fxn;
+	ev.txfxn = NULL;
+	ev.cbstate = state;
 	return libtorque_addevent(ctx,&ev);
 }
 
 int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
 				libtorque_evcbfxn tx,void *state){
-	eventreq ev;
+	evsource ev;
 
 	if(fd <= 0){
 		return -1;
 	}
-	if(ctx == NULL || (rx == NULL && tx == NULL)){
-		return -1;
-	}
 	// FIXME
-	ev.state = state;
+	ev.rxfxn = rx;
+	ev.txfxn = tx;
+	ev.cbstate = state;
 	return libtorque_addevent(ctx,&ev);
 }
 
 int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 			libtorque_evcbfxn rx,libtorque_evcbfxn tx,void *state){
-	eventreq ev;
+	evsource ev;
 
 	if(fd <= 0){
 		return -1;
 	}
-	if(ctx == NULL || (rx == NULL && tx == NULL)){
+	if(ctx == NULL){
 		return -1;
 	}
 	if(sslctx == NULL){
 		return -1;
 	}
 	// FIXME
-	ev.state = state;
+	ev.rxfxn = rx; // FIXME no, use our SSL layer, then calldowns
+	ev.txfxn = tx;
+	ev.cbstate = state;
 	return libtorque_addevent(ctx,&ev);
 }
 

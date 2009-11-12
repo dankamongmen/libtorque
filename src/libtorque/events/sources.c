@@ -4,13 +4,6 @@
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/sources.h>
 
-// The callback state associated with an event source.
-typedef struct evsource {
-	evcbfxn rxfxn;
-	evcbfxn txfxn;
-	void *cbstate;
-} evsource;
-
 evsource *create_evsources(unsigned n){
 	evsource *evs;
 

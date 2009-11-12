@@ -13,6 +13,7 @@ struct libtorque_ctx;
 // one thread may call libtorque_init().
 struct libtorque_ctx *libtorque_init(void)
 	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
 
 // Returning anything other than 0 will see the descriptor closed, and removed
@@ -24,12 +25,14 @@ typedef int (*libtorque_evcbfxn)(int,void *);
 // kqueue doesn't support it; we could wrap this, though FIXME).
 int libtorque_addsignal(struct libtorque_ctx *,int,libtorque_evcbfxn,void *)
 	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));
 
 // Handle the specified file descriptor.
 int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn,
 				libtorque_evcbfxn,void *)
 	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
 #ifndef LIBTORQUE_WITHOUT_SSL
@@ -39,6 +42,7 @@ int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn,
 int libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,libtorque_evcbfxn,
 					libtorque_evcbfxn,void *)
 	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));
 #endif
 
