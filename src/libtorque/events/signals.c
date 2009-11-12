@@ -1,14 +1,13 @@
-#include <libdank/utils/threads.h>
-#include <libdank/ersatz/compat.h>
-#include <libdank/utils/syswrap.h>
-#include <libdank/modules/events/fds.h>
-#include <libdank/modules/events/evcore.h>
-#include <libdank/modules/events/signals.h>
-#include <libdank/modules/events/sources.h>
+#include <unistd.h>
+#include <signal.h>
+#include <libtorque/events/fds.h>
+#include <libtorque/events/sysdep.h>
+#include <libtorque/events/signals.h>
+#include <libtorque/events/sources.h>
 
-#ifdef LIB_COMPAT_LINUX
+#ifdef LIBTORQUE_LINUX
 #include <sys/signalfd.h>
-static void
+static int
 signalfd_demultiplexer(int fd,void *cbstate){
 	struct signalfd_siginfo si;
 	evhandler *e = cbstate;
@@ -18,13 +17,13 @@ signalfd_demultiplexer(int fd,void *cbstate){
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
 			handle_evsource_read(e->sigarray,si.ssi_signo);
 		}else if(r >= 0){
-			bitch("Got short read (%zd) off signalfd %d\n",r,fd);
-			// FIXME stat!
+			// FIXME stat short read! return -1?
 		}
 	}while(r >= 0 && errno != EINTR);
 	if(errno != EAGAIN){
-		moan("Error reading from signalfd %d\n",fd);
+		// FIXME stat on error reading signalfd! return -1?
 	}
+	return 0;
 }
 #endif
 
@@ -49,12 +48,11 @@ signalfd_demultiplexer(int fd,void *cbstate){
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 static inline int
-add_signal_event(evhandler *eh,struct evectors *ev,int sig,
-				evcbfxn rfxn,void *cbstate){
+add_signal_event(evhandler *eh,int sig,evcbfxn rfxn,void *cbstate){
 	sigset_t mask,oldmask;
 
 	sigemptyset(&mask);
-	if(Sigaddset(&mask,sig)){
+	if(sigaddset(&mask,sig)){
 		return -1;
 	}
 	// FIXME actually we want to set the procmask of evhandler threads
@@ -65,7 +63,7 @@ add_signal_event(evhandler *eh,struct evectors *ev,int sig,
 	if(!sigismember(&oldmask,sig)){
 		return -1;
 	}
-#ifdef LIB_COMPAT_LINUX
+#ifdef LIBTORQUE_LINUX
 	{
 		// FIXME we could restrict this all to a single signalfd, since
 		// it takes a sigset_t...less potential parallelism, though
@@ -74,13 +72,12 @@ add_signal_event(evhandler *eh,struct evectors *ev,int sig,
 		if((fd = signalfd(-1,&mask,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			return -1;
 		}
-		if(add_fd_to_evcore(eh,ev,fd,signalfd_demultiplexer,NULL,eh)){
-			Close(fd);
+		if(add_fd_to_evhandler(eh,fd,signalfd_demultiplexer,NULL,eh)){
+			close(fd);
 			return -1;
 		}
 	}
-#else
-#ifdef LIB_COMPAT_FREEBSD
+#elif defined(LIBTORQUE_FREEBSD)
 	{
 		struct kevent k;
 
@@ -92,30 +89,15 @@ add_signal_event(evhandler *eh,struct evectors *ev,int sig,
 #else
 #error "No signal event implementation on this OS"
 #endif
-#endif
 	setup_evsource(eh->sigarray,sig,rfxn,NULL,cbstate);
 	return 0;
 }
 
-int add_signal_to_evcore(evhandler *eh,struct evectors *ev,int sig,
-				evcbfxn rfxn,void *cbstate){
-	if(sig >= eh->sigarraysize){
-		return -1;
-	}
-	if(add_signal_event(eh,ev,sig,rfxn,cbstate)){
-		return -1;
-	}
-	return 0;
-}
-
 int add_signal_to_evhandler(evhandler *eh,int sig,evcbfxn rfxn,void *cbstate){
-	struct evectors *ev = eh->externalvec;
-
 	if(pthread_mutex_lock(&eh->lock) == 0){
-		if(add_signal_to_evcore(eh,ev,sig,rfxn,cbstate) == 0){
-			if(flush_evector_changes(eh,ev) == 0){
-				return pthread_mutex_unlock(&eh->lock);
-			}
+		if(add_signal_event(eh,sig,rfxn,cbstate) == 0){
+			// flush_evector_changes unlocks on all paths
+			return flush_evector_changes(eh,eh->externalvec);
 		}
 		pthread_mutex_unlock(&eh->lock);
 	}

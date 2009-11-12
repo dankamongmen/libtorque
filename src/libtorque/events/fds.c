@@ -50,9 +50,6 @@ add_fd_to_evcore(evhandler *eh,struct evectors *ev,int fd,evcbfxn rfxn,
 	if(fd >= eh->fdarraysize){
 		return -1;
 	}
-	if(rfxn == NULL && tfxn == NULL){
-		return -1;
-	}
 	if(add_fd_event(ev,fd,rfxn,tfxn)){
 		return -1;
 	}
@@ -66,9 +63,8 @@ int add_fd_to_evhandler(evhandler *eh,int fd,evcbfxn rfxn,evcbfxn tfxn,
 		struct evectors *ev = eh->externalvec;
 
 		if(add_fd_to_evcore(eh,ev,fd,rfxn,tfxn,cbstate) == 0){
-			if(flush_evector_changes(eh,ev) == 0){
-				return pthread_mutex_unlock(&eh->lock);
-			}
+			// flush_evector_changes unlocks on all paths
+			return flush_evector_changes(eh,ev);
 		}
 		pthread_mutex_unlock(&eh->lock);
 	}
