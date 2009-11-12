@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <libtorque/ssl/ssl.h>
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/hardware/arch.h>
@@ -79,21 +80,19 @@ int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
 
 int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 			libtorque_evcbfxn rx,libtorque_evcbfxn tx,void *state){
+	struct ssl_accept_cbstate *cbs;
 	evsource ev;
 
+	if((cbs = create_ssl_accept_cbstate(sslctx,state)) == NULL){
+		return -1;
+	}
 	if(fd <= 0){
-		return -1;
-	}
-	if(ctx == NULL){
-		return -1;
-	}
-	if(sslctx == NULL){
 		return -1;
 	}
 	// FIXME
 	ev.rxfxn = rx; // FIXME no, use our SSL layer, then calldowns
 	ev.txfxn = tx;
-	ev.cbstate = state;
+	ev.cbstate = cbs;
 	return libtorque_addevent(ctx,&ev);
 }
 

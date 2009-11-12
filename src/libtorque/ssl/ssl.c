@@ -11,6 +11,22 @@ struct CRYPTO_dynlock_value {
 	pthread_mutex_t mutex; // FIXME use a read-write lock
 };
 
+typedef struct ssl_accept_cbstate {
+	SSL_CTX *sslctx;
+	void *cbstate;
+} ssl_accept_cbstate;
+
+struct ssl_accept_cbstate *
+create_ssl_accept_cbstate(SSL_CTX *ctx,void *cbstate){
+	ssl_accept_cbstate *ret;
+
+	if( (ret = malloc(sizeof(*ret))) ){
+		ret->sslctx = ctx;
+		ret->cbstate = cbstate;
+	}
+	return ret;
+}
+
 int stop_ssl(void){
 	int z,numlocks,ret = 0;
 

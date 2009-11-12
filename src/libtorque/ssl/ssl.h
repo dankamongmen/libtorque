@@ -10,7 +10,8 @@ extern "C" {
 // Call this only if OpenSSL hasn't already been properly initialized by some
 // other code. If OpenSSL is elsewhere initialized, ensure the threads(3ssl)
 // directives have been observed!
-int init_ssl(void) __attribute__ ((visibility("default")));
+int init_ssl(void) __attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result));
 
 // Likewise, call this only if we called initialize_ssl().
 int stop_ssl(void) __attribute__ ((visibility("default")));
@@ -19,9 +20,18 @@ int stop_ssl(void) __attribute__ ((visibility("default")));
 // SSLv3/TLSv1, and require full certificate-based authentication, but allow
 // specification of whether or not client authentication is required.
 SSL_CTX *new_ssl_ctx(const char *,const char *,const char *,unsigned)
-	__attribute__ ((visibility("default")));
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((malloc));
 
-SSL *new_ssl_conn(SSL_CTX *);
+SSL *new_ssl_conn(SSL_CTX *)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((malloc));
+
+struct ssl_accept_cbstate *
+create_ssl_accept_cbstate(SSL_CTX *,void *)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((malloc));
 
 #ifdef __cplusplus
 }
