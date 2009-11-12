@@ -6,8 +6,6 @@
 #include <libtorque/events/signals.h>
 #include <libtorque/events/sources.h>
 
-#define EVTHREAD_SIGNAL SIGURG
-
 // We're currently cancellable. That isn't generally safe unless we wrap
 // handling with cancellation blocking, which eats a bit of performance. We'd
 // like to encode cancellation into event handling itself FIXME.
@@ -122,17 +120,6 @@ add_evhandler_baseevents(evhandler *e){
 		destroy_evectors(ev);
 		return -1;
 	}
-#ifdef LIBTORQUE_LINUX
-	if(Kevent(e->efd,&ev->changev,ev->changesqueued,NULL,0)){
-#else
-	if(Kevent(e->efd,ev->changev,ev->changesqueued,NULL,0)){
-#endif
-		e->externalvec = NULL;
-		ev->changesqueued = 0;
-		destroy_evectors(ev);
-		return -1;
-	}
-	ev->changesqueued = 0;
 	return 0;
 }
 
@@ -197,8 +184,6 @@ evhandler *create_evhandler(void){
 		close(fd);
 		return NULL;
 	}
-#else
-#error "No OS support for event queues"
 #endif
 	if( (ret = malloc(sizeof(*ret))) ){
 		if(initialize_evhandler(ret,fd) == 0){

@@ -95,6 +95,7 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 	return NULL;
 }
 
+#include <stdio.h>
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
 static int

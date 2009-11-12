@@ -5,6 +5,7 @@
 #include <libtorque/libtorque.h>
 #include <libtorque/events/fds.h>
 #include <libtorque/hardware/arch.h>
+#include <libtorque/events/sysdep.h>
 #include <libtorque/events/sources.h>
 
 static inline libtorque_ctx *
@@ -30,7 +31,8 @@ free_libtorque_ctx(libtorque_ctx *ctx){
 	free(ctx);
 }
 
-libtorque_ctx *libtorque_init(void){
+static libtorque_ctx *
+libtorque_init_sigmasked(void){
 	libtorque_ctx *ctx;
 
 	if((ctx = create_libtorque_ctx()) == NULL){
@@ -41,6 +43,24 @@ libtorque_ctx *libtorque_init(void){
 		return NULL;
 	}
 	return ctx;
+}
+
+libtorque_ctx *libtorque_init(void){
+	libtorque_ctx *ret;
+	sigset_t old,add;
+
+	if(sigemptyset(&add) || sigaddset(&add,EVTHREAD_SIGNAL)){
+		return NULL;
+	}
+	if(pthread_sigmask(SIG_BLOCK,&add,&old)){
+		return NULL;
+	}
+	ret = libtorque_init_sigmasked();
+	if(pthread_sigmask(SIG_SETMASK,&old,NULL)){
+		libtorque_stop(ret);
+		return NULL;
+	}
+	return ret;
 }
 
 static int

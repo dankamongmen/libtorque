@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#include <signal.h>
+
+#define EVTHREAD_SIGNAL SIGURG
+
 #include <errno.h>
 
 // To emulate FreeBSD's kevent interface, supply a marshalling of two vectors.

@@ -49,18 +49,12 @@ signalfd_demultiplexer(int fd,void *cbstate){
 //      these signals are silently ignored if specified in mask.
 static inline int
 add_signal_event(evhandler *eh,int sig,evcbfxn rfxn,void *cbstate){
-	sigset_t mask,oldmask;
+	sigset_t mask;
 
-	sigemptyset(&mask);
-	if(sigaddset(&mask,sig)){
+	if(pthread_sigmask(SIG_BLOCK,NULL,&mask)){
 		return -1;
 	}
-	// FIXME actually we want to set the procmask of evhandler threads
-	// present and future...not necessarily the entire process. hrmmmm...
-	if(pthread_sigmask(SIG_BLOCK,&mask,&oldmask)){
-		return -1;
-	}
-	if(!sigismember(&oldmask,sig)){
+	if(!sigismember(&mask,sig)){
 		return -1;
 	}
 #ifdef LIBTORQUE_LINUX
@@ -72,7 +66,8 @@ add_signal_event(evhandler *eh,int sig,evcbfxn rfxn,void *cbstate){
 		if((fd = signalfd(-1,&mask,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			return -1;
 		}
-		if(add_fd_to_evhandler(eh,fd,signalfd_demultiplexer,NULL,eh)){
+		if(add_fd_to_evcore(eh,eh->externalvec,fd,
+				signalfd_demultiplexer,NULL,eh)){
 			close(fd);
 			return -1;
 		}

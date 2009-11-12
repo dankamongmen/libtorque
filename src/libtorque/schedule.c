@@ -236,9 +236,7 @@ thread(void *void_marshal){
 	marshal->ctx->ev = ev;
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
-	if(pthread_mutex_unlock(&marshal->lock)){
-		goto earlyerr;
-	}
+	pthread_mutex_unlock(&marshal->lock);
 	event_thread(ev);
 	destroy_evhandler(ev);
 	return NULL;
