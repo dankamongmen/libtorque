@@ -65,17 +65,17 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 	__asm__ __volatile__(
 #ifdef __x86_64__
 		"cpuid\n\t" // serializing instruction
-		: "=&a" (gpregs[0]), "=b" (gpregs[1]),
-		  "=&c" (gpregs[2]), "=d" (gpregs[3])
+		: "=a" (gpregs[0]), "=b" (gpregs[1]),
+		  "=c" (gpregs[2]), "=d" (gpregs[3])
 		: "0" (level), "2" (subparam)
 #else
 		"pushl %%ebx\n\t" // can't assume use of ebx on 32-bit with PIC
 		"cpuid\n\t" // serializing instruction
 		"movl %%ebx,%[spill]\n\t"
 		"popl %%ebx\n\t"
-		: "=&a" (gpregs[0]), [spill] "=r" (gpregs[1]),
-		  "=&c" (gpregs[2]), "=d" (gpregs[3])
-		: "0" (level), "2" (subparam)
+		: "=a" (gpregs[0]), [spill] "=S" (gpregs[1]),
+		  "=c" (gpregs[2]), "=d" (gpregs[3])
+		: "a" (level), "c" (subparam)
 #endif
 	);
 }
