@@ -10,7 +10,7 @@ extern "C" {
 struct evhandler;
 
 int add_signal_to_evhandler(struct evhandler *,int,evcbfxn,void *)
-	__attribute__ ((nonnull (1)));
+	__attribute__ ((nonnull (1,3)));
 
 #ifdef __cplusplus
 }

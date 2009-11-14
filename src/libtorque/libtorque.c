@@ -50,7 +50,8 @@ libtorque_ctx *libtorque_init(void){
 	libtorque_ctx *ret;
 	sigset_t old,add;
 
-	if(sigemptyset(&add) || sigaddset(&add,EVTHREAD_SIGNAL)){
+	if(sigemptyset(&add) || sigaddset(&add,EVTHREAD_SIGNAL)
+			|| sigaddset(&add,EVTHREAD_TERM)){
 		return NULL;
 	}
 	if(pthread_sigmask(SIG_BLOCK,&add,&old)){

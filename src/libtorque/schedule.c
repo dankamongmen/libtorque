@@ -1,8 +1,10 @@
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include <pthread.h>
 #include <libtorque/internal.h>
 #include <libtorque/events/thread.h>
+#include <libtorque/events/sysdep.h>
 
 // OpenSSL requires a numeric identifier for threads. On FreeBSD (using
 // the default or libthr implementations), pthread_self() is insufficient; it
@@ -199,10 +201,8 @@ reap_thread(pthread_t tid){
 	int ret = 0;
 
 	// If a thread has exited but not yet been joined, it's safe to call
-	// pthread_cancel(); go ahead and do a hard test for success.
-	if(pthread_cancel(tid)){
-		return -1;
-	}
+	// pthread_cancel(). I don't think the same applies here; ignore error.
+	pthread_kill(tid,EVTHREAD_TERM);
 	if(pthread_join(tid,&joinret) || joinret != PTHREAD_CANCELED){
 		ret = -1;
 	}
@@ -226,6 +226,9 @@ thread(void *void_marshal){
 	tguard *marshal = void_marshal;
 	evhandler *ev = NULL;
 
+	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
+		goto earlyerr;
+	}
 	if((ev = create_evhandler()) == NULL){
 		goto earlyerr;
 	}

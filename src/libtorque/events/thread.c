@@ -7,9 +7,11 @@
 #include <libtorque/events/sources.h>
 
 static void
-handle_event(const kevententry *e){
-	if(e->data.fd >= 0){
-		printf("handling %d\n",e->data.fd);
+handle_event(evhandler *eh,const kevententry *e){
+	if(e->events & EPOLLIN){
+		handle_evsource_read(eh->fdarray,e->data.fd);
+	}
+	if(e->events & EPOLLOUT){
 	}
 }
 
@@ -17,20 +19,15 @@ handle_event(const kevententry *e){
 // handling with cancellation blocking, which eats a bit of performance. We'd
 // like to encode cancellation into event handling itself FIXME.
 void event_thread(evhandler *e){
-	int newcstate = PTHREAD_CANCEL_DISABLE;
-
 	while(1){
 		evectors *ev = e->externalvec; // FIXME really?
-		int events,oldcstate,z;
+		int events,z;
 
 		events = Kevent(e->efd,PTR_TO_CHANGEV(ev),ev->changesqueued,
 				PTR_TO_EVENTV(ev),ev->vsizes);
 		for(z = 0 ; z < events ; ++z){
-			handle_event(&PTR_TO_EVENTV(ev)->events[z]);
+			handle_event(e,&PTR_TO_EVENTV(ev)->events[z]);
 		}
-		pthread_setcancelstate(newcstate,&oldcstate);
-		pthread_setcancelstate(oldcstate,&newcstate);
-		pthread_testcancel();
 	}
 }
 
@@ -115,6 +112,17 @@ destroy_evectors(evectors *e){
 }
 
 static int
+rxsignal(int sig,void *unsafe_e){
+	evhandler *e = unsafe_e;
+
+	if(sig == SIGTERM){
+		destroy_evhandler(e);
+		pthread_exit(PTHREAD_CANCELED);
+	}
+	return 0;
+}
+
+static int
 add_evhandler_baseevents(evhandler *e){
 	evectors *ev;
 
@@ -122,7 +130,12 @@ add_evhandler_baseevents(evhandler *e){
 		return -1;
 	}
 	e->externalvec = ev;
-	if(add_signal_to_evhandler(e,EVTHREAD_SIGNAL,NULL,NULL)){
+	if(add_signal_to_evhandler(e,EVTHREAD_SIGNAL,rxsignal,e)){
+		e->externalvec = NULL;
+		destroy_evectors(ev);
+		return -1;
+	}
+	if(add_signal_to_evhandler(e,EVTHREAD_TERM,rxsignal,e)){
 		e->externalvec = NULL;
 		destroy_evectors(ev);
 		return -1;
@@ -193,6 +206,7 @@ evhandler *create_evhandler(void){
 	}
 #endif
 	if( (ret = malloc(sizeof(*ret))) ){
+		memset(ret,0,sizeof(*ret));
 		if(initialize_evhandler(ret,fd) == 0){
 			return ret;
 		}
@@ -202,10 +216,17 @@ evhandler *create_evhandler(void){
 	return NULL;
 }
 
+static void print_evstats(const evthreadstats *stats){
+#define PRINTSTAT(s,field) printf(#field ": %ju\n",(s)->field)
+	PRINTSTAT(stats,evhandler_errors);
+#undef PRINTSTAT
+}
+
 int destroy_evhandler(evhandler *e){
 	int ret = 0;
 
 	if(e){
+		print_evstats(&e->stats);
 		ret |= pthread_mutex_destroy(&e->lock);
 		//ret |= pthread_cond_destroy(&e->cond);
 		ret |= destroy_evsources(e->sigarray,e->sigarraysize);

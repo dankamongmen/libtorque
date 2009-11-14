@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <pthread.h>
 #include <libtorque/libtorque.h>
 
@@ -19,8 +20,13 @@ typedef struct evsource {
 
 struct evectors;
 
+typedef struct evthreadstats {
+	uintmax_t evhandler_errors;
+} evthreadstats;
+
 typedef struct evhandler {
 	int efd;
+	evthreadstats stats;
 	pthread_mutex_t lock;
 	struct evsource *fdarray,*sigarray;
 	int sigarraysize,fdarraysize;
