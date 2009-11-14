@@ -115,7 +115,7 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	if((sd = make_ssl_fd(AF_INET,(struct sockaddr *)&sin,sizeof(sin))) < 0){
-		fprintf(stderr,"Couldn't initialize libtorque\n");
+		fprintf(stderr,"Couldn't create OpenSSL fd\n");
 		goto err;
 	}
 	if(init_ssl()){
