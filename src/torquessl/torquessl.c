@@ -151,7 +151,7 @@ err:
 		fprintf(stderr,"Couldn't shutdown OpenSSL\n");
 		return EXIT_FAILURE;
 	}
-	if(close(sd)){
+	if((sd >= 0) && close(sd)){
 		fprintf(stderr,"Couldn't close SSL socket %d\n",sd);
 		return EXIT_FAILURE;
 	}
