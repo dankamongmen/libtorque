@@ -5,6 +5,7 @@
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/schedule.h>
 
+static unsigned numlocks;
 static pthread_mutex_t *openssl_locks;
 
 struct CRYPTO_dynlock_value {
@@ -41,19 +42,18 @@ void free_ssl_accept_cbstate(ssl_accept_cbstate *sac){
 }
 
 int stop_ssl(void){
-	int z,numlocks,ret = 0;
+	int ret = 0;
+	unsigned z;
 
 	RAND_cleanup();
 	CRYPTO_set_locking_callback(NULL);
 	CRYPTO_set_id_callback(NULL);
-	// wish we could just preserve this...sigh
-	if((numlocks = CRYPTO_num_locks()) > 0){
-		for(z = 0 ; z < numlocks ; ++z){
-			if(pthread_mutex_destroy(&openssl_locks[z])){
-				ret = -1;
-			}
+	for(z = 0 ; z < numlocks ; ++z){
+		if(pthread_mutex_destroy(&openssl_locks[z])){
+			ret = -1;
 		}
 	}
+	numlocks = 0;
 	free(openssl_locks);
 	openssl_locks = NULL;
 	return ret;
@@ -157,7 +157,8 @@ SSL_CTX *new_ssl_ctx(const char *certfile,const char *keyfile,
 }
 
 int init_ssl(void){
-	int numlocks,z;
+	int nlocks;
+	unsigned z;
 
 	if(SSL_library_init() != 1){
 		return -1;
@@ -170,13 +171,14 @@ int init_ssl(void){
 	if(RAND_status() != 1){
 		return -1;
 	}
-	if((numlocks = CRYPTO_num_locks()) < 0){
+	if((nlocks = CRYPTO_num_locks()) < 0){
 		RAND_cleanup();
 		return -1;
-	}else if(numlocks == 0){ // assume no need for threading
+	}else if(nlocks == 0){ // assume no need for threading
 		return 0;
 	}
-	if((openssl_locks = malloc(sizeof(*openssl_locks) * (unsigned)numlocks)) == NULL){
+	numlocks = nlocks;
+	if((openssl_locks = malloc(sizeof(*openssl_locks) * numlocks)) == NULL){
 		RAND_cleanup();
 		return -1;
 	}
@@ -187,6 +189,7 @@ int init_ssl(void){
 			}
 			free(openssl_locks);
 			openssl_locks = NULL;
+			numlocks = 0;
 			RAND_cleanup();
 			return -1;
 		}
