@@ -101,9 +101,9 @@ err:
 int main(int argc,char **argv){
 	const char *certfile = NULL,*keyfile = NULL,*cafile = NULL;
 	struct libtorque_ctx *ctx = NULL;
+	SSL_CTX *sslctx = NULL;
 	struct sockaddr_in sin;
 	sigset_t termset;
-	SSL_CTX *sslctx;
 	int sig,sd = -1;
 
 	sigemptyset(&termset);
@@ -162,6 +162,7 @@ err:
 		fprintf(stderr,"Couldn't shutdown OpenSSL\n");
 		return EXIT_FAILURE;
 	}
+	SSL_CTX_free(sslctx);
 	if((sd >= 0) && close(sd)){
 		fprintf(stderr,"Couldn't close SSL socket %d\n",sd);
 		return EXIT_FAILURE;
