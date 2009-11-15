@@ -11,7 +11,7 @@ extern "C" {
 struct evhandler;
 
 int add_signal_to_evhandler(struct evhandler *,const sigset_t *,libtorquecb,void *)
-	__attribute__ ((nonnull (1,3)));
+	__attribute__ ((nonnull (1,2,3)));
 
 #ifdef __cplusplus
 }
