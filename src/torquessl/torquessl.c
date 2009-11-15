@@ -19,8 +19,8 @@ typedef struct torquessl {
 } torquessl;
 
 static int
-ssl_conn_handler(int fd,void *v){
-	torquessl *tssl = v;
+ssl_conn_handler(int fd,torquercbstate *v){
+	torquessl *tssl = v->cbstate;
 	const char *b;
 	size_t blen;
 

@@ -18,10 +18,14 @@ struct libtorque_ctx *libtorque_init(void)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
 
+typedef struct torquercbstate {
+	void *rxbuf;
+	void *cbstate;
+} torquercbstate;
+
 // Returning anything other than 0 will see the descriptor closed, and removed
 // from the evhandler's notification queue.
-// FIXME maybe ought be using a uintptr_t instead of void *?
-typedef int (*libtorquercb)(int,void *);
+typedef int (*libtorquercb)(int,torquercbstate *);
 typedef int (*libtorquewcb)(int,void *);
 
 // Handle the specified signals.

@@ -41,7 +41,7 @@ create_ssl_cbstate(struct libtorque_ctx *,SSL_CTX *,void *,libtorquercb,libtorqu
 
 void free_ssl_cbstate(struct ssl_cbstate *);
 
-int ssl_accept_rxfxn(int,void *);
+int ssl_accept_rxfxn(int,torquercbstate *);
 
 #ifdef __cplusplus
 }

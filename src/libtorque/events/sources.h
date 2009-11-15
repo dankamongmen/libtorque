@@ -90,8 +90,12 @@ static inline int handle_evsource_write(evsource *,int)
 static inline int
 handle_evsource_read(evsource *evs,int n){
 	// printf("handling read on %d\n",n);
+	torquercbstate rcb = {
+		.cbstate = evs[n].cbstate,
+	};
+
 	if(evs[n].rxfxn){
-		return evs[n].rxfxn(n,evs[n].cbstate);
+		return evs[n].rxfxn(n,&rcb);
 	}
 	return -1;
 }

@@ -8,9 +8,9 @@
 #ifdef LIBTORQUE_LINUX
 #include <sys/signalfd.h>
 static int
-signalfd_demultiplexer(int fd,void *cbstate){
+signalfd_demultiplexer(int fd,torquercbstate *cbstate){
+	evhandler *e = cbstate->cbstate;
 	struct signalfd_siginfo si;
-	evhandler *e = cbstate;
 	int ret = 0;
 	ssize_t r;
 

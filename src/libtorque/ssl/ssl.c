@@ -228,7 +228,7 @@ SSL *new_ssl_conn(SSL_CTX *ctx){
 	return SSL_new(ctx);
 }
 
-static int ssl_rxfxn(int,void *);
+static int ssl_rxfxn(int,torquercbstate *);
 
 static int
 ssl_txrxfxn(int fd,void *cbs){
@@ -262,8 +262,8 @@ ssl_txrxfxn(int fd,void *cbs){
 }
 
 static int
-ssl_rxfxn(int fd,void *cbs){
-	ssl_cbstate *sc = cbs;
+ssl_rxfxn(int fd,torquercbstate *cbs){
+	ssl_cbstate *sc = cbs->cbstate;
 	int r,err;
 
 	printf("%s\n",__func__);
@@ -306,8 +306,8 @@ ssl_txfxn(int fd,void *cbs){
 static int accept_conttxfxn(int,void *);
 
 static int
-accept_contrxfxn(int fd,void *cbs){
-	ssl_cbstate *sc = cbs;
+accept_contrxfxn(int fd,torquercbstate *cbs){
+	ssl_cbstate *sc = cbs->cbstate;
 	int ret;
 
 	if((ret = SSL_accept(sc->ssl)) == 1){
@@ -424,8 +424,8 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 	return 0;
 }
 
-int ssl_accept_rxfxn(int fd,void *cbs){
-	const ssl_cbstate *sc = cbs;
+int ssl_accept_rxfxn(int fd,torquercbstate *cbs){
+	const ssl_cbstate *sc = cbs->cbstate;
 	struct sockaddr_in sina;
 	socklen_t slen;
 	int sd;

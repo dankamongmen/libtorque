@@ -30,7 +30,7 @@ handle_event(evhandler *eh,const kevententry *e){
 }
 
 static int
-rxsignal(int sig,void *nullv __attribute__ ((unused))){
+rxsignal(int sig,torquercbstate *nullv __attribute__ ((unused))){
 	if(sig == EVTHREAD_TERM){
 		evhandler *e = tsd_evhandler;
 
