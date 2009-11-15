@@ -18,8 +18,7 @@ evsource *create_evsources(unsigned n){
 // and not handed it off to anything else which would register it. If it was
 // already being used, it must have been removed from the event queue (by
 // guarantees of the epoll/kqueue mechanisms), and thus no events exist for it.
-void setup_evsource(evsource *evs,int n,libtorque_evcbfxn rfxn,
-				libtorque_evcbfxn tfxn,void *v){
+void setup_evsource(evsource *evs,int n,libtorquecb rfxn,libtorquecb tfxn,void *v){
 	evs[n].rxfxn = rfxn;
 	evs[n].txfxn = tfxn;
 	evs[n].cbstate = v;

@@ -9,10 +9,8 @@ extern "C" {
 #include <pthread.h>
 #include <libtorque/libtorque.h>
 
-// The callback state associated with an event source.
-typedef struct evsource {
-	libtorque_evcbfxn rxfxn;
-	libtorque_evcbfxn txfxn;
+typedef struct evsource { // The callback state associated with an event source
+	libtorquecb rxfxn,txfxn;
 	void *cbstate;
 } evsource;
 
@@ -44,7 +42,7 @@ evsource *create_evsources(unsigned)
 // having the fd cleared, we design to not care about it at all -- there is no
 // feedback from the callback functions, and nothing needs to call anything
 // upon closing an fd.
-void setup_evsource(evsource *,int,libtorque_evcbfxn,libtorque_evcbfxn,void *)
+void setup_evsource(evsource *,int,libtorquecb,libtorquecb,void *)
 	__attribute__ ((nonnull(1)));
 
 int handle_evsource_read(evsource *,int)

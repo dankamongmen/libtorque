@@ -66,12 +66,12 @@ libtorque_ctx *libtorque_init(void){
 }
 
 int libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
-			libtorque_evcbfxn fxn,void *state){
+			libtorquecb fxn,void *state){
 	return add_signal_to_evhandler(ctx->ev,sigs,fxn,state);
 }
 
-int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
-				libtorque_evcbfxn tx,void *state){
+int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquecb rx,
+				libtorquecb tx,void *state){
 	if(fd < 0){
 		return -1;
 	}
@@ -79,7 +79,7 @@ int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorque_evcbfxn rx,
 }
 
 int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
-			libtorque_evcbfxn rx,libtorque_evcbfxn tx,void *state){
+			libtorquecb rx,libtorquecb tx,void *state){
 	struct ssl_accept_cbstate *cbs;
 
 	if((cbs = create_ssl_accept_cbstate(sslctx,state,rx,tx)) == NULL){

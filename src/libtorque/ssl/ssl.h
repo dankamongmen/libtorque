@@ -30,7 +30,7 @@ SSL *new_ssl_conn(SSL_CTX *)
 	__attribute__ ((malloc));
 
 struct ssl_accept_cbstate *
-create_ssl_accept_cbstate(SSL_CTX *,void *,libtorque_evcbfxn,libtorque_evcbfxn)
+create_ssl_accept_cbstate(SSL_CTX *,void *,libtorquecb,libtorquecb)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));

@@ -50,8 +50,7 @@ signalfd_demultiplexer(int fd,void *cbstate){
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 static inline int
-add_signal_event(evhandler *eh,const sigset_t *sigs,libtorque_evcbfxn rfxn,
-							void *cbstate){
+add_signal_event(evhandler *eh,const sigset_t *sigs,libtorquecb rfxn,void *cbstate){
 	unsigned z;
 #ifdef LIBTORQUE_LINUX
 	{
@@ -93,7 +92,7 @@ add_signal_event(evhandler *eh,const sigset_t *sigs,libtorque_evcbfxn rfxn,
 }
 
 int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
-			libtorque_evcbfxn rfxn,void *cbstate){
+				libtorquecb rfxn,void *cbstate){
 	if(pthread_mutex_lock(&eh->lock) == 0){
 		if(add_signal_event(eh,sigs,rfxn,cbstate) == 0){
 			// flush_evector_changes unlocks on all paths
