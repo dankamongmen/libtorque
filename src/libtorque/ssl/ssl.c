@@ -1,3 +1,4 @@
+#ifndef LIBTORQUE_WITHOUT_SSL
 #include <unistd.h>
 #include <pthread.h>
 #include <arpa/inet.h>
@@ -238,3 +239,4 @@ int ssl_accept_rxfxn(int fd,void *cbs){
 	close(sd);
 	return -1;
 }
+#endif

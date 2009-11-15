@@ -78,6 +78,7 @@ int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquecb rx,
 	return add_fd_to_evhandler(ctx->ev,fd,rx,tx,state);
 }
 
+#ifndef LIBTORQUE_WITHOUT_SSL
 int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 			libtorquecb rx,libtorquecb tx,void *state){
 	struct ssl_accept_cbstate *cbs;
@@ -91,6 +92,7 @@ int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 	}
 	return 0;
 }
+#endif
 
 int libtorque_stop(libtorque_ctx *ctx){
 	int ret = 0;

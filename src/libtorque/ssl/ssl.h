@@ -1,6 +1,8 @@
 #ifndef LIBTORQUE_SSL_SSL
 #define LIBTORQUE_SSL_SSL
 
+#ifndef LIBTORQUE_WITHOUT_SSL
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,6 +43,8 @@ int ssl_accept_rxfxn(int,void *);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif
