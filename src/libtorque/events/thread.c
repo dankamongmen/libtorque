@@ -148,13 +148,10 @@ initialize_evhandler(evhandler *e,int fd){
 	if(pthread_mutex_init(&e->lock,NULL)){
 		goto err;
 	}
-	/*if(pthread_cond_init(&e->cond,NULL)){
-		goto lockerr;
-	}*/
 	e->efd = fd;
 	e->fdarraysize = max_fds();
 	if((e->fdarray = create_evsources(e->fdarraysize)) == NULL){
-		goto conderr;
+		goto lockerr;
 	}
 	// Need we really go all the way through SIGRTMAX? FreeBSD 6 doesn't
 	// even define it argh! FIXME
@@ -176,9 +173,7 @@ sigerr:
 	
 fderr:
 	destroy_evsources(e->fdarray,e->fdarraysize);
-conderr:
-	//pthread_cond_destroy(&e->cond);
-//lockerr:
+lockerr:
 	pthread_mutex_destroy(&e->lock);
 err:
 	return -1;
@@ -217,7 +212,8 @@ evhandler *create_evhandler(void){
 }
 
 static void print_evstats(const evthreadstats *stats){
-#define PRINTSTAT(s,field) printf(#field ": %ju\n",(s)->field)
+#define PRINTSTAT(s,field) \
+	do { if((s)->field){ printf(#field ": %ju\n",(s)->field); } }while(0)
 	PRINTSTAT(stats,evhandler_errors);
 #undef PRINTSTAT
 }
@@ -228,7 +224,6 @@ int destroy_evhandler(evhandler *e){
 	if(e){
 		print_evstats(&e->stats);
 		ret |= pthread_mutex_destroy(&e->lock);
-		//ret |= pthread_cond_destroy(&e->cond);
 		ret |= destroy_evsources(e->sigarray,e->sigarraysize);
 		ret |= destroy_evsources(e->fdarray,e->fdarraysize);
 		destroy_evectors(e->externalvec);
