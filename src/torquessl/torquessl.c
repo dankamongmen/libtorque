@@ -134,6 +134,7 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't add SSL sd %d\n",sd);
 		goto err;
 	}
+	printf("Waiting on termination signal...\n");
 	if(sigwait(&termset,&sig)){
 		fprintf(stderr,"Couldn't wait on signals\n");
 		goto err;

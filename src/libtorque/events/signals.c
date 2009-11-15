@@ -57,6 +57,9 @@ add_signal_event(evhandler *eh,int sig,evcbfxn rfxn,void *cbstate){
 	if(!sigismember(&mask,sig)){
 		return -1;
 	}
+	if(sigemptyset(&mask) || sigaddset(&mask,sig)){
+		return -1;
+	}
 #ifdef LIBTORQUE_LINUX
 	{
 		// FIXME we could restrict this all to a single signalfd, since
