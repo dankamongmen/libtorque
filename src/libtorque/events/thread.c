@@ -186,8 +186,16 @@ evhandler *create_evhandler(void){
 	evhandler *ret;
 	int fd;
 
+// Until the epoll API stabilizes a bit... :/
 #ifdef LIBTORQUE_LINUX
-	if((fd = epoll_create(EPOLL_CLOEXEC)) < 0){
+#ifdef EPOLL_CLOEXEC
+#define SAFE_EPOLL_CLOEXEC EPOLL_CLOEXEC
+#else // otherwise, it wants a size hint in terms of fd's
+#include <linux/limits.h>
+#define SAFE_EPOLL_CLOEXEC NR_OPEN
+#endif
+	if((fd = epoll_create(SAFE_EPOLL_CLOEXEC)) < 0){
+#undef SAFE_EPOLL_CLOEXEC
 		return NULL;
 	}
 #elif defined(LIBTORQUE_FREEBSD)
