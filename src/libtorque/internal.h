@@ -72,6 +72,11 @@ typedef struct libtorque_cput {
 	libtorque_memt *memdescs;	// Memory descriptors, never NULL
 } libtorque_cput;
 
+typedef struct evtables {
+	struct evsource *fdarray,*sigarray;
+	unsigned sigarraysize,fdarraysize;
+} evtables;
+
 // Whenever a field is added to this structure, make sure it's
 //  a) initialized in create_libtorque_ctx(), and
 //  b) free()d (and reset) in the appropriate cleanup
@@ -86,8 +91,8 @@ typedef struct libtorque_ctx {
 	libtorque_cput *cpudescs;	// dynarray of cpu_typecount elements
 	libtorque_nodet *manodes;	// dynarray of NUMA node descriptors
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
-	cpu_set_t origmask;		// these two are the same; purge one
-	cpu_set_t validmap;		// affinityid validity map
+	cpu_set_t origmask;		// affinityid validity map
+	evtables eventtables;		// callback state tables
 	// FIXME all these CPU_SETSIZE arrays are (usually) pretty wasteful
 	unsigned affinmap[CPU_SETSIZE];	// maps into the cpu desc table
 	struct {

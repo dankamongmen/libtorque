@@ -46,13 +46,13 @@ add_fd_event(struct evectors *ev,int fd,libtorquecb rfxn,libtorquecb tfxn){
 
 int add_fd_to_evcore(evhandler *eh,struct evectors *ev,int fd,libtorquecb rfxn,
 					libtorquecb tfxn,void *cbstate){
-	if((unsigned)fd >= eh->fdarraysize){
+	if((unsigned)fd >= eh->evsources->fdarraysize){
 		return -1;
 	}
 	if(add_fd_event(ev,fd,rfxn,tfxn)){
 		return -1;
 	}
-	setup_evsource(eh->fdarray,fd,rfxn,tfxn,cbstate);
+	setup_evsource(eh->evsources->fdarray,fd,rfxn,tfxn,cbstate);
 	return 0;
 }
 

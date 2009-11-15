@@ -1,5 +1,6 @@
 #ifndef LIBTORQUE_WITHOUT_SSL
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <arpa/inet.h>
@@ -249,6 +250,39 @@ SSL *new_ssl_conn(SSL_CTX *ctx){
 	return SSL_new(ctx);
 }
 
+static int ssl_rxfxn(int,void *);
+
+static int
+ssl_txrxfxn(int fd,void *cbs){
+	ssl_cbstate *sc = cbs;
+	int r,err;
+
+	printf("%s\n",__func__);
+	if(sc->rxfxn == NULL){
+		return -1;
+	}
+	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
+		printf("read %d\n",r);
+		if(sc->rxfxn(fd,sc->cbstate)){
+			free_ssl_cbstate(sc);
+			close(fd);
+			return -1;
+		}
+	}
+	err = SSL_get_error(sc->ssl,r);
+	if(err == SSL_ERROR_WANT_READ){
+		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,ssl_rxfxn);
+		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,NULL);
+	}else if(err == SSL_ERROR_WANT_WRITE){
+		// just let it loop
+	}else{
+		free_ssl_cbstate(sc);
+		close(fd);
+		return -1;
+	}
+	return 0;
+}
+
 static int
 ssl_rxfxn(int fd,void *cbs){
 	ssl_cbstate *sc = cbs;
@@ -261,13 +295,15 @@ ssl_rxfxn(int fd,void *cbs){
 	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
 		printf("read %d\n",r);
 		if(sc->rxfxn(fd,sc->cbstate)){
+			free_ssl_cbstate(sc);
+			close(fd);
 			return -1;
 		}
 	}
 	err = SSL_get_error(sc->ssl,r);
-	printf("read %d %d\n",r,err);
 	if(err == SSL_ERROR_WANT_WRITE){
-		// need to change the callbacks! FIXME
+		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,NULL);
+		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,ssl_txrxfxn);
 	}else if(err == SSL_ERROR_WANT_READ){
 		// just let it loop
 	}else{
@@ -289,20 +325,27 @@ ssl_txfxn(int fd,void *cbs){
 	return sc->txfxn(fd,sc->cbstate);
 }
 
+static int accept_conttxfxn(int,void *);
+
 static int
 accept_contrxfxn(int fd,void *cbs){
 	const ssl_cbstate *sc = cbs;
 	int ret;
 
 	if((ret = SSL_accept(sc->ssl)) == 1){
-		// need to change the callbacks! FIXME
+		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
+		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
+
+		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
+		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,tx);
 	}else{
 		int err = SSL_get_error(sc->ssl,ret);
 
-		if(err == SSL_ERROR_WANT_READ){
+		if(err == SSL_ERROR_WANT_WRITE){
+			set_evsource_rx(sc->ctx->eventtables.fdarray,fd,NULL);
+			set_evsource_tx(sc->ctx->eventtables.fdarray,fd,accept_conttxfxn);
+		}else if(err == SSL_ERROR_WANT_READ){
 			// just let it loop
-		}else if(err == SSL_ERROR_WANT_WRITE){
-			// need to change the callbacks! FIXME
 		}else{
 			free_ssl_cbstate(cbs);
 			close(fd);
@@ -318,12 +361,17 @@ accept_conttxfxn(int fd,void *cbs){
 	int ret;
 
 	if((ret = SSL_accept(sc->ssl)) == 1){
-		// need to change the callbacks! FIXME
+		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
+		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
+
+		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
+		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,tx);
 	}else{
 		int err = SSL_get_error(sc->ssl,ret);
 
 		if(err == SSL_ERROR_WANT_READ){
-			// need to change the callbacks! FIXME
+			set_evsource_rx(sc->ctx->eventtables.fdarray,fd,accept_contrxfxn);
+			set_evsource_tx(sc->ctx->eventtables.fdarray,fd,NULL);
 		}else if(err == SSL_ERROR_WANT_WRITE){
 			// just let it loop
 		}else{
@@ -389,13 +437,17 @@ int ssl_accept_rxfxn(int fd,void *cbs){
 	int sd;
 
 	do{
+		int flags;
+
 		slen = sizeof(sina);
 		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) < 0){
 			if(errno != EINTR){ // loop on EINTR
 				return 0;
 			}
 		}
-		if(ssl_accept_internal(sd,sc)){
+		if(((flags = fcntl(sd,F_GETFL)) < 0) || fcntl(sd,F_SETFL,flags | O_NONBLOCK)){
+			close(sd);
+		}else if(ssl_accept_internal(sd,sc)){
 			close(sd);
 		}
 	}while(1);

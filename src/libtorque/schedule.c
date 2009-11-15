@@ -229,7 +229,7 @@ thread(void *void_marshal){
 	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
 		goto earlyerr;
 	}
-	if((ev = create_evhandler()) == NULL){
+	if((ev = create_evhandler(&marshal->ctx->eventtables)) == NULL){
 		goto earlyerr;
 	}
 	if(pthread_mutex_lock(&marshal->lock)){

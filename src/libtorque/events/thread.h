@@ -5,9 +5,11 @@
 extern "C" {
 #endif
 
+struct evtables;
+
 #include <libtorque/events/sources.h>
 
-evhandler *create_evhandler(void)
+evhandler *create_evhandler(struct evtables *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
 

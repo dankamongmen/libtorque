@@ -78,9 +78,6 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 	if(aid >= CPU_SETSIZE){
 		return -1;
 	}
-	if(CPU_ISSET(aid,&ctx->validmap)){
-		return -1;
-	}
 	if((sg = find_sched_group(&ctx->sched_zone,pkg)) == NULL){
 		return -1;
 	}
@@ -112,7 +109,6 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 	ctx->cpu_map[aid].thread = thread;
 	ctx->cpu_map[aid].core = core;
 	ctx->cpu_map[aid].package = pkg;
-	CPU_SET(aid,&ctx->validmap);
 	return 0;
 }
 
@@ -123,6 +119,5 @@ void reset_topology(libtorque_ctx *ctx){
 		ctx->sched_zone = sz->next;
 		free(sz);
 	}
-	CPU_ZERO(&ctx->validmap);
 	memset(ctx->cpu_map,0,sizeof(ctx->cpu_map));
 }

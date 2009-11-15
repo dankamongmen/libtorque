@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
@@ -9,14 +10,52 @@
 #include <libtorque/events/signals.h>
 #include <libtorque/events/sources.h>
 
+static unsigned long
+max_fds(void){
+	long sc;
+
+	if((sc = sysconf(_SC_OPEN_MAX)) <= 0){
+		if((sc = getdtablesize()) <= 0){ // just checks rlimit
+			sc = FOPEN_MAX; // ugh
+		}
+	}
+	return sc;
+}
+
+static inline int
+initialize_etables(evtables *e){
+	if((e->fdarraysize = max_fds()) <= 0){
+		return -1;
+	}
+	if((e->fdarray = create_evsources(e->fdarraysize)) == NULL){
+		return -1;
+	}
+	// Need we really go all the way through SIGRTMAX? FreeBSD 6 doesn't
+	// even define it argh! FIXME
+#ifdef SIGRTMAX
+	e->sigarraysize = SIGRTMAX;
+#else
+	e->sigarraysize = SIGUSR2;
+#endif
+	if((e->sigarray = create_evsources(e->sigarraysize)) == NULL){
+		destroy_evsources(e->fdarray);
+		return -1;
+	}
+	return 0;
+}
+
 static inline libtorque_ctx *
 create_libtorque_ctx(void){
 	libtorque_ctx *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
+		if(initialize_etables(&ret->eventtables)){
+			free(ret);
+			return NULL;
+		}
 		memset(&ret->cpu_map,0,sizeof(ret->cpu_map));
 		memset(&ret->affinmap,0,sizeof(ret->affinmap));
-		CPU_ZERO(&ret->validmap);
+		CPU_ZERO(&ret->origmask);
 		ret->sched_zone = NULL;
 		ret->cpudescs = NULL;
 		ret->manodes = NULL;
@@ -28,6 +67,8 @@ create_libtorque_ctx(void){
 
 static void
 free_libtorque_ctx(libtorque_ctx *ctx){
+	free(ctx->eventtables.sigarray);
+	free(ctx->eventtables.fdarray);
 	free_architecture(ctx);
 	free(ctx);
 }

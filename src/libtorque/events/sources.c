@@ -13,7 +13,7 @@ evsource *create_evsources(unsigned n){
 	return evs;
 }
 
-int destroy_evsources(evsource *evs,unsigned n __attribute__ ((unused))){
+int destroy_evsources(evsource *evs){
 	int ret = 0;
 
 	if(evs){

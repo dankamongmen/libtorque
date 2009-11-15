@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <pthread.h>
+#include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
 
 // The callback state associated with an event source.
@@ -28,8 +29,7 @@ typedef struct evthreadstats {
 typedef struct evhandler {
 	int efd;
 	pthread_mutex_t lock;
-	struct evsource *fdarray,*sigarray;
-	unsigned sigarraysize,fdarraysize;
+	evtables *evsources;
 	struct evectors *externalvec;
 	evthreadstats stats;
 } evhandler;
@@ -62,12 +62,10 @@ setup_evsource(evsource *evs,int n,libtorquecb rfxn,libtorquecb tfxn,void *v){
 	evs[n].cbstate = v;
 }
 
-static inline int handle_evsource_read(evsource *,int)
-	__attribute__ ((warn_unused_result))
+static inline void set_evsource_rx(evsource *,int,libtorquecb)
 	__attribute__ ((nonnull(1)));
 
-static inline int handle_evsource_write(evsource *,int)
-	__attribute__ ((warn_unused_result))
+static inline void set_evsource_tx(evsource *,int,libtorquecb)
 	__attribute__ ((nonnull(1)));
 
 static inline void
@@ -79,6 +77,14 @@ static inline void
 set_evsource_tx(evsource *evs,int n,libtorquecb tx){
 	evs[n].txfxn = tx;
 }
+
+static inline int handle_evsource_read(evsource *,int)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)));
+
+static inline int handle_evsource_write(evsource *,int)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)));
 
 static inline int
 handle_evsource_read(evsource *evs,int n){
@@ -98,7 +104,7 @@ handle_evsource_write(evsource *evs,int n){
 	return -1;
 }
 
-int destroy_evsources(evsource *,unsigned);
+int destroy_evsources(evsource *);
 
 #ifdef __cplusplus
 }

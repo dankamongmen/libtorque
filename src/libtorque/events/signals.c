@@ -16,7 +16,8 @@ signalfd_demultiplexer(int fd,void *cbstate){
 
 	do{
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
-			ret |= handle_evsource_read(e->sigarray,si.ssi_signo);
+			ret |= handle_evsource_read(e->evsources->sigarray,
+							si.ssi_signo);
 			// FIXME do... what, exactly with ret?
 		}else if(r >= 0){
 			// FIXME stat short read! return -1?
@@ -70,7 +71,7 @@ add_signal_event(evhandler *eh,const sigset_t *sigs,libtorquecb rfxn,void *cbsta
 #elif defined(LIBTORQUE_FREEBSD)
 	{
 
-		for(z = 1 ; z < eh->sigarraysize ; ++z){
+		for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
 			struct kevent k;
 
 			if(!sigismember(sigs,z)){
@@ -85,8 +86,10 @@ add_signal_event(evhandler *eh,const sigset_t *sigs,libtorquecb rfxn,void *cbsta
 #else
 #error "No signal event implementation on this OS"
 #endif
-	for(z = 1 ; z < eh->sigarraysize ; ++z){
-		setup_evsource(eh->sigarray,z,rfxn,NULL,cbstate);
+	for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
+		if(sigismember(sigs,z)){
+			setup_evsource(eh->evsources->sigarray,z,rfxn,NULL,cbstate);
+		}
 	}
 	return 0;
 }
