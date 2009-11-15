@@ -15,22 +15,13 @@
 
 typedef struct torquessl {
 	FILE *out;
-	libtorque_rxbuf *rxb;
 } torquessl;
 
 static int
 ssl_conn_handler(int fd,torquercbstate *v){
 	torquessl *tssl = v->cbstate;
-	const char *b;
-	size_t blen;
 
-	b = rxbuffer_valid(tssl->rxb,&blen);
-	if(blen){
-		fprintf(tssl->out,"SSL data (%zub) on fd %d\n",blen,fd);
-	}else{
-		fprintf(stderr,"SSL connection shut down on %d\n",fd);
-		return -1;
-	}
+	fprintf(tssl->out,"SSL data on fd %d\n",fd);
 	return 0;
 }
 

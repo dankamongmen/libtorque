@@ -36,15 +36,16 @@ create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
 	ssl_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		ret->rxb.buffer = NULL;
-		ret->rxb.bufleft = 0;
-		ret->ctx = ctx;
-		ret->sslctx = sslctx;
-		ret->cbstate = cbstate;
-		ret->rxfxn = rx;
-		ret->txfxn = tx;
-		ret->ssl = NULL;
-		return ret;
+		if(initialize_rxbuffer(&ret->rxb) == 0){
+			ret->ctx = ctx;
+			ret->sslctx = sslctx;
+			ret->cbstate = cbstate;
+			ret->rxfxn = rx;
+			ret->txfxn = tx;
+			ret->ssl = NULL;
+			return ret;
+		}
+		free(ret);
 	}
 	return NULL;
 }
@@ -266,13 +267,20 @@ ssl_rxfxn(int fd,torquercbstate *cbs){
 	ssl_cbstate *sc = cbs->cbstate;
 	int r,err;
 
-	printf("%s\n",__func__);
+	printf("%s -> %p(%p)\n",__func__,sc->rxfxn,sc->cbstate);
 	if(sc->rxfxn == NULL){
+		free_ssl_cbstate(sc);
+		close(fd);
 		return -1;
 	}
+	printf("we have %p with %zu\n",rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb));
+	// FIXME update avail
 	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
-		// FIXME update avail
-		if(sc->rxfxn(fd,sc->cbstate)){
+		torquercbstate rcb = {
+			.rxbuf = &sc->rxb,
+			.cbstate = sc->cbstate,
+		};
+		if(sc->rxfxn(fd,&rcb)){
 			free_ssl_cbstate(sc);
 			close(fd);
 			return -1;
@@ -382,6 +390,7 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 	if(csc == NULL){
 		return -1;
 	}
+	printf("states: %p %p\n",sc->cbstate,csc->cbstate);
 	if((csc->ssl = SSL_new(sc->sslctx)) == NULL){
 		free_ssl_cbstate(csc);
 		return -1;
