@@ -93,6 +93,7 @@ TORQUE:=torque
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
 # paths against overlong total path names.
 OUT:=.out
+TEST:=test
 SRCDIR:=src
 TOOLDIR:=tools
 MANDIR:=doc/man
@@ -105,9 +106,11 @@ TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 # Simple compositions from here on out
 LIBOUT:=$(OUT)/lib
 BINOUT:=$(OUT)/bin
+TESTOUT:=$(OUT)/$(TEST)
 TORQUESOL:=lib$(TORQUE).so
 TORQUESOR:=$(TORQUESOL).$(MAJORVER)
 TORQUEREAL:=$(TORQUESOR).$(MINORVER).$(RELEASEVER)
+TORQUESTAT:=lib$(TORQUE).a
 PKGCONFIG:=$(TOOLDIR)/lib$(TORQUE).pc
 
 # We don't want to have to list all our source files, so discover them based on
@@ -124,7 +127,7 @@ TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
 BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(PERCPU) $(SSLSRV))
-LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR))
+LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
 # Documentation processing
@@ -221,10 +224,16 @@ testpercpu: $(BINOUT)/$(PERCPU)
 	@echo -n "Testing $(<F): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $< $(PERCPUARGS)
 
-testssl: $(BINOUT)/$(SSLSRV)
+SSLCONF:=$(TEST)/$(SSLSRV)-ca.conf
+SSLKEY:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).key
+SSLCERT:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).cert
+testssl: $(BINOUT)/$(SSLSRV) $(SSLCERT)
 	@echo -n "Testing $(<F) (press Ctrl-C to stop): "
-	env LD_LIBRARY_PATH=$(LIBOUT) $<
+	env LD_LIBRARY_PATH=$(LIBOUT) $< -c $(SSLCERT)
 
+$(SSLCERT) $(SSLKEY): $(SSLCONF) $(GLOBOBJDEPS)
+	@mkdir -p $(@D)
+	openssl req -batch -out $(SSLCERT) -keyout $(SSLKEY) -x509 -config $(SSLCONF) -new
 
 VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v --track-origins=yes
@@ -243,6 +252,10 @@ $(LIBOUT)/$(TORQUESOR): $(LIBOUT)/$(TORQUEREAL)
 $(LIBOUT)/$(TORQUEREAL): $(TORQUEOBJ)
 	@mkdir -p $(@D)
 	$(CC) $(TORQUECFLAGS) -o $@ $^ $(TORQUELFLAGS)
+
+$(LIBOUT)/$(TORQUESTAT): $(TORQUEOBJ)
+	@mkdir -p $(@D)
+	ar rcs $@ $^
 
 $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 	@mkdir -p $(@D)
