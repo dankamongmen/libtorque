@@ -262,7 +262,6 @@ ssl_txrxfxn(int fd,void *cbs){
 		return -1;
 	}
 	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
-		printf("read %d\n",r);
 		if(sc->rxfxn(fd,sc->cbstate)){
 			free_ssl_cbstate(sc);
 			close(fd);
@@ -293,7 +292,6 @@ ssl_rxfxn(int fd,void *cbs){
 		return -1;
 	}
 	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
-		printf("read %d\n",r);
 		if(sc->rxfxn(fd,sc->cbstate)){
 			free_ssl_cbstate(sc);
 			close(fd);

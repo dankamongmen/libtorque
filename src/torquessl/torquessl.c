@@ -147,7 +147,8 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't allocate OpenSSL cbstate\n");
 		goto err;
 	}
-	if(libtorque_addssl(ctx,sd,sslctx,ssl_conn_handler,NULL,stdout)){
+	tssl->out = stdout;
+	if(libtorque_addssl(ctx,sd,sslctx,ssl_conn_handler,NULL,tssl)){
 		fprintf(stderr,"Couldn't add SSL sd %d\n",sd);
 		goto err;
 	}
