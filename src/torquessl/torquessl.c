@@ -18,9 +18,13 @@ ssl_conn_handler(int fd,void *v){
 
 static int
 make_ssl_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
-	int sd;
+	int sd,reuse = 1;
 
 	if((sd = socket(domain,SOCK_STREAM,0)) < 0){
+		return -1;
+	}
+	if(setsockopt(sd,SOL_SOCKET,SO_REUSEADDR,&reuse,sizeof(reuse))){
+		close(sd);
 		return -1;
 	}
 	if(bind(sd,saddr,slen)){
