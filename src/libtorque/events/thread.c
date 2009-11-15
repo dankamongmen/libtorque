@@ -8,11 +8,15 @@
 
 static void
 handle_event(evhandler *eh,const kevententry *e){
+	int ret = 0;
+
 	if(e->events & EPOLLIN){
-		handle_evsource_read(eh->fdarray,e->data.fd);
+		ret |= handle_evsource_read(eh->fdarray,e->data.fd);
 	}
 	if(e->events & EPOLLOUT){
+		ret |= handle_evsource_write(eh->fdarray,e->data.fd);
 	}
+	printf("result code: %d\n",ret);
 }
 
 // We're currently cancellable. That isn't generally safe unless we wrap

@@ -11,11 +11,13 @@ static int
 signalfd_demultiplexer(int fd,void *cbstate){
 	struct signalfd_siginfo si;
 	evhandler *e = cbstate;
+	int ret = 0;
 	ssize_t r;
 
 	do{
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
-			handle_evsource_read(e->sigarray,si.ssi_signo);
+			ret |= handle_evsource_read(e->sigarray,si.ssi_signo);
+			// FIXME do... what, exactly with ret?
 		}else if(r >= 0){
 			// FIXME stat short read! return -1?
 		}
@@ -48,7 +50,8 @@ signalfd_demultiplexer(int fd,void *cbstate){
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 static inline int
-add_signal_event(evhandler *eh,const sigset_t *sigs,evcbfxn rfxn,void *cbstate){
+add_signal_event(evhandler *eh,const sigset_t *sigs,libtorque_evcbfxn rfxn,
+							void *cbstate){
 	unsigned z;
 #ifdef LIBTORQUE_LINUX
 	{
@@ -89,8 +92,8 @@ add_signal_event(evhandler *eh,const sigset_t *sigs,evcbfxn rfxn,void *cbstate){
 	return 0;
 }
 
-int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,evcbfxn rfxn,
-						void *cbstate){
+int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
+			libtorque_evcbfxn rfxn,void *cbstate){
 	if(pthread_mutex_lock(&eh->lock) == 0){
 		if(add_signal_event(eh,sigs,rfxn,cbstate) == 0){
 			// flush_evector_changes unlocks on all paths

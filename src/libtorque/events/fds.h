@@ -9,11 +9,13 @@ extern "C" {
 
 struct evhandler;
 
-int add_fd_to_evcore(evhandler *,struct evectors *,int,evcbfxn,evcbfxn,void *)
+int add_fd_to_evcore(evhandler *,struct evectors *,int,libtorque_evcbfxn,
+						libtorque_evcbfxn,void *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull (1,2)));
 
-int add_fd_to_evhandler(struct evhandler *,int,evcbfxn,evcbfxn,void *)
+int add_fd_to_evhandler(struct evhandler *,int,libtorque_evcbfxn,
+						libtorque_evcbfxn,void *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull (1)));
 

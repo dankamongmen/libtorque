@@ -15,11 +15,12 @@ struct CRYPTO_dynlock_value {
 typedef struct ssl_accept_cbstate {
 	SSL *ssl;
 	void *cbstate;
-	evcbfxn rxfxn,txfxn;
+	libtorque_evcbfxn rxfxn,txfxn;
 } ssl_accept_cbstate;
 
 struct ssl_accept_cbstate *
-create_ssl_accept_cbstate(SSL_CTX *ctx,void *cbstate,evcbfxn rx,evcbfxn tx){
+create_ssl_accept_cbstate(SSL_CTX *ctx,void *cbstate,libtorque_evcbfxn rx,
+						libtorque_evcbfxn tx){
 	ssl_accept_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
