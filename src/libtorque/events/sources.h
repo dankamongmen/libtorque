@@ -42,8 +42,20 @@ evsource *create_evsources(unsigned)
 // having the fd cleared, we design to not care about it at all -- there is no
 // feedback from the callback functions, and nothing needs to call anything
 // upon closing an fd.
-void setup_evsource(evsource *,int,libtorquecb,libtorquecb,void *)
+static inline void setup_evsource(evsource *,int,libtorquecb,libtorquecb,void *)
 	__attribute__ ((nonnull(1)));
+
+// We need no locking here, because the only time someone should call
+// setup_evsource is when they've been handed the file descriptor from the OS,
+// and not handed it off to anything else which would register it. If it was
+// already being used, it must have been removed from the event queue (by
+// guarantees of the epoll/kqueue mechanisms), and thus no events exist for it.
+static inline void
+setup_evsource(evsource *evs,int n,libtorquecb rfxn,libtorquecb tfxn,void *v){
+	evs[n].rxfxn = rfxn;
+	evs[n].txfxn = tfxn;
+	evs[n].cbstate = v;
+}
 
 static inline int handle_evsource_read(evsource *,int)
 	__attribute__ ((warn_unused_result))
@@ -52,6 +64,16 @@ static inline int handle_evsource_read(evsource *,int)
 static inline int handle_evsource_write(evsource *,int)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
+
+static inline void
+set_evsource_rx(evsource *evs,int n,libtorquecb rx){
+	evs[n].rxfxn = rx;
+}
+
+static inline void
+set_evsource_tx(evsource *evs,int n,libtorquecb tx){
+	evs[n].txfxn = tx;
+}
 
 static inline int
 handle_evsource_read(evsource *evs,int n){

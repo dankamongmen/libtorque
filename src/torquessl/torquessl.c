@@ -13,7 +13,7 @@
 
 static int
 ssl_conn_handler(int fd,void *v){
-	printf("SSL connection on fd %d, state %p\n",fd,v);
+	printf("SSL data on fd %d, state %p\n",fd,v);
 	return 0;
 }
 
