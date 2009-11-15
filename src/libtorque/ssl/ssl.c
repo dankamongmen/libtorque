@@ -136,7 +136,13 @@ SSL_CTX *libtorque_ssl_ctx(const char *certfile,const char *keyfile,
 			const char *cafile,unsigned cliver){
 	SSL_CTX *ret;
 
+	// Need to accept SSLv2, SSLv3, and TLSv1 ClientHellos if we want
+	// multiple protocol support at all (we do, the latter two).
 	if((ret = SSL_CTX_new(SSLv23_method())) == NULL){
+		return NULL;
+	}
+	if(!(SSL_CTX_set_options(ret,SSL_OP_NO_SSLv2) & SSL_OP_NO_SSLv2)){
+		SSL_CTX_free(ret);
 		return NULL;
 	}
 	// The CA's we trust. We must still ensure the certificate chain is
