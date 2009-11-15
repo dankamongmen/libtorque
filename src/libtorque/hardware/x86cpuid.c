@@ -80,17 +80,31 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 	);
 }
 
+// These are all taken from the Intel document; need check AMD's FIXME
+struct feature_flags {
+	int sse3;	// sse 3 (0)
+	int ssse3;	// ssse 3 (9)
+	int dca;	// direct cache access (18)
+	int sse41;	// sse 4.1 (19)
+	int sse42;	// sse 4.2 (20)
+	int x2apic;	// x2apic (21)
+	int pse;	// page size extension (3)
+	int pae;	// physical address extension (6)
+	int pse36;	// 36-bit page size extension (17)
+	int ht;		// physical support for hyperthreading (28)
+};
+
 typedef struct known_x86_vendor {
 	const char *signet;
 	int (*memfxn)(uint32_t,libtorque_cput *);
-	int (*topfxn)(uint32_t,libtorque_cput *);
+	int (*topfxn)(uint32_t,const struct feature_flags *,libtorque_cput *);
 } known_x86_vendor;
 
 static int id_amd_caches(uint32_t,libtorque_cput *);
 static int id_via_caches(uint32_t,libtorque_cput *);
 static int id_intel_caches(uint32_t,libtorque_cput *);
-static int id_amd_topology(uint32_t,libtorque_cput *);
-static int id_intel_topology(uint32_t,libtorque_cput *);
+static int id_amd_topology(uint32_t,const struct feature_flags *,libtorque_cput *);
+static int id_intel_topology(uint32_t,const struct feature_flags *,libtorque_cput *);
 
 // There's also: (Collect them all! Impress your friends!)
 //      " UMC UMC UMC" "CyriteadxIns" "NexGivenenDr"
@@ -1400,7 +1414,7 @@ x86_getbrandname(libtorque_cput *cpudesc){
 }
 
 static int
-id_x86_topology(uint32_t maxfunc,libtorque_cput *cpu){
+id_x86_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *cpu){
 	uint32_t gpregs[4];
 
 	if(maxfunc < CPUID_CPU_VERSION){
@@ -1413,7 +1427,11 @@ id_x86_topology(uint32_t maxfunc,libtorque_cput *cpu){
 	// processors that report CPUID.1:EBX[23:16] as reserved (i.e. 0), the
 	// processor supports only one level of topology." EBX[23:16] on AMD is
 	// "LogicalProcessorCount", *iff* CPUID1.EDX[HTT] is 1 FIXME.
-	if((cpu->threadspercore = (gpregs[1] >> 16u) & 0xffu) == 0){
+	if(ff->ht){
+		if((cpu->threadspercore = (gpregs[1] >> 16u) & 0xffu) == 0){
+			return -1;
+		}
+	}else{
 		cpu->threadspercore = 1; // can't have 0 threads
 	}
 	// Round it to the nearest >= power of 2...
@@ -1440,13 +1458,13 @@ id_x86_topology(uint32_t maxfunc,libtorque_cput *cpu){
 #define CPUID_CLAHFSAHF			0x0001u
 
 static int
-id_amd_topology(uint32_t maxfunc,libtorque_cput *cpu){
+id_amd_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *cpu){
 	unsigned apiccorebits;
 	uint32_t gpregs[4];
 
 	cpu->coresperpackage = 1;
 	if(maxfunc < CPUID_EXTENDED_TOPOLOGY){
-		return id_x86_topology(maxfunc,cpu);
+		return id_x86_topology(maxfunc,ff,cpu);
 	}
 	cpuid(CPUID_EXTENDED_TOPOLOGY,0,gpregs);
 	if( (apiccorebits = ((gpregs[2] >> 12u) & 0xf)) ){
@@ -1462,18 +1480,18 @@ id_amd_topology(uint32_t maxfunc,libtorque_cput *cpu){
 	// CPUID.80000001 ECX[1] is CmpLegacy. LogicalProcessorCount is
 	// reserved when CmpLegacy is set, or HTT is 0.
 	if(!(gpregs[3] & CPUID_CMPLEGACY)){
-		return id_x86_topology(maxfunc,cpu);
+		return id_x86_topology(maxfunc,ff,cpu);
 	}
 	cpu->threadspercore = 1;
 	return 0;
 }
 
 static int
-id_intel_topology(uint32_t maxfunc,libtorque_cput *cpu){
+id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *cpu){
 	uint32_t gpregs[4];
 
 	if(maxfunc < CPUID_STANDARD_TOPOLOGY){
-		return id_x86_topology(maxfunc,cpu);
+		return id_x86_topology(maxfunc,ff,cpu);
 	}
 	cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
 	if(((gpregs[2] >> 8u) & 0xffu) != 1u){
@@ -1492,8 +1510,22 @@ id_intel_topology(uint32_t maxfunc,libtorque_cput *cpu){
 	return 0;
 }
 
+// ECX feature flags
+#define FFLAG_SSE3		0x00000001u
+#define FFLAG_SSSE3		0x00000200u
+#define FFLAG_DCA		0x00040000u
+#define FFLAG_SSE41		0x00080000u
+#define FFLAG_SSE42		0x00100000u
+#define FFLAG_X2APIC		0x00200000u
+
+// EDX feature flags
+#define FFLAG_PSE		0x00000008u
+#define FFLAG_PAE		0x00000040u
+#define FFLAG_PSE36		0x00020000u
+#define FFLAG_HT		0x10000000u
+
 static int
-x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
+x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu,struct feature_flags *ff){
 	uint32_t gpregs[4];
 
 	if(maxfunc < CPUID_CPU_VERSION){
@@ -1506,6 +1538,20 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu){
 	cpu->model = ((gpregs[0] >> 12u) & 0xf0u) | ((gpregs[0] >> 4u) & 0xfu);
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
 	cpu->family = ((gpregs[0] >> 17u) & 0x7f8u) | ((gpregs[0] >> 8u) & 0xfu);
+	memset(ff,0,sizeof(*ff));
+	ff->sse3 = !!(gpregs[2] & FFLAG_SSE3);
+	ff->ssse3 = !!(gpregs[2] & FFLAG_SSSE3);
+	ff->dca = !!(gpregs[2] & FFLAG_DCA);
+	ff->sse41 = !!(gpregs[2] & FFLAG_SSE41);
+	ff->sse42 = !!(gpregs[2] & FFLAG_SSE42);
+	ff->x2apic = !!(gpregs[2] & FFLAG_X2APIC);
+	ff->pse = !!(gpregs[3] & FFLAG_PSE);
+	ff->pae = !!(gpregs[3] & FFLAG_PAE);
+	ff->pse36 = !!(gpregs[3] & FFLAG_PSE36);
+	ff->ht = !!(gpregs[3] & FFLAG_HT);
+	// printf("SSE3: %d SSSE3: %d\n",ff->sse3,ff->ssse3);
+	// printf("DCA: %d SSE4.1: %d SSE4.2: %d X2APIC: %d\n",ff->dca,ff->sse41,ff->sse42,ff->x2apic);
+	// printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",ff->pse,ff->pae,ff->pse36,ff->ht);
 	return 0;
 }
 
@@ -1581,6 +1627,7 @@ x86topology(unsigned maxlevel,const libtorque_cput *cpu,unsigned *thread,
 int x86cpuid(libtorque_cput *cpudesc,unsigned *thread,unsigned *core,
 						unsigned *pkg){
 	const known_x86_vendor *vendor;
+	struct feature_flags ff;
 	uint32_t gpregs[4];
 	unsigned maxlevel;
 
@@ -1600,10 +1647,10 @@ int x86cpuid(libtorque_cput *cpudesc,unsigned *thread,unsigned *core,
 	if((vendor = lookup_vendor(gpregs + 1)) == NULL){
 		return -1;
 	}
-	if(x86_getprocsig(maxlevel,cpudesc)){
+	if(x86_getprocsig(maxlevel,cpudesc,&ff)){
 		return -1;
 	}
-	if(vendor->topfxn && vendor->topfxn(maxlevel,cpudesc)){
+	if(vendor->topfxn && vendor->topfxn(maxlevel,&ff,cpudesc)){
 		return -1;
 	}
 	if(vendor->memfxn(maxlevel,cpudesc)){
