@@ -10,6 +10,7 @@ add_fd_event(struct evectors *ev,int fd,libtorquecb rfxn,libtorquecb tfxn){
 	struct epoll_event ee;
 	struct kevent k;
 
+	memset(&ee.data,0,sizeof(ee.data));
 	k.events = &ee;
 	ee.data.fd = fd;
 	k.ctldata = &ecd;
