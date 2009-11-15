@@ -16,13 +16,45 @@ struct CRYPTO_dynlock_value {
 	pthread_mutex_t mutex; // FIXME use a read-write lock
 };
 
+typedef struct rxbuffer {
+	char *buffer;
+	size_t bufleft;
+} rxbuffer;
+
 typedef struct ssl_cbstate {
 	struct libtorque_ctx *ctx;
 	SSL_CTX *sslctx;
 	SSL *ssl;
 	void *cbstate;
 	libtorquecb rxfxn,txfxn;
+	rxbuffer rxb;
 } ssl_cbstate;
+
+static inline char *
+rxbuffer_buf(rxbuffer *rxb){
+	return rxb->buffer;
+}
+
+static inline size_t
+rxbuffer_avail(const rxbuffer *rxb){
+	return rxb->bufleft;
+}
+
+#define RXBUFSIZE (16 * 1024)
+
+static inline int
+initialize_rxbuffer(rxbuffer *rxb){
+	if( (rxb->buffer = malloc(RXBUFSIZE)) ){
+		rxb->bufleft = RXBUFSIZE;
+		return 0;
+	}
+	return -1;
+}
+
+static inline void
+free_rxbuffer(rxbuffer *rxb){
+	free(rxb->buffer);
+}
 
 struct ssl_cbstate *
 create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
@@ -30,19 +62,24 @@ create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
 	ssl_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		ret->ctx = ctx;
-		ret->sslctx = sslctx;
-		ret->cbstate = cbstate;
-		ret->rxfxn = rx;
-		ret->txfxn = tx;
-		ret->ssl = NULL;
+		if(initialize_rxbuffer(&ret->rxb) == 0){
+			ret->ctx = ctx;
+			ret->sslctx = sslctx;
+			ret->cbstate = cbstate;
+			ret->rxfxn = rx;
+			ret->txfxn = tx;
+			ret->ssl = NULL;
+			return ret;
+		}
+		free(ret);
 	}
-	return ret;
+	return NULL;
 }
 
 void free_ssl_cbstate(ssl_cbstate *sc){
 	if(sc){
 		SSL_free(sc->ssl);
+		free_rxbuffer(&sc->rxb);
 		free(sc);
 	}
 }
@@ -214,13 +251,31 @@ SSL *new_ssl_conn(SSL_CTX *ctx){
 
 static int
 ssl_rxfxn(int fd,void *cbs){
-	const ssl_cbstate *sc = cbs;
+	ssl_cbstate *sc = cbs;
+	int r,err;
 
 	printf("%s\n",__func__);
 	if(sc->rxfxn == NULL){
 		return -1;
 	}
-	return sc->rxfxn(fd,sc->cbstate);
+	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
+		printf("read %d\n",r);
+		if(sc->rxfxn(fd,sc->cbstate)){
+			return -1;
+		}
+	}
+	err = SSL_get_error(sc->ssl,r);
+	printf("read %d %d\n",r,err);
+	if(err == SSL_ERROR_WANT_WRITE){
+		// need to change the callbacks! FIXME
+	}else if(err == SSL_ERROR_WANT_READ){
+		// just let it loop
+	}else{
+		free_ssl_cbstate(sc);
+		close(fd);
+		return -1;
+	}
+	return 0;
 }
 
 static int
@@ -237,12 +292,24 @@ ssl_txfxn(int fd,void *cbs){
 static int
 accept_contrxfxn(int fd,void *cbs){
 	const ssl_cbstate *sc = cbs;
+	int ret;
 
-	printf("%s\n",__func__);
-	if(sc->rxfxn == NULL){
-		return -1;
+	if((ret = SSL_accept(sc->ssl)) == 1){
+		// need to change the callbacks! FIXME
+	}else{
+		int err = SSL_get_error(sc->ssl,ret);
+
+		if(err == SSL_ERROR_WANT_READ){
+			// just let it loop
+		}else if(err == SSL_ERROR_WANT_WRITE){
+			// need to change the callbacks! FIXME
+		}else{
+			free_ssl_cbstate(cbs);
+			close(fd);
+			return -1;
+		}
 	}
-	return sc->rxfxn(fd,sc->cbstate);
+	return 0;
 }
 
 static int
@@ -268,55 +335,68 @@ accept_conttxfxn(int fd,void *cbs){
 	return 0;
 }
 
+static inline int
+ssl_accept_internal(int sd,const ssl_cbstate *sc){
+	ssl_cbstate *csc;
+	int ret;
+
+	csc = create_ssl_cbstate(sc->ctx,sc->sslctx,sc->cbstate,sc->rxfxn,sc->txfxn);
+	if(csc == NULL){
+		return -1;
+	}
+	if((csc->ssl = SSL_new(sc->sslctx)) == NULL){
+		free_ssl_cbstate(csc);
+		return -1;
+	}
+	if(SSL_set_fd(csc->ssl,sd) != 1){
+		free_ssl_cbstate(csc);
+		return -1;
+	}
+	if((ret = SSL_accept(csc->ssl)) == 1){
+		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
+		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
+
+		if(libtorque_addfd(sc->ctx,sd,rx,tx,csc)){
+			free_ssl_cbstate(csc);
+			return -1;
+		}
+	}else{
+		int err;
+
+		err = SSL_get_error(csc->ssl,ret);
+		if(err == SSL_ERROR_WANT_WRITE){
+			if(libtorque_addfd(sc->ctx,sd,NULL,accept_conttxfxn,csc)){
+				free_ssl_cbstate(csc);
+				return -1;
+			}
+		}else if(err == SSL_ERROR_WANT_READ){
+			if(libtorque_addfd(sc->ctx,sd,accept_contrxfxn,NULL,csc)){
+				free_ssl_cbstate(csc);
+				return -1;
+			}
+		}else{
+			free_ssl_cbstate(csc);
+			return -1;
+		}
+	}
+	return 0;
+}
+
 int ssl_accept_rxfxn(int fd,void *cbs){
-	libtorquecb rx,tx;
 	const ssl_cbstate *sc = cbs;
 	struct sockaddr_in sina;
 	socklen_t slen;
-	int sd,ret;
-	SSL *ssl;
+	int sd;
 
-	rx = sc->rxfxn ? ssl_rxfxn : NULL;
-	tx = sc->txfxn ? ssl_txfxn : NULL;
 	do{
 		slen = sizeof(sina);
-		printf("ACCEPITNG on %d\n",fd);
 		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) < 0){
 			if(errno != EINTR){ // loop on EINTR
 				return 0;
 			}
 		}
-		if((ssl = SSL_new(sc->sslctx)) == NULL){
-			close(fd);
-			continue;
-		}
-		if(SSL_set_fd(ssl,sd) != 1){
-			close(fd);
-			continue;
-		}
-		if((ret = SSL_accept(ssl)) == 1){
-			if(libtorque_addfd(sc->ctx,sd,rx,tx,cbs)){
-				SSL_free(ssl);
-				close(fd);
-			}
-		}else{
-			int err;
-
-			err = SSL_get_error(ssl,ret);
-			if(err == SSL_ERROR_WANT_WRITE){
-				if(libtorque_addfd(sc->ctx,sd,NULL,accept_conttxfxn,cbs)){
-					SSL_free(ssl);
-					close(fd);
-				}
-			}else if(err == SSL_ERROR_WANT_READ){
-				if(libtorque_addfd(sc->ctx,sd,accept_contrxfxn,NULL,cbs)){
-					SSL_free(ssl);
-					close(fd);
-				}
-			}else{
-				SSL_free(ssl);
-				close(sd);
-			}
+		if(ssl_accept_internal(sd,sc)){
+			close(sd);
 		}
 	}while(1);
 }
