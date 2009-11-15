@@ -77,9 +77,13 @@ typedef struct evtables {
 	unsigned sigarraysize,fdarraysize;
 } evtables;
 
+// This is the simplest possible RX buffer; fixed-length, one piece, not even
+// circular (ie, fixed length on connection!). It'll be replaced.
 typedef struct libtorque_rxbuf {
-	char *buffer;
-	size_t bufleft;
+	char *buffer;			// always points to the buffer's start
+	size_t buftot;			// length of the buffer
+	size_t bufoff;			// how far we've dirtied the buffer
+	size_t bufate;			// how much input the client's released
 } libtorque_rxbuf;
 
 // Whenever a field is added to this structure, make sure it's

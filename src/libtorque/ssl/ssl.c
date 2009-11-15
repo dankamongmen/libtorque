@@ -240,9 +240,12 @@ ssl_txrxfxn(int fd,void *cbs){
 	if(sc->rxfxn == NULL){
 		return -1;
 	}
-	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
-		// FIXME update avail
-		if(sc->rxfxn(fd,sc->cbstate)){
+	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) > 0){
+		torquercbstate rcb = {
+			.rxbuf = &sc->rxb,
+			.cbstate = sc->cbstate,
+		};
+		if(sc->rxfxn(fd,&rcb)){
 			free_ssl_cbstate(sc);
 			close(fd);
 			return -1;
@@ -273,9 +276,7 @@ ssl_rxfxn(int fd,torquercbstate *cbs){
 		close(fd);
 		return -1;
 	}
-	printf("we have %p with %zu\n",rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb));
-	// FIXME update avail
-	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
+	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) > 0){
 		torquercbstate rcb = {
 			.rxbuf = &sc->rxb,
 			.cbstate = sc->cbstate,

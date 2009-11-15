@@ -20,8 +20,17 @@ typedef struct torquessl {
 static int
 ssl_conn_handler(int fd,torquercbstate *v){
 	torquessl *tssl = v->cbstate;
+	const char *buf;
+	size_t len;
 
-	fprintf(tssl->out,"SSL data on fd %d\n",fd);
+	buf = rxbuffer_valid(v->rxbuf,&len);
+	if(len == 0){
+		fprintf(tssl->out,"SSL closed on %d\n",fd);
+		return -1;
+	}
+	fprintf(tssl->out,"Buffer %p has %zub\n",buf,len);
+	fprintf(tssl->out,"%.*s\n",(int)len,buf);
+	rxbuffer_advance(v->rxbuf,len);
 	return 0;
 }
 
