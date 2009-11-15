@@ -187,7 +187,7 @@ evhandler *create_evhandler(void){
 	int fd;
 
 #ifdef LIBTORQUE_LINUX
-	if((fd = epoll_create1(EPOLL_CLOEXEC)) < 0){
+	if((fd = epoll_create(EPOLL_CLOEXEC)) < 0){
 		return NULL;
 	}
 #elif defined(LIBTORQUE_FREEBSD)
