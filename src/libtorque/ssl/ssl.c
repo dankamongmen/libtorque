@@ -15,17 +15,17 @@ struct CRYPTO_dynlock_value {
 	pthread_mutex_t mutex; // FIXME use a read-write lock
 };
 
-typedef struct ssl_accept_cbstate {
+typedef struct ssl_cbstate {
 	struct libtorque_ctx *ctx;
 	SSL_CTX *sslctx;
 	void *cbstate;
 	libtorquecb rxfxn,txfxn;
-} ssl_accept_cbstate;
+} ssl_cbstate;
 
-struct ssl_accept_cbstate *
-create_ssl_accept_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,
-			void *cbstate,libtorquecb rx,libtorquecb tx){
-	ssl_accept_cbstate *ret;
+struct ssl_cbstate *
+create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
+					libtorquecb rx,libtorquecb tx){
+	ssl_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
 		ret->ctx = ctx;
@@ -37,9 +37,9 @@ create_ssl_accept_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,
 	return ret;
 }
 
-void free_ssl_accept_cbstate(ssl_accept_cbstate *sac){
-	if(sac){
-		free(sac);
+void free_ssl_cbstate(ssl_cbstate *sc){
+	if(sc){
+		free(sc);
 	}
 }
 
@@ -208,35 +208,64 @@ SSL *new_ssl_conn(SSL_CTX *ctx){
 	return SSL_new(ctx);
 }
 
+static int
+ssl_rxfxn(int fd,void *cbs){
+	const ssl_cbstate *sc = cbs;
+
+	printf("%s\n",__func__);
+	if(sc->rxfxn == NULL){
+		return -1;
+	}
+	return sc->rxfxn(fd,sc->cbstate);
+}
+
+static int
+ssl_txfxn(int fd,void *cbs){
+	const ssl_cbstate *sc = cbs;
+
+	printf("%s\n",__func__);
+	if(sc->txfxn == NULL){
+		return -1;
+	}
+	return sc->txfxn(fd,sc->cbstate);
+}
+
 int ssl_accept_rxfxn(int fd,void *cbs){
-	const ssl_accept_cbstate *sac = cbs;
+	libtorquecb rx,tx;
+	const ssl_cbstate *sc = cbs;
 	struct sockaddr_in sina;
 	socklen_t slen;
 	int sd,ret,err;
 	SSL *ssl;
 
+	printf("%s %d\n",__func__,fd);
 	slen = sizeof(sina);
 	if((sd = accept(fd,(struct sockaddr *)&sina,&slen)) < 0){
 		return 0; // FIXME stat!
 	}
-	if((ssl = SSL_new(sac->sslctx)) == NULL){
+	if((ssl = SSL_new(sc->sslctx)) == NULL){
 		close(fd);
 		return 0;
 	}
 	if(SSL_set_fd(ssl,sd) != 1){
-		printf("couldn't set %d (%p)\n",sd,ssl);
 		close(fd);
 		return 0;
 	}
-	// FIXME need to add new socket back to evthread
+	rx = sc->rxfxn ? ssl_rxfxn : NULL;
+	tx = sc->txfxn ? ssl_txfxn : NULL;
 	if((ret = SSL_accept(ssl)) == 1){
-		return sac->rxfxn(fd,sac->cbstate);
+		if(libtorque_addfd(sc->ctx,sd,rx,tx,cbs)){
+			close(fd);
+			SSL_free(ssl);
+			return -1;
+		}
+		return 0;
 	}
 	err = SSL_get_error(ssl,ret);
 	if(err == SSL_ERROR_WANT_WRITE){
-		// FIXME
+		// FIXME add it, entering an ssl_accept_conttxfxn
 	}else if(err == SSL_ERROR_WANT_READ){
-		return 0; // just wait for next event
+		// FIXME add it, entering an ssl_accept_contrxfxn
 	}
 	close(sd);
 	return -1;

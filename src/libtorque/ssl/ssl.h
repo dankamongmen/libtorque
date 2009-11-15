@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+struct ssl_cbstate;
+
 #include <openssl/ssl.h>
 #include <libtorque/events/sources.h>
 
@@ -31,13 +33,13 @@ SSL *new_ssl_conn(SSL_CTX *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
 
-struct ssl_accept_cbstate *
-create_ssl_accept_cbstate(struct libtorque_ctx *,SSL_CTX *,void *,libtorquecb,libtorquecb)
+struct ssl_cbstate *
+create_ssl_cbstate(struct libtorque_ctx *,SSL_CTX *,void *,libtorquecb,libtorquecb)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((malloc));
 
-void free_ssl_accept_cbstate(struct ssl_accept_cbstate *);
+void free_ssl_cbstate(struct ssl_cbstate *);
 
 int ssl_accept_rxfxn(int,void *);
 
