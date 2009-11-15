@@ -126,10 +126,10 @@ SSL_CTX *new_ssl_ctx(const char *certfile,const char *keyfile,
 	if((ret = SSL_CTX_new(SSLv3_method())) == NULL){
 		return NULL;
 	}
-	if(cafile){
 	// The CA's we trust. We must still ensure the certificate chain is
 	// semantically valid, not just syntactically valid! This is done via
 	// checking X509 properties and a CRL in openssl_verify_callback().
+	if(cafile){
 		if(SSL_CTX_load_verify_locations(ret,cafile,NULL) != 1){
 			SSL_CTX_free(ret);
 			return NULL;;
@@ -209,8 +209,20 @@ SSL *new_ssl_conn(SSL_CTX *ctx){
 
 int ssl_accept_rxfxn(int fd __attribute__ ((unused)),void *cbs){
 	const ssl_accept_cbstate *sac = cbs;
+	int ret,err;
 
-	// FIXME implement
-	SSL_accept(sac->ssl);
-	return 0;
+	printf("SSL_ACCEPT\n");
+	if((ret = SSL_accept(sac->ssl)) == 0){
+		printf("SSL_ACCEPT %d\n",ret);
+		return sac->rxfxn(fd,sac->cbstate);
+	}
+	err = SSL_get_error(sac->ssl,ret);
+	printf("SSL_ACCEPT %d %d\n",ret,err);
+	if(err == SSL_ERROR_WANT_WRITE){
+		// FIXME
+	}else if(err == SSL_ERROR_WANT_READ){
+		printf("WANT READ!\n");
+		return 0; // just wait for next event
+	}
+	return -1;
 }

@@ -5,6 +5,7 @@
 // #include'd by applications (save those built as part of the libtorque
 // distribution).
 
+#include <stdio.h>
 #include <stdint.h>
 #include <libtorque/schedule.h>
 

@@ -31,7 +31,6 @@ int add_evector_kevents(evectors *e,const struct kevent *k,int kcount){
 	return 0;
 }
 
-#include <stdio.h>
 int flush_evector_changes(evhandler *eh,evectors *ev){
 	int ret;
 
