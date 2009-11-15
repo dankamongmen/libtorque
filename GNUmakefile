@@ -136,11 +136,11 @@ MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1))
 MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3))
 DOCS:=$(MAN1OBJ) $(MAN3OBJ)
 INCINSTALL:=$(SRCDIR)/lib$(TORQUE)/lib$(TORQUE).h
+TAGS:=.tags
 
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
-TAGS:=.tags
-GLOBOBJDEPS:=$(TAGS) $(CINC)
+GLOBOBJDEPS:=$(CINC) $(MAKEFILE_LIST)
 
 # Debugging flags. These aren't normally used.
 DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
@@ -292,9 +292,6 @@ $(OUT)/%.1: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(XSLTPROC) -o $@ $(DOC2MANXSL) $<
 
-# Having TAGS dep on the involved makefiles -- and including TAGS in
-# GLOBOBJDEPS -- means that a makefile change forces global rebuilding, which
-# seems a desirable goal anyway.
 $(TAGS): $(SRC) $(CINC) $(MAKEFILE_LIST)
 	@mkdir -p $(@D)
 	$(TAGBIN) -f $@ $^
