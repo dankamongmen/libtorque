@@ -83,7 +83,7 @@ int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 			libtorquecb rx,libtorquecb tx,void *state){
 	struct ssl_accept_cbstate *cbs;
 
-	if((cbs = create_ssl_accept_cbstate(sslctx,state,rx,tx)) == NULL){
+	if((cbs = create_ssl_accept_cbstate(ctx,sslctx,state,rx,tx)) == NULL){
 		return -1;
 	}
 	if(libtorque_addfd(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){

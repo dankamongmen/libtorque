@@ -16,21 +16,23 @@ struct CRYPTO_dynlock_value {
 };
 
 typedef struct ssl_accept_cbstate {
+	struct libtorque_ctx *ctx;
 	SSL_CTX *sslctx;
 	void *cbstate;
 	libtorquecb rxfxn,txfxn;
 } ssl_accept_cbstate;
 
 struct ssl_accept_cbstate *
-create_ssl_accept_cbstate(SSL_CTX *ctx,void *cbstate,libtorquecb rx,
-						libtorquecb tx){
+create_ssl_accept_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,
+			void *cbstate,libtorquecb rx,libtorquecb tx){
 	ssl_accept_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		ret->sslctx = ctx;
+		ret->ctx = ctx;
+		ret->sslctx = sslctx;
 		ret->cbstate = cbstate;
-		ret->txfxn = tx;
 		ret->rxfxn = rx;
+		ret->txfxn = tx;
 	}
 	return ret;
 }
