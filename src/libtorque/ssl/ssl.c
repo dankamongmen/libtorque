@@ -207,21 +207,18 @@ SSL *new_ssl_conn(SSL_CTX *ctx){
 	return SSL_new(ctx);
 }
 
-int ssl_accept_rxfxn(int fd __attribute__ ((unused)),void *cbs){
+int ssl_accept_rxfxn(int fd,void *cbs){
 	const ssl_accept_cbstate *sac = cbs;
 	int ret,err;
 
-	printf("SSL_ACCEPT\n");
 	if((ret = SSL_accept(sac->ssl)) == 0){
-		printf("SSL_ACCEPT %d\n",ret);
 		return sac->rxfxn(fd,sac->cbstate);
 	}
 	err = SSL_get_error(sac->ssl,ret);
-	printf("SSL_ACCEPT %d %d\n",ret,err);
+	printf("SSL error %d %d\n",ret,err);
 	if(err == SSL_ERROR_WANT_WRITE){
 		// FIXME
 	}else if(err == SSL_ERROR_WANT_READ){
-		printf("WANT READ!\n");
 		return 0; // just wait for next event
 	}
 	return -1;

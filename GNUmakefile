@@ -93,7 +93,6 @@ TORQUE:=torque
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
 # paths against overlong total path names.
 OUT:=.out
-TEST:=test
 SRCDIR:=src
 TOOLDIR:=tools
 MANDIR:=doc/man
@@ -106,7 +105,7 @@ TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 # Simple compositions from here on out
 LIBOUT:=$(OUT)/lib
 BINOUT:=$(OUT)/bin
-TESTOUT:=$(OUT)/$(TEST)
+TESTOUT:=$(OUT)/test
 TORQUESOL:=lib$(TORQUE).so
 TORQUESOR:=$(TORQUESOL).$(MAJORVER)
 TORQUEREAL:=$(TORQUESOR).$(MINORVER).$(RELEASEVER)
@@ -224,16 +223,15 @@ testpercpu: $(BINOUT)/$(PERCPU)
 	@echo -n "Testing $(<F): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $< $(PERCPUARGS)
 
-SSLCONF:=$(TEST)/$(SSLSRV)-ca.conf
 SSLKEY:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).key
 SSLCERT:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).cert
 testssl: $(BINOUT)/$(SSLSRV) $(SSLCERT)
 	@echo -n "Testing $(<F) (press Ctrl-C to stop): "
-	env LD_LIBRARY_PATH=$(LIBOUT) $< -c $(SSLCERT)
+	env LD_LIBRARY_PATH=$(LIBOUT) $< -c $(SSLCERT) -k $(SSLKEY)
 
-$(SSLCERT) $(SSLKEY): $(SSLCONF) $(GLOBOBJDEPS)
+$(SSLCERT) $(SSLKEY): $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
-	openssl req -batch -out $(SSLCERT) -keyout $(SSLKEY) -x509 -config $(SSLCONF) -new
+	openssl req -utf8 -batch -nodes -out $(SSLCERT) -keyout $(SSLKEY) -x509 -new
 
 VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v --track-origins=yes
