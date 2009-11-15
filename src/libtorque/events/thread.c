@@ -39,10 +39,10 @@ void event_thread(evhandler *e){
 
 		events = Kevent(e->efd,PTR_TO_CHANGEV(ev),ev->changesqueued,
 					PTR_TO_EVENTV(ev),ev->vsizes);
-		++e->stats.rounds;
 		for(z = 0 ; z < events ; ++z){
 			handle_event(e,&PTR_TO_EVENTV(ev)->events[z]);
 		}
+		++e->stats.rounds;
 	}
 }
 
