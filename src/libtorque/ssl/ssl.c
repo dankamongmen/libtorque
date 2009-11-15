@@ -1,4 +1,6 @@
+#include <unistd.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
 #include <openssl/crypto.h>
@@ -13,7 +15,7 @@ struct CRYPTO_dynlock_value {
 };
 
 typedef struct ssl_accept_cbstate {
-	SSL *ssl;
+	SSL_CTX *sslctx;
 	void *cbstate;
 	libtorque_evcbfxn rxfxn,txfxn;
 } ssl_accept_cbstate;
@@ -24,20 +26,16 @@ create_ssl_accept_cbstate(SSL_CTX *ctx,void *cbstate,libtorque_evcbfxn rx,
 	ssl_accept_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if((ret->ssl = new_ssl_conn(ctx)) == NULL){
-			free(ret);
-			return NULL;
-		}
+		ret->sslctx = ctx;
 		ret->cbstate = cbstate;
-		ret->rxfxn = rx;
 		ret->txfxn = tx;
+		ret->rxfxn = rx;
 	}
 	return ret;
 }
 
 void free_ssl_accept_cbstate(ssl_accept_cbstate *sac){
 	if(sac){
-		SSL_free(sac->ssl);
 		free(sac);
 	}
 }
@@ -209,17 +207,34 @@ SSL *new_ssl_conn(SSL_CTX *ctx){
 
 int ssl_accept_rxfxn(int fd,void *cbs){
 	const ssl_accept_cbstate *sac = cbs;
-	int ret,err;
+	struct sockaddr_in sina;
+	socklen_t slen;
+	int sd,ret,err;
+	SSL *ssl;
 
-	if((ret = SSL_accept(sac->ssl)) == 0){
+	slen = sizeof(sina);
+	if((sd = accept(fd,(struct sockaddr *)&sina,&slen)) < 0){
+		return 0; // FIXME stat!
+	}
+	if((ssl = SSL_new(sac->sslctx)) == NULL){
+		close(fd);
+		return 0;
+	}
+	if(SSL_set_fd(ssl,sd) != 1){
+		printf("couldn't set %d (%p)\n",sd,ssl);
+		close(fd);
+		return 0;
+	}
+	// FIXME need to add new socket back to evthread
+	if((ret = SSL_accept(ssl)) == 1){
 		return sac->rxfxn(fd,sac->cbstate);
 	}
-	err = SSL_get_error(sac->ssl,ret);
-	printf("SSL error %d %d\n",ret,err);
+	err = SSL_get_error(ssl,ret);
 	if(err == SSL_ERROR_WANT_WRITE){
 		// FIXME
 	}else if(err == SSL_ERROR_WANT_READ){
 		return 0; // just wait for next event
 	}
+	close(sd);
 	return -1;
 }
