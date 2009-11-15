@@ -45,13 +45,31 @@ evsource *create_evsources(unsigned)
 void setup_evsource(evsource *,int,libtorquecb,libtorquecb,void *)
 	__attribute__ ((nonnull(1)));
 
-int handle_evsource_read(evsource *,int)
+static inline int handle_evsource_read(struct libtorque_ctx *,evsource *,int)
 	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull(1)));
+	__attribute__ ((nonnull(1,2)));
 
-int handle_evsource_write(evsource *,int)
+static inline int handle_evsource_write(struct libtorque_ctx *,evsource *,int)
 	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull(1)));
+	__attribute__ ((nonnull(1,2)));
+
+static inline int
+handle_evsource_read(struct libtorque_ctx *ctx,evsource *evs,int n){
+	// printf("handling read on %d\n",n);
+	if(evs[n].rxfxn){
+		return evs[n].rxfxn(ctx,n,evs[n].cbstate);
+	}
+	return -1;
+}
+
+static inline int
+handle_evsource_write(struct libtorque_ctx *ctx,evsource *evs,int n){
+	// printf("handling write on %d\n",n);
+	if(evs[n].rxfxn){
+		return evs[n].txfxn(ctx,n,evs[n].cbstate);
+	}
+	return -1;
+}
 
 int destroy_evsources(evsource *,unsigned);
 
