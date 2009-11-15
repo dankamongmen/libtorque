@@ -29,7 +29,7 @@ typedef struct evhandler {
 	evthreadstats stats;
 	pthread_mutex_t lock;
 	struct evsource *fdarray,*sigarray;
-	int sigarraysize,fdarraysize;
+	unsigned sigarraysize,fdarraysize;
 	struct evectors *externalvec;
 } evhandler;
 

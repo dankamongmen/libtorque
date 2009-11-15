@@ -48,25 +48,15 @@ signalfd_demultiplexer(int fd,void *cbstate){
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 static inline int
-add_signal_event(evhandler *eh,int sig,evcbfxn rfxn,void *cbstate){
-	sigset_t mask;
-
-	if(pthread_sigmask(SIG_BLOCK,NULL,&mask)){
-		return -1;
-	}
-	if(!sigismember(&mask,sig)){
-		return -1;
-	}
-	if(sigemptyset(&mask) || sigaddset(&mask,sig)){
-		return -1;
-	}
+add_signal_event(evhandler *eh,const sigset_t *sigs,evcbfxn rfxn,void *cbstate){
+	unsigned z;
 #ifdef LIBTORQUE_LINUX
 	{
 		// FIXME we could restrict this all to a single signalfd, since
 		// it takes a sigset_t...less potential parallelism, though
 		int fd;
 
-		if((fd = signalfd(-1,&mask,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
+		if((fd = signalfd(-1,sigs,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			return -1;
 		}
 		if(add_fd_to_evcore(eh,eh->externalvec,fd,
@@ -77,23 +67,32 @@ add_signal_event(evhandler *eh,int sig,evcbfxn rfxn,void *cbstate){
 	}
 #elif defined(LIBTORQUE_FREEBSD)
 	{
-		struct kevent k;
 
-		EV_SET(&k,sig,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
-		if(add_evector_kevents(ev,&k,1)){
-			return -1;
+		for(z = 1 ; z < eh->sigarraysize ; ++z){
+			struct kevent k;
+
+			if(!sigismember(sigs,z)){
+				continue;
+			}
+			EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
+			if(add_evector_kevents(ev,&k,1)){
+				return -1;
+			}
 		}
 	}
 #else
 #error "No signal event implementation on this OS"
 #endif
-	setup_evsource(eh->sigarray,sig,rfxn,NULL,cbstate);
+	for(z = 1 ; z < eh->sigarraysize ; ++z){
+		setup_evsource(eh->sigarray,z,rfxn,NULL,cbstate);
+	}
 	return 0;
 }
 
-int add_signal_to_evhandler(evhandler *eh,int sig,evcbfxn rfxn,void *cbstate){
+int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,evcbfxn rfxn,
+						void *cbstate){
 	if(pthread_mutex_lock(&eh->lock) == 0){
-		if(add_signal_event(eh,sig,rfxn,cbstate) == 0){
+		if(add_signal_event(eh,sigs,rfxn,cbstate) == 0){
 			// flush_evector_changes unlocks on all paths
 			return flush_evector_changes(eh,eh->externalvec);
 		}

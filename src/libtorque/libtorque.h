@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <signal.h>
+
 struct libtorque_ctx;
 
 // Initialize the library, returning 0 on success. No libtorque functions may
@@ -21,16 +23,16 @@ struct libtorque_ctx *libtorque_init(void)
 // FIXME maybe ought be using a uintptr_t instead of void *?
 typedef int (*libtorque_evcbfxn)(int,void *);
 
-// Handle the specified signal (we don't use a sigset_t because FreeBSD's
-// kqueue doesn't support it; we could wrap this, though FIXME).
-int libtorque_addsignal(struct libtorque_ctx *,int,libtorque_evcbfxn,void *)
+// Handle the specified signals.
+int libtorque_addsignal(struct libtorque_ctx *,const sigset_t *,
+						libtorque_evcbfxn,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull(1,3)));
+	__attribute__ ((nonnull(1,2,3)));
 
 // Handle the specified file descriptor.
 int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn,
-				libtorque_evcbfxn,void *)
+						libtorque_evcbfxn,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
@@ -40,7 +42,7 @@ int libtorque_addfd(struct libtorque_ctx *,int,libtorque_evcbfxn,
 // The SSL_CTX should be set up with the desired authentication parameters etc
 // already (utility functions are provided to do this).
 int libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,libtorque_evcbfxn,
-					libtorque_evcbfxn,void *)
+						libtorque_evcbfxn,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));

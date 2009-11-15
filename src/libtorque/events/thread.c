@@ -125,17 +125,16 @@ rxsignal(int sig,void *unsafe_e){
 static int
 add_evhandler_baseevents(evhandler *e){
 	evectors *ev;
+	sigset_t s;
 
 	if((ev = create_evectors()) == NULL){
 		return -1;
 	}
 	e->externalvec = ev;
-	if(add_signal_to_evhandler(e,EVTHREAD_SIGNAL,rxsignal,e)){
-		e->externalvec = NULL;
-		destroy_evectors(ev);
+	if(sigemptyset(&s) || sigaddset(&s,EVTHREAD_SIGNAL) || sigaddset(&s,EVTHREAD_TERM)){
 		return -1;
 	}
-	if(add_signal_to_evhandler(e,EVTHREAD_TERM,rxsignal,e)){
+	if(add_signal_to_evhandler(e,&s,rxsignal,e)){
 		e->externalvec = NULL;
 		destroy_evectors(ev);
 		return -1;

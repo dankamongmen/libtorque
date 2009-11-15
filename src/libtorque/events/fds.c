@@ -46,7 +46,7 @@ add_fd_event(struct evectors *ev,int fd,evcbfxn rfxn,evcbfxn tfxn){
 
 int add_fd_to_evcore(evhandler *eh,struct evectors *ev,int fd,evcbfxn rfxn,
 				evcbfxn tfxn,void *cbstate){
-	if(fd >= eh->fdarraysize){
+	if((unsigned)fd >= eh->fdarraysize){
 		return -1;
 	}
 	if(add_fd_event(ev,fd,rfxn,tfxn)){

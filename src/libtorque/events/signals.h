@@ -5,11 +5,12 @@
 extern "C" {
 #endif
 
+#include <signal.h>
 #include <libtorque/events/sources.h>
 
 struct evhandler;
 
-int add_signal_to_evhandler(struct evhandler *,int,evcbfxn,void *)
+int add_signal_to_evhandler(struct evhandler *,const sigset_t *,evcbfxn,void *)
 	__attribute__ ((nonnull (1,3)));
 
 #ifdef __cplusplus
