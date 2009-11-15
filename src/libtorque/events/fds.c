@@ -4,7 +4,7 @@
 #include <libtorque/events/sources.h>
 
 static inline int
-add_fd_event(struct evectors *ev,int fd,libtorquecb rfxn,libtorquecb tfxn){
+add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn){
 #ifdef LIBTORQUE_LINUX
 	struct epoll_ctl_data ecd;
 	struct epoll_event ee;
@@ -45,8 +45,8 @@ add_fd_event(struct evectors *ev,int fd,libtorquecb rfxn,libtorquecb tfxn){
 	return 0;
 }
 
-int add_fd_to_evcore(evhandler *eh,struct evectors *ev,int fd,libtorquecb rfxn,
-					libtorquecb tfxn,void *cbstate){
+int add_fd_to_evcore(evhandler *eh,struct evectors *ev,int fd,libtorquercb rfxn,
+					libtorquewcb tfxn,void *cbstate){
 	if((unsigned)fd >= eh->evsources->fdarraysize){
 		return -1;
 	}
@@ -57,8 +57,8 @@ int add_fd_to_evcore(evhandler *eh,struct evectors *ev,int fd,libtorquecb rfxn,
 	return 0;
 }
 
-int add_fd_to_evhandler(evhandler *eh,int fd,libtorquecb rfxn,
-					libtorquecb tfxn,void *cbstate){
+int add_fd_to_evhandler(evhandler *eh,int fd,libtorquercb rfxn,
+					libtorquewcb tfxn,void *cbstate){
 	if(pthread_mutex_lock(&eh->lock) == 0){
 		struct evectors *ev = eh->externalvec;
 

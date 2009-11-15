@@ -21,16 +21,17 @@ struct libtorque_ctx *libtorque_init(void)
 // Returning anything other than 0 will see the descriptor closed, and removed
 // from the evhandler's notification queue.
 // FIXME maybe ought be using a uintptr_t instead of void *?
-typedef int (*libtorquecb)(int,void *);
+typedef int (*libtorquercb)(int,void *);
+typedef int (*libtorquewcb)(int,void *);
 
 // Handle the specified signals.
-int libtorque_addsignal(struct libtorque_ctx *,const sigset_t *,libtorquecb,void *)
+int libtorque_addsignal(struct libtorque_ctx *,const sigset_t *,libtorquercb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2,3)));
 
 // Handle the specified file descriptor.
-int libtorque_addfd(struct libtorque_ctx *,int,libtorquecb,libtorquecb,void *)
+int libtorque_addfd(struct libtorque_ctx *,int,libtorquercb,libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
@@ -39,7 +40,8 @@ int libtorque_addfd(struct libtorque_ctx *,int,libtorquecb,libtorquecb,void *)
 #include <openssl/ssl.h>
 // The SSL_CTX should be set up with the desired authentication parameters etc
 // already (utility functions are provided to do this).
-int libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,libtorquecb,libtorquecb,void *)
+int libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,libtorquercb,
+						libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));

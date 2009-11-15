@@ -14,7 +14,8 @@ extern "C" {
 // The alignment ought be determined at runtime based off L1 parameters, and
 // combined with software indexing FIXME.
 typedef struct evsource {
-	libtorquecb rxfxn,txfxn;
+	libtorquercb rxfxn;
+	libtorquewcb txfxn;
 	void *cbstate;
 } evsource;
 
@@ -47,7 +48,7 @@ evsource *create_evsources(unsigned)
 // having the fd cleared, we design to not care about it at all -- there is no
 // feedback from the callback functions, and nothing needs to call anything
 // upon closing an fd.
-static inline void setup_evsource(evsource *,int,libtorquecb,libtorquecb,void *)
+static inline void setup_evsource(evsource *,int,libtorquercb,libtorquewcb,void *)
 	__attribute__ ((nonnull(1)));
 
 // We need no locking here, because the only time someone should call
@@ -56,25 +57,25 @@ static inline void setup_evsource(evsource *,int,libtorquecb,libtorquecb,void *)
 // already being used, it must have been removed from the event queue (by
 // guarantees of the epoll/kqueue mechanisms), and thus no events exist for it.
 static inline void
-setup_evsource(evsource *evs,int n,libtorquecb rfxn,libtorquecb tfxn,void *v){
+setup_evsource(evsource *evs,int n,libtorquercb rfxn,libtorquewcb tfxn,void *v){
 	evs[n].rxfxn = rfxn;
 	evs[n].txfxn = tfxn;
 	evs[n].cbstate = v;
 }
 
-static inline void set_evsource_rx(evsource *,int,libtorquecb)
+static inline void set_evsource_rx(evsource *,int,libtorquercb)
 	__attribute__ ((nonnull(1)));
 
-static inline void set_evsource_tx(evsource *,int,libtorquecb)
+static inline void set_evsource_tx(evsource *,int,libtorquewcb)
 	__attribute__ ((nonnull(1)));
 
 static inline void
-set_evsource_rx(evsource *evs,int n,libtorquecb rx){
+set_evsource_rx(evsource *evs,int n,libtorquercb rx){
 	evs[n].rxfxn = rx;
 }
 
 static inline void
-set_evsource_tx(evsource *evs,int n,libtorquecb tx){
+set_evsource_tx(evsource *evs,int n,libtorquewcb tx){
 	evs[n].txfxn = tx;
 }
 

@@ -25,13 +25,14 @@ typedef struct ssl_cbstate {
 	SSL_CTX *sslctx;
 	SSL *ssl;
 	void *cbstate;
-	libtorquecb rxfxn,txfxn;
+	libtorquercb rxfxn;
+	libtorquewcb txfxn;
 	libtorque_rxbuf rxb;
 } ssl_cbstate;
 
 struct ssl_cbstate *
 create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
-					libtorquecb rx,libtorquecb tx){
+					libtorquercb rx,libtorquewcb tx){
 	ssl_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
@@ -239,6 +240,7 @@ ssl_txrxfxn(int fd,void *cbs){
 		return -1;
 	}
 	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
+		// FIXME update avail
 		if(sc->rxfxn(fd,sc->cbstate)){
 			free_ssl_cbstate(sc);
 			close(fd);
@@ -269,6 +271,7 @@ ssl_rxfxn(int fd,void *cbs){
 		return -1;
 	}
 	while((r = SSL_read(sc->ssl,rxbuffer_buf(&sc->rxb),rxbuffer_avail(&sc->rxb))) > 0){
+		// FIXME update avail
 		if(sc->rxfxn(fd,sc->cbstate)){
 			free_ssl_cbstate(sc);
 			close(fd);
@@ -308,8 +311,8 @@ accept_contrxfxn(int fd,void *cbs){
 	int ret;
 
 	if((ret = SSL_accept(sc->ssl)) == 1){
-		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
-		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
+		libtorquercb rx = sc->rxfxn ? ssl_rxfxn : NULL;
+		libtorquewcb tx = sc->txfxn ? ssl_txfxn : NULL;
 
 		if(initialize_rxbuffer(&sc->rxb)){
 			goto err;
@@ -342,8 +345,8 @@ accept_conttxfxn(int fd,void *cbs){
 	int ret;
 
 	if((ret = SSL_accept(sc->ssl)) == 1){
-		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
-		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
+		libtorquercb rx = sc->rxfxn ? ssl_rxfxn : NULL;
+		libtorquewcb tx = sc->txfxn ? ssl_txfxn : NULL;
 
 		if(initialize_rxbuffer(&sc->rxb)){
 			goto err;
@@ -388,8 +391,8 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 		return -1;
 	}
 	if((ret = SSL_accept(csc->ssl)) == 1){
-		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
-		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
+		libtorquercb rx = sc->rxfxn ? ssl_rxfxn : NULL;
+		libtorquewcb tx = sc->txfxn ? ssl_txfxn : NULL;
 
 		if(initialize_rxbuffer(&csc->rxb)){
 			free_ssl_cbstate(csc);
