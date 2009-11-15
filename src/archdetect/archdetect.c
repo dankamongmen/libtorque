@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <locale.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -24,7 +25,7 @@ fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 			return -1;
 		}
 	}
-	if((r = fprintf(fp,"%ju%c%s",val,*unit,suffix)) < 0){
+	if((r = fprintf(fp,"%'ju%c%s",val,*unit,suffix)) < 0){
 		return r;
 	}
 	if(val >= SCALE && (val % SCALE)){
@@ -342,6 +343,10 @@ int main(void){
 	const libtorque_topt *t;
 	int ret = EXIT_FAILURE;
 
+	if(setlocale(LC_ALL,"") == NULL){
+		fprintf(stderr,"Couldn't set locale\n");
+		goto done;
+	}
 	if((ctx = libtorque_init()) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto done;
