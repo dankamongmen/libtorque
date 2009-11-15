@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <libtorque/buffers.h>
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/libtorque.h>
 
@@ -20,8 +21,16 @@ typedef struct torquessl {
 static int
 ssl_conn_handler(int fd,void *v){
 	torquessl *tssl = v;
+	const char *b;
+	size_t blen;
 
-	fprintf(tssl->out,"SSL data on fd %d\n",fd);
+	b = rxbuffer_valid(tssl->rxb,&blen);
+	if(blen){
+		fprintf(tssl->out,"SSL data (%zub) on fd %d\n",blen,fd);
+	}else{
+		fprintf(stderr,"SSL connection shut down on %d\n",fd);
+		return -1;
+	}
 	return 0;
 }
 

@@ -34,6 +34,12 @@ free_rxbuffer(libtorque_rxbuf *rxb){
 	free(rxb->buffer);
 }
 
+static inline const char *
+rxbuffer_valid(const libtorque_rxbuf *rxb,size_t *valid){
+	*valid = RXBUFSIZE - rxb->bufleft;
+	return rxb->buffer;
+}
+
 #ifdef __cplusplus
 }
 #endif
