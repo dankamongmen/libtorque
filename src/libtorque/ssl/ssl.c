@@ -136,7 +136,7 @@ SSL_CTX *libtorque_ssl_ctx(const char *certfile,const char *keyfile,
 			const char *cafile,unsigned cliver){
 	SSL_CTX *ret;
 
-	if((ret = SSL_CTX_new(SSLv3_method())) == NULL){
+	if((ret = SSL_CTX_new(SSLv23_method())) == NULL){
 		return NULL;
 	}
 	// The CA's we trust. We must still ensure the certificate chain is
