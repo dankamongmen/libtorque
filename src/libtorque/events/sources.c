@@ -24,22 +24,6 @@ void setup_evsource(evsource *evs,int n,libtorquecb rfxn,libtorquecb tfxn,void *
 	evs[n].cbstate = v;
 }
 
-int handle_evsource_read(evsource *evs,int n){
-	printf("handling read on %d\n",n);
-	if(evs[n].rxfxn){
-		return evs[n].rxfxn(n,evs[n].cbstate);
-	}
-	return -1;
-}
-
-int handle_evsource_write(evsource *evs,int n){
-	printf("handling write on %d\n",n);
-	if(evs[n].rxfxn){
-		return evs[n].rxfxn(n,evs[n].cbstate);
-	}
-	return -1;
-}
-
 int destroy_evsources(evsource *evs,unsigned n __attribute__ ((unused))){
 	int ret = 0;
 
