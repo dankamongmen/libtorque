@@ -128,11 +128,11 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't create OpenSSL fd\n");
 		goto err;
 	}
-	if(init_ssl()){
+	if(libtorque_init_ssl()){
 		fprintf(stderr,"Couldn't initialize OpenSSL\n");
 		goto err;
 	}
-	if((sslctx = new_ssl_ctx(certfile,keyfile,cafile,0)) == NULL){
+	if((sslctx = libtorque_ssl_ctx(certfile,keyfile,cafile,0)) == NULL){
 		fprintf(stderr,"Couldn't initialize OpenSSL context\n");
 		goto err;
 	}
@@ -158,7 +158,7 @@ err:
 		fprintf(stderr,"Couldn't shutdown libtorque\n");
 		return EXIT_FAILURE;
 	}
-	if(stop_ssl()){
+	if(libtorque_stop_ssl()){
 		fprintf(stderr,"Couldn't shutdown OpenSSL\n");
 		return EXIT_FAILURE;
 	}

@@ -41,7 +41,7 @@ void free_ssl_accept_cbstate(ssl_accept_cbstate *sac){
 	}
 }
 
-int stop_ssl(void){
+int libtorque_stop_ssl(void){
 	int ret = 0;
 	unsigned z;
 
@@ -118,7 +118,7 @@ openssl_verify_callback(int preverify_ok,X509_STORE_CTX *xctx __attribute__ ((un
 	return preverify_ok;
 }
 
-SSL_CTX *new_ssl_ctx(const char *certfile,const char *keyfile,
+SSL_CTX *libtorque_ssl_ctx(const char *certfile,const char *keyfile,
 			const char *cafile,unsigned cliver){
 	SSL_CTX *ret;
 
@@ -156,7 +156,7 @@ SSL_CTX *new_ssl_ctx(const char *certfile,const char *keyfile,
 	return NULL;
 }
 
-int init_ssl(void){
+int libtorque_init_ssl(void){
 	int nlocks;
 	unsigned z;
 
