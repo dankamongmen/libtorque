@@ -26,6 +26,7 @@ void event_thread(evhandler *e){
 
 		events = Kevent(e->efd,PTR_TO_CHANGEV(ev),ev->changesqueued,
 				PTR_TO_EVENTV(ev),ev->vsizes);
+		++e->stats.rounds;
 		for(z = 0 ; z < events ; ++z){
 			handle_event(e,&PTR_TO_EVENTV(ev)->events[z]);
 		}
@@ -222,7 +223,9 @@ evhandler *create_evhandler(void){
 static void print_evstats(const evthreadstats *stats){
 #define PRINTSTAT(s,field) \
 	do { if((s)->field){ printf(#field ": %ju\n",(s)->field); } }while(0)
-	PRINTSTAT(stats,evhandler_errors);
+	PRINTSTAT(stats,rounds);
+	PRINTSTAT(stats,events);
+	PRINTSTAT(stats,errors);
 #undef PRINTSTAT
 }
 

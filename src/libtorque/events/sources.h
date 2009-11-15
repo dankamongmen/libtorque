@@ -9,7 +9,10 @@ extern "C" {
 #include <pthread.h>
 #include <libtorque/libtorque.h>
 
-typedef struct evsource { // The callback state associated with an event source
+// The callback state associated with an event source.
+// The alignment ought be determined at runtime based off L1 parameters, and
+// combined with software indexing FIXME.
+typedef struct evsource {
 	libtorquecb rxfxn,txfxn;
 	void *cbstate;
 } evsource;
@@ -17,16 +20,18 @@ typedef struct evsource { // The callback state associated with an event source
 struct evectors;
 
 typedef struct evthreadstats {
-	uintmax_t evhandler_errors;
+	uintmax_t rounds;	// times through the event queue loop
+	uintmax_t events;	// events dequeued from kernel
+	uintmax_t errors;	// errors in the main event code
 } evthreadstats;
 
 typedef struct evhandler {
 	int efd;
-	evthreadstats stats;
 	pthread_mutex_t lock;
 	struct evsource *fdarray,*sigarray;
 	unsigned sigarraysize,fdarraysize;
 	struct evectors *externalvec;
+	evthreadstats stats;
 } evhandler;
 
 evsource *create_evsources(unsigned)
