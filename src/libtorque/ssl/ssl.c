@@ -311,7 +311,7 @@ accept_contrxfxn(int fd,void *cbs){
 		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
 
-		if(initialize_rxbuffer(&sc->rxb) == 0){
+		if(initialize_rxbuffer(&sc->rxb)){
 			goto err;
 		}
 		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
@@ -345,7 +345,7 @@ accept_conttxfxn(int fd,void *cbs){
 		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
 
-		if(initialize_rxbuffer(&sc->rxb) == 0){
+		if(initialize_rxbuffer(&sc->rxb)){
 			goto err;
 		}
 		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
@@ -391,7 +391,7 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
 
-		if(initialize_rxbuffer(&csc->rxb) == 0){
+		if(initialize_rxbuffer(&csc->rxb)){
 			free_ssl_cbstate(csc);
 			return -1;
 		}
