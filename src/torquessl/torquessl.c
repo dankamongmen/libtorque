@@ -25,11 +25,10 @@ ssl_conn_handler(int fd,torquercbstate *v){
 
 	buf = rxbuffer_valid(v->rxbuf,&len);
 	if(len == 0){
-		fprintf(tssl->out,"SSL closed on %d\n",fd);
+		fprintf(tssl->out,"[%4d] closed\n",fd);
 		return -1;
 	}
-	fprintf(tssl->out,"Buffer %p has %zub\n",buf,len);
-	fprintf(tssl->out,"%.*s\n",(int)len,buf);
+	fprintf(tssl->out,"[%4d] %.*s\n",fd,(int)len,buf);
 	rxbuffer_advance(v->rxbuf,len);
 	return 0;
 }

@@ -276,7 +276,7 @@ ssl_rxfxn(int fd,torquercbstate *cbs){
 		close(fd);
 		return -1;
 	}
-	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) > 0){
+	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) >= 0){
 		torquercbstate rcb = {
 			.rxbuf = &sc->rxb,
 			.cbstate = sc->cbstate,
