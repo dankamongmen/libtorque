@@ -20,9 +20,9 @@ typedef struct evsource {
 struct evectors;
 
 typedef struct evthreadstats {
-	uintmax_t rounds;	// times through the event queue loop
-	uintmax_t events;	// events dequeued from kernel
-	uintmax_t errors;	// errors in the main event code
+#define STATDEF(x) uintmax_t x;
+#include <libtorque/events/stats.h>
+#undef STATDEF
 } evthreadstats;
 
 typedef struct evhandler {

@@ -223,9 +223,9 @@ evhandler *create_evhandler(void){
 static void print_evstats(const evthreadstats *stats){
 #define PRINTSTAT(s,field) \
 	do { if((s)->field){ printf(#field ": %ju\n",(s)->field); } }while(0)
-	PRINTSTAT(stats,rounds);
-	PRINTSTAT(stats,events);
-	PRINTSTAT(stats,errors);
+#define STATDEF(field) PRINTSTAT(stats,field);
+#include <libtorque/events/stats.h>
+#undef STATDEF
 #undef PRINTSTAT
 }
 
