@@ -25,12 +25,10 @@ void setup_evsource(evsource *evs,int n,libtorque_evcbfxn rfxn,
 	evs[n].cbstate = v;
 }
 
-#include <stdio.h>
 int handle_evsource_read(evsource *evs,int n){
 	printf("handling read on %d\n",n);
 	if(evs[n].rxfxn){
-		evs[n].rxfxn(n,evs[n].cbstate);
-		return 0;
+		return evs[n].rxfxn(n,evs[n].cbstate);
 	}
 	return -1;
 }
@@ -38,8 +36,7 @@ int handle_evsource_read(evsource *evs,int n){
 int handle_evsource_write(evsource *evs,int n){
 	printf("handling write on %d\n",n);
 	if(evs[n].rxfxn){
-		evs[n].rxfxn(n,evs[n].cbstate);
-		return 0;
+		return evs[n].rxfxn(n,evs[n].cbstate);
 	}
 	return -1;
 }
