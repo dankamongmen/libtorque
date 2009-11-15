@@ -37,7 +37,7 @@ make_ssl_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 		return -1;
 	}
 	if(((flags = fcntl(sd,F_GETFL)) < 0) ||
-			fcntl(sd,F_SETFL,flags & (long)O_NONBLOCK)){
+			fcntl(sd,F_SETFL,flags | (long)O_NONBLOCK)){
 		close(sd);
 		return -1;
 	}
