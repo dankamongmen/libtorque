@@ -11,9 +11,15 @@
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/libtorque.h>
 
+typedef struct torquessl {
+	FILE *out;
+} torquessl;
+
 static int
 ssl_conn_handler(int fd,void *v){
-	printf("SSL data on fd %d, state %p\n",fd,v);
+	torquessl *tssl = v;
+
+	fprintf(tssl->out,"SSL data on fd %d\n",fd);
 	return 0;
 }
 
@@ -101,6 +107,7 @@ err:
 int main(int argc,char **argv){
 	const char *certfile = NULL,*keyfile = NULL,*cafile = NULL;
 	struct libtorque_ctx *ctx = NULL;
+	torquessl *tssl = NULL;
 	SSL_CTX *sslctx = NULL;
 	struct sockaddr_in sin;
 	sigset_t termset;
@@ -136,7 +143,11 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't initialize OpenSSL context\n");
 		goto err;
 	}
-	if(libtorque_addssl(ctx,sd,sslctx,ssl_conn_handler,NULL,NULL)){
+	if((tssl = malloc(sizeof(*tssl))) == NULL){
+		fprintf(stderr,"Couldn't allocate OpenSSL cbstate\n");
+		goto err;
+	}
+	if(libtorque_addssl(ctx,sd,sslctx,ssl_conn_handler,NULL,stdout)){
 		fprintf(stderr,"Couldn't add SSL sd %d\n",sd);
 		goto err;
 	}
@@ -150,6 +161,11 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't shutdown libtorque\n");
 		return EXIT_FAILURE;
 	}
+	if(libtorque_stop_ssl()){
+		fprintf(stderr,"Couldn't shutdown OpenSSL\n");
+		return EXIT_FAILURE;
+	}
+	free(tssl);
 	printf("Successfully cleaned up.\n");
 	return EXIT_SUCCESS;
 
@@ -163,6 +179,7 @@ err:
 		return EXIT_FAILURE;
 	}
 	SSL_CTX_free(sslctx);
+	free(tssl);
 	if((sd >= 0) && close(sd)){
 		fprintf(stderr,"Couldn't close SSL socket %d\n",sd);
 		return EXIT_FAILURE;
