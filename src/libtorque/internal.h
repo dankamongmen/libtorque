@@ -77,6 +77,11 @@ typedef struct evtables {
 	unsigned sigarraysize,fdarraysize;
 } evtables;
 
+typedef struct libtorque_rxbuf {
+	char *buffer;
+	size_t bufleft;
+} libtorque_rxbuf;
+
 // Whenever a field is added to this structure, make sure it's
 //  a) initialized in create_libtorque_ctx(), and
 //  b) free()d (and reset) in the appropriate cleanup

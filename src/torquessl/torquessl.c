@@ -13,6 +13,7 @@
 
 typedef struct torquessl {
 	FILE *out;
+	libtorque_rxbuf *rxb;
 } torquessl;
 
 static int
@@ -50,7 +51,7 @@ make_ssl_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 	return sd;
 }
 
-#define DEFAULT_PORT ((uint16_t)7443)
+#define DEFAULT_PORT ((uint16_t)4433)
 
 static void
 usage(const char *argv0){

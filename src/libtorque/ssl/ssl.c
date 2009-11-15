@@ -7,6 +7,7 @@
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
 #include <openssl/crypto.h>
+#include <libtorque/buffers.h>
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/schedule.h>
 
@@ -17,45 +18,14 @@ struct CRYPTO_dynlock_value {
 	pthread_mutex_t mutex; // FIXME use a read-write lock
 };
 
-typedef struct rxbuffer {
-	char *buffer;
-	size_t bufleft;
-} rxbuffer;
-
 typedef struct ssl_cbstate {
 	struct libtorque_ctx *ctx;
 	SSL_CTX *sslctx;
 	SSL *ssl;
 	void *cbstate;
 	libtorquecb rxfxn,txfxn;
-	rxbuffer rxb;
+	libtorque_rxbuf rxb;
 } ssl_cbstate;
-
-static inline char *
-rxbuffer_buf(rxbuffer *rxb){
-	return rxb->buffer;
-}
-
-static inline size_t
-rxbuffer_avail(const rxbuffer *rxb){
-	return rxb->bufleft;
-}
-
-#define RXBUFSIZE (16 * 1024)
-
-static inline int
-initialize_rxbuffer(rxbuffer *rxb){
-	if( (rxb->buffer = malloc(RXBUFSIZE)) ){
-		rxb->bufleft = RXBUFSIZE;
-		return 0;
-	}
-	return -1;
-}
-
-static inline void
-free_rxbuffer(rxbuffer *rxb){
-	free(rxb->buffer);
-}
 
 struct ssl_cbstate *
 create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
