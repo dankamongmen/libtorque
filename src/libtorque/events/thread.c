@@ -19,12 +19,9 @@ handle_event(evhandler *eh,const kevententry *e){
 	printf("result code: %d\n",ret);
 }
 
-// We're currently cancellable. That isn't generally safe unless we wrap
-// handling with cancellation blocking, which eats a bit of performance. We'd
-// like to encode cancellation into event handling itself FIXME.
 void event_thread(evhandler *e){
 	while(1){
-		evectors *ev = e->externalvec; // FIXME really?
+		evectors *ev = e->externalvec; // FIXME really? surely not.
 		int events,z;
 
 		events = Kevent(e->efd,PTR_TO_CHANGEV(ev),ev->changesqueued,
