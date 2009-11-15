@@ -35,16 +35,15 @@ create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
 	ssl_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_rxbuffer(&ret->rxb) == 0){
-			ret->ctx = ctx;
-			ret->sslctx = sslctx;
-			ret->cbstate = cbstate;
-			ret->rxfxn = rx;
-			ret->txfxn = tx;
-			ret->ssl = NULL;
-			return ret;
-		}
-		free(ret);
+		ret->rxb.buffer = NULL;
+		ret->rxb.bufleft = 0;
+		ret->ctx = ctx;
+		ret->sslctx = sslctx;
+		ret->cbstate = cbstate;
+		ret->rxfxn = rx;
+		ret->txfxn = tx;
+		ret->ssl = NULL;
+		return ret;
 	}
 	return NULL;
 }
@@ -305,13 +304,16 @@ static int accept_conttxfxn(int,void *);
 
 static int
 accept_contrxfxn(int fd,void *cbs){
-	const ssl_cbstate *sc = cbs;
+	ssl_cbstate *sc = cbs;
 	int ret;
 
 	if((ret = SSL_accept(sc->ssl)) == 1){
 		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
 
+		if(initialize_rxbuffer(&sc->rxb) == 0){
+			goto err;
+		}
 		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
 		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,tx);
 	}else{
@@ -323,23 +325,29 @@ accept_contrxfxn(int fd,void *cbs){
 		}else if(err == SSL_ERROR_WANT_READ){
 			// just let it loop
 		}else{
-			free_ssl_cbstate(cbs);
-			close(fd);
-			return -1;
+			goto err;
 		}
 	}
 	return 0;
+
+err:
+	free_ssl_cbstate(sc);
+	close(fd);
+	return -1;
 }
 
 static int
 accept_conttxfxn(int fd,void *cbs){
-	const ssl_cbstate *sc = cbs;
+	ssl_cbstate *sc = cbs;
 	int ret;
 
 	if((ret = SSL_accept(sc->ssl)) == 1){
 		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
 
+		if(initialize_rxbuffer(&sc->rxb) == 0){
+			goto err;
+		}
 		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
 		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,tx);
 	}else{
@@ -351,12 +359,15 @@ accept_conttxfxn(int fd,void *cbs){
 		}else if(err == SSL_ERROR_WANT_WRITE){
 			// just let it loop
 		}else{
-			free_ssl_cbstate(cbs);
-			close(fd);
-			return -1;
+			goto err;
 		}
 	}
 	return 0;
+
+err:
+	free_ssl_cbstate(sc);
+	close(fd);
+	return -1;
 }
 
 static inline int
@@ -380,6 +391,10 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 		libtorquecb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquecb tx = sc->txfxn ? ssl_txfxn : NULL;
 
+		if(initialize_rxbuffer(&csc->rxb) == 0){
+			free_ssl_cbstate(csc);
+			return -1;
+		}
 		if(libtorque_addfd(sc->ctx,sd,rx,tx,csc)){
 			free_ssl_cbstate(csc);
 			return -1;
