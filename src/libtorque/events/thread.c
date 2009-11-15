@@ -115,7 +115,7 @@ static int
 rxsignal(int sig,void *unsafe_e){
 	evhandler *e = unsafe_e;
 
-	if(sig == SIGTERM){
+	if(sig == EVTHREAD_TERM){
 		destroy_evhandler(e);
 		pthread_exit(PTHREAD_CANCELED);
 	}
