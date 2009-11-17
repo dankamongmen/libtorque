@@ -236,7 +236,6 @@ ssl_txrxfxn(int fd,void *cbs){
 	ssl_cbstate *sc = cbs;
 	int r,err;
 
-	printf("%s\n",__func__);
 	if(sc->rxfxn == NULL){
 		return -1;
 	}
@@ -270,7 +269,6 @@ ssl_rxfxn(int fd,torquercbstate *cbs){
 	ssl_cbstate *sc = cbs->cbstate;
 	int r,err;
 
-	printf("%s -> %p(%p)\n",__func__,sc->rxfxn,sc->cbstate);
 	if(sc->rxfxn == NULL){
 		free_ssl_cbstate(sc);
 		close(fd);
@@ -305,7 +303,6 @@ static int
 ssl_txfxn(int fd,void *cbs){
 	const ssl_cbstate *sc = cbs;
 
-	printf("%s\n",__func__);
 	if(sc->txfxn == NULL){
 		return -1;
 	}
