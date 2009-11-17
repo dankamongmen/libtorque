@@ -21,10 +21,8 @@ unsigned libtorque_affinitymapping(const struct libtorque_ctx *,unsigned)
 	__attribute__ ((visibility("default")));
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-unsigned detect_cpucount(struct libtorque_ctx *,cpu_set_t *);
 int associate_affinityid(struct libtorque_ctx *,unsigned,unsigned);
 int pin_thread(unsigned);
-int unpin_thread(const struct libtorque_ctx *);
 int spawn_thread(struct libtorque_ctx *);
 int reap_threads(struct libtorque_ctx *);
 

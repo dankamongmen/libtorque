@@ -95,6 +95,83 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 	return NULL;
 }
 
+// Revert to the original cpuset mask
+static int
+unpin_thread(const cpu_set_t *cset){
+#ifdef LIBTORQUE_FREEBSD
+	if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,sizeof(*cset),cset)){
+#else
+	if(pthread_setaffinity_np(pthread_self(),sizeof(*cset),cset)){
+#endif
+		return -1;
+	}
+	return 0;
+}
+
+// Detect the number of processing elements (of any type) available to us; this
+// isn't a function of architecture, but a function of the OS (only certain
+// processors might be enabled, and we might be restricted to a subset). We
+// want only those processors we can *use* (schedule code on). Hopefully, the
+// OS is providing us with full use of the provided processors, simplifying our
+// own scheduling (assuming we're not using measured load as a feedback).
+//
+// Methods to do so include:
+//  - sysconf(_SC_NPROCESSORS_ONLN) (GNU extension: get_nprocs_conf())
+//  - sysconf(_SC_NPROCESSORS_CONF) (GNU extension: get_nprocs())
+//  - dmidecode --type 4 (Processor type)
+//  - grep ^processor /proc/cpuinfo (linux only)
+//  - ls /sys/devices/system/cpu/cpu? | wc -l (linux only)
+//  - ls /dev/cpuctl* | wc -l (freebsd only, with cpuctl device)
+//  - ls /dev/cpu/[0-9]* | wc -l (linux only, with cpuid driver)
+//  - mptable (freebsd only, with SMP option)
+//  - hw.ncpu, kern.smp.cpus sysctls (freebsd)
+//  - read BIOS via /dev/memory (requires root)
+//  - cpuset_size() (libcpuset, linux)
+//  - cpuset -g (freebsd)
+//  - taskset -c (linux)
+//  - cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET) (freebsd)
+//  - sched_getaffinity(0) (linux)
+//  - CPUID function 0x0000_000b (x2APIC/Topology Enumeration)
+
+// FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
+// setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
+static inline unsigned
+portable_cpuset_count(const cpu_set_t *mask){
+	unsigned count = 0,cpu;
+
+	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
+		if(CPU_ISSET(cpu,mask)){
+			++count;
+		}
+	}
+	return count;
+}
+
+// Returns a positive integer number of processing elements on success. A non-
+// positive return value indicates failure to determine the processor count.
+// A "processor" is "something on which we can schedule a running thread". On a
+// successful return, mask contains the original affinity mask of the process.
+static inline unsigned
+detect_cpucount(cpu_set_t *mask){
+#ifdef LIBTORQUE_FREEBSD
+	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
+				sizeof(*mask),mask) == 0){
+#elif defined(LIBTORQUE_LINUX)
+	// We might be only a subthread of a larger application; use the
+	// affinity mask of the thread which initializes us.
+	if(pthread_getaffinity_np(pthread_self(),sizeof(*mask),mask) == 0){
+#else
+#error "No affinity detection method defined for this OS"
+#endif
+		unsigned csize;
+
+		if((csize = portable_cpuset_count(mask)) > 0){
+			return csize;
+		}
+	}
+	return 0;
+}
+
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
 static int
@@ -106,7 +183,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 	*cputc = 0;
 	*types = NULL;
 	// we're basically doing this in the main loop. purge! FIXME
-	if((cpucount = detect_cpucount(ctx,&mask)) <= 0){
+	if((cpucount = detect_cpucount(&mask)) <= 0){
 		goto err;
 	}
 	// Might be quite large; we don't want it allocated on the stack
@@ -149,13 +226,13 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 		}
 		++aid;
 	}
-	if(unpin_thread(ctx)){
+	if(unpin_thread(&mask)){
 		goto err;
 	}
 	return 0;
 
 err:
-	unpin_thread(ctx);
+	unpin_thread(&mask);
 	reap_threads(ctx);
 	while((*cputc)--){
 		free_cpudetails((*types) + ctx->cpu_typecount);

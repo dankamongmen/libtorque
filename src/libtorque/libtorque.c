@@ -54,7 +54,6 @@ create_libtorque_ctx(void){
 			return NULL;
 		}
 		memset(&ret->affinmap,0,sizeof(ret->affinmap));
-		CPU_ZERO(&ret->origmask);
 		ret->sched_zone = NULL;
 		ret->cpudescs = NULL;
 		ret->manodes = NULL;

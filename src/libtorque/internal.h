@@ -98,7 +98,6 @@ typedef struct libtorque_ctx {
 	libtorque_cput *cpudescs;	// dynarray of cpu_typecount elements
 	libtorque_nodet *manodes;	// dynarray of NUMA node descriptors
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
-	cpu_set_t origmask;		// affinityid validity map
 	evtables eventtables;		// callback state tables
 	pthread_t headtid;		// tid of list leader (for shutdown)
 	// FIXME all these CPU_SETSIZE arrays are (usually) pretty wasteful
