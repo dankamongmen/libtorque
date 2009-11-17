@@ -15,7 +15,7 @@ evhandler *create_evhandler(struct evtables *)
 
 int destroy_evhandler(evhandler *);
 
-void event_thread(evhandler *);
+void event_thread(evhandler *) __attribute__ ((noreturn));
 
 #ifdef __cplusplus
 }
