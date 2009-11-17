@@ -1199,6 +1199,16 @@ id_amd_gbtlbs(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpreg
 	return 0;
 }
 
+// For TLBs which can be either unused, 2M or 4M, Long Mode always uses 4M,
+// Legacy Mode+PAE uses 2M, +PSE uses 4M, and otherwise only 4K pages.
+static size_t
+determine_amd_pagesize(const struct feature_flags *ff){
+	if(ff->lme == 1){
+		return 1024 * 1024 * 4; // FIXME must also check MSR for LMER!
+	}
+	return 1024 * 1024 * 2; // FIXME can be 4MB or unused, see above
+}
+
 static int
 id_amd_23caches(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpregs,libtorque_cput *cpud){
 	libtorque_tlbt tlb,tlb24,itlb,itlb24;
@@ -1232,7 +1242,7 @@ id_amd_23caches(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpr
 		}
 	}
 	tlb.pagesize = itlb.pagesize = 4096;
-	tlb24.pagesize = itlb24.pagesize = 1024 * 1024 * 2; // FIXME can be 4MB
+	tlb24.pagesize = itlb24.pagesize = determine_amd_pagesize(ff);
 	tlb.sharedways = itlb.sharedways = cpud->threadspercore;
 	tlb24.sharedways = itlb24.sharedways = cpud->threadspercore;
 	tlb.level = itlb.level = tlb24.level = itlb24.level = 2;
@@ -1329,7 +1339,7 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),const struct feature_fl
 		return -1;
 	}
 	tlb.pagesize = itlb.pagesize = 4096;
-	tlb24.pagesize = itlb24.pagesize = 1024 * 1024 * 2; // FIXME can be 4MB
+	tlb24.pagesize = itlb24.pagesize = determine_amd_pagesize(ff);
 	tlb.sharedways = itlb.sharedways = cpud->threadspercore;
 	tlb24.sharedways = itlb24.sharedways = cpud->threadspercore;
 	tlb.level = itlb.level = tlb24.level = itlb24.level = 1;
