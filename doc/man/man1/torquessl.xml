@@ -64,6 +64,12 @@
 	<refsynopsisdiv>
 		<cmdsynopsis>
 			<command>torquessl</command>
+			<arg>-c <replaceable>certificate</replaceable></arg>
+			<arg>-k <replaceable>keyfile</replaceable></arg>
+			<arg>-p <replaceable>port</replaceable></arg>
+			<arg>-C <replaceable>CA certificate</replaceable></arg>
+			<arg>-h</arg>
+			<arg>--version</arg>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 	<refsect1 id="description">
@@ -75,7 +81,42 @@
 	</refsect1>
 	<refsect1 id="options">
 		<title>OPTIONS</title>
-		<para><command>&dhpackage;</command> takes no options FIXME.</para>
+		<varlistentry>
+  			<term><option>-c cert</option></term>
+  			<listitem>
+    			<para>Specify a certificate file for identification.</para>
+  			</listitem>
+		</varlistentry>
+		<varlistentry>
+  			<term><option>-k key</option></term>
+  			<listitem>
+    			<para>Specify the keyfile corresponding to our certificate.</para>
+  			</listitem>
+		</varlistentry>
+		<varlistentry>
+  			<term><option>-p port</option></term>
+  			<listitem>
+    			<para>Specify the TCP port.</para>
+  			</listitem>
+		</varlistentry>
+		<varlistentry>
+  			<term><option>-C cafile</option></term>
+  			<listitem>
+    			<para>Specify a certificate file for a trusted CA.</para>
+  			</listitem>
+		</varlistentry>
+		<varlistentry>
+  			<term><option>-h</option></term>
+  			<listitem>
+    			<para>Print a brief usage summary and exit.</para>
+  			</listitem>
+		</varlistentry>
+		<varlistentry>
+  			<term><option>--version</option></term>
+  			<listitem>
+    			<para>Print version information and exit.</para>
+  			</listitem>
+		</varlistentry>
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
