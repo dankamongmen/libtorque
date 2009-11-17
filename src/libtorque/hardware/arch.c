@@ -99,6 +99,7 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 // CPU mask if necessary after a call.
 static int
 detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
+	struct top_map *topmap = NULL;
 	unsigned z,cpu;
 	cpu_set_t mask;
 
@@ -108,6 +109,11 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 	if((ctx->cpucount = detect_cpucount(ctx,&mask)) <= 0){
 		goto err;
 	}
+	// Might be quite large; we don't want it allocated on the stack
+	if((topmap = malloc(ctx->cpucount * sizeof(*topmap))) == NULL){
+		goto err;
+	}
+	memset(topmap,0,ctx->cpucount * sizeof(*topmap));
 	for(z = 0, cpu = 0 ; z < ctx->cpucount ; ++z){
 		libtorque_cput cpudetails;
 		unsigned thread,core,pkg;
@@ -135,7 +141,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 		if(associate_affinityid(ctx,cpu,(unsigned)(cputype - *types)) < 0){
 			goto err;
 		}
-		if(topologize(ctx,cpu,thread,core,pkg)){
+		if(topologize(ctx,topmap,cpu,thread,core,pkg)){
 			goto err;
 		}
 		if(spawn_thread(ctx,z)){
@@ -157,6 +163,7 @@ err:
 	free(*types);
 	*types = NULL;
 	ctx->cpucount = 0;
+	free(topmap);
 	return -1;
 }
 

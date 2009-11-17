@@ -68,9 +68,12 @@ first_aid(cpu_set_t *cs){
 	return z;
 }
 
-// We must be currently pinned to the processor being associated
-int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
-					unsigned pkg){
+// We must be currently pinned to the processor being associated. We need keep
+// extra state during initial topology detection, but not later; this is stored
+// in *tm, which must be zeroed out prior to topology detection, and not
+// touched between calls. It must have space for a top_map per invocation.
+int topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
+			unsigned thread,unsigned core,unsigned pkg){
 	libtorque_topt *sg;
 
 	if(aid >= CPU_SETSIZE){
@@ -91,7 +94,7 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 			if((oid = first_aid(&sg->schedulable)) >= CPU_SETSIZE){
 				return -1;
 			}
-			sg->sub = create_zone(ctx->cpu_map[oid].core);
+			sg->sub = create_zone(tm[oid].core);
 			if(sg->sub == NULL){
 				return -1;
 			}
@@ -104,9 +107,9 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 		CPU_SET(aid,&sc->schedulable);
 	}
 	CPU_SET(aid,&sg->schedulable);
-	ctx->cpu_map[aid].thread = thread;
-	ctx->cpu_map[aid].core = core;
-	ctx->cpu_map[aid].package = pkg;
+	tm[aid].thread = thread;
+	tm[aid].core = core;
+	tm[aid].package = pkg;
 	return 0;
 }
 
@@ -117,5 +120,4 @@ void reset_topology(libtorque_ctx *ctx){
 		ctx->sched_zone = sz->next;
 		free(sz);
 	}
-	memset(ctx->cpu_map,0,sizeof(ctx->cpu_map));
 }

@@ -66,7 +66,6 @@ typedef struct libtorque_cput {
 	unsigned tlbs;			// Number of TLBs (per-mem?)
 	unsigned threadspercore;	// Number of ways our core is shared
 	unsigned coresperpackage;	// Number of cores sharing our die
-	// cpu_set_t cpuset;		// Corresponding cpuset mask
 	libtorque_tlbt *tlbdescs;	// TLB descriptors, NULL if tlbs == 0
 	char *strdescription;		// Vender-specific string description
 	libtorque_memt *memdescs;	// Memory descriptors, never NULL
@@ -104,11 +103,6 @@ typedef struct libtorque_ctx {
 	evtables eventtables;		// callback state tables
 	// FIXME all these CPU_SETSIZE arrays are (usually) pretty wasteful
 	unsigned affinmap[CPU_SETSIZE];	// maps into the cpu desc table
-	struct {
-		unsigned thread;	// FIXME hw-genericize via dynarray
-		unsigned core;
-		unsigned package;
-	} cpu_map[CPU_SETSIZE];
 	// Allocate these upon detecting cpu count FIXME
 	pthread_t tids[CPU_SETSIZE];
 } libtorque_ctx;

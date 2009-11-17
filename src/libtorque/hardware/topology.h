@@ -52,8 +52,15 @@ struct libtorque_topt;
 const struct libtorque_topt *libtorque_get_topology(struct libtorque_ctx *)
 	__attribute__ ((visibility("default")));
 
+struct top_map {
+	unsigned thread;	// FIXME hw-genericize via dynarray
+	unsigned core;
+	unsigned package;
+};
+
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int topologize(struct libtorque_ctx *,unsigned,unsigned,unsigned,unsigned);
+int topologize(struct libtorque_ctx *,struct top_map *,unsigned,unsigned,
+						unsigned,unsigned);
 void reset_topology(struct libtorque_ctx *);
 
 #ifdef __cplusplus
