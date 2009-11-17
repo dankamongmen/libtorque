@@ -12,7 +12,7 @@ int add_evector_kevents(evectors *e,const struct kevent *k,int kcount){
 	if(kcount < 0){
 		return -1;
 	}
-	if(e->changesqueued + kcount >= e->vsizes){
+	if(e->changesqueued + kcount > e->vsizes){
 		// FIXME be more robust. try to flush the changes to the
 		// evhandler, or reallocate larger vectors. at least add stat!
 		return -1;
