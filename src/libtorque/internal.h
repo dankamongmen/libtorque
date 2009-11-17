@@ -100,7 +100,7 @@ typedef struct libtorque_ctx {
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
 	evtables eventtables;		// callback state tables
 	pthread_t headtid;		// tid of list leader (for shutdown)
-	// FIXME all these CPU_SETSIZE arrays are (usually) pretty wasteful
+	// FIXME CPU_SETSIZE arrays are (usually) pretty wasteful
 	unsigned affinmap[CPU_SETSIZE];	// maps into the cpu desc table
 } libtorque_ctx;
 

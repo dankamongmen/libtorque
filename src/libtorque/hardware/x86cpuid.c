@@ -80,8 +80,9 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 	);
 }
 
-// These are all taken from the Intel document; need check AMD's FIXME
+// These are largely taken from the Intel document; need check AMD's FIXME
 struct feature_flags {
+	// CPUID 00000001
 	int sse3;	// sse 3 (0)
 	int ssse3;	// ssse 3 (9)
 	int dca;	// direct cache access (18)
@@ -92,17 +93,20 @@ struct feature_flags {
 	int pae;	// physical address extension (6)
 	int pse36;	// 36-bit page size extension (17)
 	int ht;		// physical support for hyperthreading (28)
+	// CPUID 80000001 EDX
+	int gbpt;	// 1GB/4-level page table support (28)
+	int lme;	// long mode enable (26)
 };
 
 typedef struct known_x86_vendor {
 	const char *signet;
-	int (*memfxn)(uint32_t,libtorque_cput *);
+	int (*memfxn)(uint32_t,const struct feature_flags *,libtorque_cput *);
 	int (*topfxn)(uint32_t,const struct feature_flags *,libtorque_cput *);
 } known_x86_vendor;
 
-static int id_amd_caches(uint32_t,libtorque_cput *);
-static int id_via_caches(uint32_t,libtorque_cput *);
-static int id_intel_caches(uint32_t,libtorque_cput *);
+static int id_amd_caches(uint32_t,const struct feature_flags *,libtorque_cput *);
+static int id_via_caches(uint32_t,const struct feature_flags *,libtorque_cput *);
+static int id_intel_caches(uint32_t,const struct feature_flags *,libtorque_cput *);
 static int id_amd_topology(uint32_t,const struct feature_flags *,libtorque_cput *);
 static int id_intel_topology(uint32_t,const struct feature_flags *,libtorque_cput *);
 
@@ -993,7 +997,8 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 }
 
 static int
-id_intel_caches(uint32_t maxlevel,libtorque_cput *cpu){
+id_intel_caches(uint32_t maxlevel,const struct feature_flags *ff __attribute__ ((unused)),
+				libtorque_cput *cpu){
 	unsigned n,level,maxdc;
 	uint32_t gpregs[4];
 
@@ -1140,10 +1145,13 @@ decode_amd_l23cache(uint32_t reg,uintmax_t *size,unsigned *assoc,unsigned *lsize
 }
 
 static int
-id_amd_gbtlbs(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
+id_amd_gbtlbs(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpregs,libtorque_cput *cpud){
 	libtorque_tlbt tlb,tlb2;
 	libtorque_tlbt itlb,itlb2;
 
+	if(ff->gbpt == 0){ // Check the 1GB Page Table Entries feature flag
+		return 0;
+	}
 	if(maxexlevel < CPUID_EXTENDED_GBTLB){
 		return 0;
 	}
@@ -1192,7 +1200,7 @@ id_amd_gbtlbs(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
 }
 
 static int
-id_amd_23caches(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
+id_amd_23caches(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpregs,libtorque_cput *cpud){
 	libtorque_tlbt tlb,tlb24,itlb,itlb24;
 	libtorque_memt l2cache,l3cache;
 
@@ -1262,7 +1270,7 @@ id_amd_23caches(uint32_t maxexlevel,uint32_t *gpregs,libtorque_cput *cpud){
 			return -1;
 		}
 	}
-	return id_amd_gbtlbs(maxexlevel,gpregs,cpud);
+	return id_amd_gbtlbs(maxexlevel,ff,gpregs,cpud);
 }
 
 static inline unsigned
@@ -1290,7 +1298,7 @@ decode_amd_l1cache(uint32_t reg,uintmax_t *size,unsigned *assoc,unsigned *lsize)
 }
 
 static int
-id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
+id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),const struct feature_flags *ff,libtorque_cput *cpud){
 	libtorque_tlbt tlb,tlb24,itlb,itlb24;
 	libtorque_memt l1dcache,l1icache;
 	uint32_t maxex,gpregs[4];
@@ -1345,14 +1353,16 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpud){
 	if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb24) == NULL){
 		return -1;
 	}
-	if(id_amd_23caches(maxex,gpregs,cpud)){
+	if(id_amd_23caches(maxex,ff,gpregs,cpud)){
 		return -1;
 	}
 	return 0;
 }
 
 static int
-id_via_caches(uint32_t maxlevel __attribute__ ((unused)),libtorque_cput *cpu){
+id_via_caches(uint32_t maxlevel __attribute__ ((unused)),
+		const struct feature_flags *ff __attribute__ ((unused)),
+		libtorque_cput *cpu){
 	// FIXME What a cheap piece of garbage, yeargh! VIA doesn't supply
 	// cache line info via CPUID. VIA C3 Antaur/Centaur both use 32b. The
 	// proof is by method of esoteric reference:
@@ -1443,6 +1453,8 @@ id_x86_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *
 	return 0;
 }
 
+// CPUID function 80000001 feature flags
+// ECX results
 #define CPUID_WDT			0x1000u
 #define CPUID_SSE5			0x0800u
 #define CPUID_IBS			0x0400u
@@ -1456,6 +1468,13 @@ id_x86_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *
 #define CPUID_SVM			0x0004u
 #define CPUID_CMPLEGACY			0x0002u
 #define CPUID_CLAHFSAHF			0x0001u
+
+// EDX results (taken from AMD manual, need crosschecking with Intel FIXME)
+#define CPUID_3DNOW			0x80000000	// 3D-Now
+#define CPUID_3DNOWEXT			0x40000000	// 3D-Now extensions
+#define CPUID_LME			0x20000000	// long-mode enable
+#define CPUID_RDTSCP			0x08000000	// read tscp
+#define CPUID_1GB			0x04000000	// 1GB/4-level pages
 
 static int
 id_amd_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *cpu){
@@ -1510,6 +1529,7 @@ id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput
 	return 0;
 }
 
+// CPUID function 00000001 feature flags
 // ECX feature flags
 #define FFLAG_SSE3		0x00000001u
 #define FFLAG_SSSE3		0x00000200u
@@ -1526,7 +1546,7 @@ id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput
 
 static int
 x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu,struct feature_flags *ff){
-	uint32_t gpregs[4];
+	uint32_t gpregs[4],maxex;
 
 	if(maxfunc < CPUID_CPU_VERSION){
 		return -1;
@@ -1549,9 +1569,15 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu,struct feature_flags *ff){
 	ff->pae = !!(gpregs[3] & FFLAG_PAE);
 	ff->pse36 = !!(gpregs[3] & FFLAG_PSE36);
 	ff->ht = !!(gpregs[3] & FFLAG_HT);
-	// printf("SSE3: %d SSSE3: %d\n",ff->sse3,ff->ssse3);
-	// printf("DCA: %d SSE4.1: %d SSE4.2: %d X2APIC: %d\n",ff->dca,ff->sse41,ff->sse42,ff->x2apic);
-	// printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",ff->pse,ff->pae,ff->pse36,ff->ht);
+	if((maxex = identify_extended_cpuid()) >= CPUID_EXTENDED_CPU_VERSION){
+		cpuid(CPUID_EXTENDED_CPU_VERSION,0,gpregs);
+		ff->lme = !!(gpregs[3] & CPUID_LME);
+		ff->gbpt = !!(gpregs[3] & CPUID_1GB);
+	}
+	/*printf("SSE3: %d SSSE3: %d\n",ff->sse3,ff->ssse3);
+	printf("LME: %d GBPT: %d\n",ff->lme,ff->gbpt);
+	printf("DCA: %d SSE4.1: %d SSE4.2: %d X2APIC: %d\n",ff->dca,ff->sse41,ff->sse42,ff->x2apic);
+	printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",ff->pse,ff->pae,ff->pse36,ff->ht);*/
 	return 0;
 }
 
@@ -1653,7 +1679,7 @@ int x86cpuid(libtorque_cput *cpudesc,unsigned *thread,unsigned *core,
 	if(vendor->topfxn && vendor->topfxn(maxlevel,&ff,cpudesc)){
 		return -1;
 	}
-	if(vendor->memfxn(maxlevel,cpudesc)){
+	if(vendor->memfxn(maxlevel,&ff,cpudesc)){
 		return -1;
 	}
 	if(x86_getbrandname(cpudesc)){
