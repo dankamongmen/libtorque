@@ -45,17 +45,15 @@ find_sched_group(libtorque_topt **sz,unsigned id){
 }
 
 static int
-share_pkg(libtorque_ctx *ctx,libtorque_topt *sz,unsigned core){
+share_level(libtorque_topt *sz){
 	unsigned z;
 
 	for(z = 0 ; z < CPU_SETSIZE ; ++z){
 		if(CPU_ISSET(z,&sz->schedulable)){
-			if(core != ctx->cpu_map[z].core){
-				return 0;
-			}
+			return 1;
 		}
 	}
-	return 1;
+	return 0;
 }
 
 static unsigned
@@ -84,7 +82,7 @@ int topologize(libtorque_ctx *ctx,unsigned aid,unsigned thread,unsigned core,
 	// If we share the package, it mustn't be a new package. Quod, we
 	// needn't worry about free()ing it, and can stroll on down...FIXME
 	// genericize this for deeper topologies (see cpu_map[] definition)
-	if(share_pkg(ctx,sg,core) == 0){
+	if(share_level(sg)){
 		typeof(*sg) *sc;
 
 		if(sg->sub == NULL){
