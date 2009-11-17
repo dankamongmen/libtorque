@@ -51,8 +51,9 @@ signalfd_demultiplexer(int fd,torquercbstate *cbstate){
 //      handled according to their default dispositions.  It is not possible to
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
-static inline int
-add_signal_event(evhandler *eh,const sigset_t *sigs,libtorquercb rfxn,void *cbstate){
+//
+int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
+			libtorquercb rfxn,void *cbstate){
 	unsigned z;
 #ifdef LIBTORQUE_LINUX
 	{
@@ -63,14 +64,14 @@ add_signal_event(evhandler *eh,const sigset_t *sigs,libtorquercb rfxn,void *cbst
 		if((fd = signalfd(-1,sigs,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			return -1;
 		}
-		if(add_fd_to_evcore(eh,eh->externalvec,fd,
-				signalfd_demultiplexer,NULL,eh)){
+		if(add_fd_to_evhandler(eh,fd,signalfd_demultiplexer,NULL,eh)){
 			close(fd);
 			return -1;
 		}
 	}
 #elif defined(LIBTORQUE_FREEBSD)
 	{
+		EVECTORS_AUTO(ev,8);
 
 		for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
 			struct kevent k;
@@ -79,9 +80,14 @@ add_signal_event(evhandler *eh,const sigset_t *sigs,libtorquercb rfxn,void *cbst
 				continue;
 			}
 			EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
-			if(add_evector_kevents(eh->externalvec,&k,1)){
-				return -1;
+			if(add_evector_kevents(ev,&k,1)){
+				if(flush_evector_changes(eh,ev)){
+					return -1;
+				}
 			}
+		}
+		if(flush_evector_changes(eh,ev)){
+			return -1;
 		}
 	}
 #else
@@ -93,16 +99,4 @@ add_signal_event(evhandler *eh,const sigset_t *sigs,libtorquercb rfxn,void *cbst
 		}
 	}
 	return 0;
-}
-
-int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
-				libtorquercb rfxn,void *cbstate){
-	if(pthread_mutex_lock(&eh->lock) == 0){
-		if(add_signal_event(eh,sigs,rfxn,cbstate) == 0){
-			// flush_evector_changes unlocks on all paths
-			return flush_evector_changes(eh,eh->externalvec);
-		}
-		pthread_mutex_unlock(&eh->lock);
-	}
-	return -1;
 }

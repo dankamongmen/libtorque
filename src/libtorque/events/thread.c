@@ -158,20 +158,12 @@ add_evhandler_baseevents(evhandler *e){
 static int
 initialize_evhandler(evhandler *e,evtables *evsources,int fd){
 	memset(e,0,sizeof(*e));
-	if(pthread_mutex_init(&e->lock,NULL)){
-		goto err;
-	}
 	e->evsources = evsources;
 	e->efd = fd;
 	if(add_evhandler_baseevents(e)){
-		goto lockerr;
+		return -1;
 	}
 	return 0;
-
-lockerr:
-	pthread_mutex_destroy(&e->lock);
-err:
-	return -1;
 }
 
 evhandler *create_evhandler(evtables *evsources){
@@ -230,7 +222,6 @@ int destroy_evhandler(evhandler *e){
 
 	if(e){
 		print_evstats(&e->stats);
-		ret |= pthread_mutex_destroy(&e->lock);
 		destroy_evectors(e->externalvec);
 		ret |= close(e->efd);
 		free(e);

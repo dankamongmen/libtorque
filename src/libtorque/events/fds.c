@@ -60,14 +60,11 @@ int add_fd_to_evcore(evhandler *eh,struct evectors *ev,int fd,libtorquercb rfxn,
 
 int add_fd_to_evhandler(evhandler *eh,int fd,libtorquercb rfxn,
 					libtorquewcb tfxn,void *cbstate){
-	if(pthread_mutex_lock(&eh->lock) == 0){
-		struct evectors *ev = eh->externalvec;
+	// FIXME no, use our own since ridding ourselves of the lock
+	struct evectors *ev = eh->externalvec;
 
-		if(add_fd_to_evcore(eh,ev,fd,rfxn,tfxn,cbstate) == 0){
-			// flush_evector_changes unlocks on all paths
-			return flush_evector_changes(eh,ev);
-		}
-		pthread_mutex_unlock(&eh->lock);
+	if(add_fd_to_evcore(eh,ev,fd,rfxn,tfxn,cbstate) == 0){
+		return flush_evector_changes(eh,ev);
 	}
 	return -1;
 }

@@ -111,6 +111,9 @@ typedef struct evectors {
 	int vsizes,changesqueued;
 } evectors;
 
+#define EVECTOR_AUTOS(count,name,n2) struct kevent n2[count]; evectors name = \
+ { .eventv = n2, .changev = n2, .vsize = (count), .changesqueued = 0, }
+
 struct evhandler;
 
 int add_evector_kevents(struct evectors *,const struct kevent *,int);
