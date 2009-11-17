@@ -308,6 +308,9 @@ unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@mkdir -p $(PREFIX)/lib
 	$(INSTALL) -m 0644 $(realpath $(REALSOS) $(LIBOUT)/$(TORQUESTAT)) $(PREFIX)/lib
 	@(cd $(PREFIX)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOL)))
+ifeq ($(UNAME),FreeBSD)
+	@(cd $(PREFIX)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOR)))
+endif
 	@mkdir -p $(PREFIX)/bin
 	@$(INSTALL) $(BINS) $(PREFIX)/bin
 	mkdir -p $(PREFIX)/include
