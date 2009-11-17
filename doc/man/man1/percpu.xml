@@ -64,6 +64,8 @@
 	<refsynopsisdiv>
 		<cmdsynopsis>
 			<command>&dhpackage;</command>
+			<arg>-h</arg>
+			<arg>--version</arg>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 	<refsect1 id="description">
@@ -71,11 +73,23 @@
 		<para><command>&dhpackage;</command> launches an instance of
 			its command line arguments bound to each processing
 			unit. Only those processors in the current cpuset are
-		       	used.</para>
+			used.</para>
 	</refsect1>
 	<refsect1 id="options">
 		<title>OPTIONS</title>
 		<para><command>&dhpackage;</command> takes no options.</para>
+		<varlistentry>
+			<term><option>-h</option></term>
+			<listitem>
+			<para>Print a brief usage summary and exit.</para>
+			</listitem>
+		</varlistentry>
+		<varlistentry>
+			<term><option>--version</option></term>
+			<listitem>
+			<para>Print version information and exit.</para>
+			</listitem>
+		</varlistentry>
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
