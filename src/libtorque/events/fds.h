@@ -11,11 +11,6 @@ extern "C" {
 struct evectors;
 struct evhandler;
 
-int add_fd_to_evcore(struct evhandler *,struct evectors *,int,libtorquercb,
-						libtorquewcb,void *)
-	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull (1,2)));
-
 int add_fd_to_evhandler(struct evhandler *,int,libtorquercb,
 						libtorquewcb,void *)
 	__attribute__ ((warn_unused_result))

@@ -71,7 +71,7 @@ int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
 	}
 #elif defined(LIBTORQUE_FREEBSD)
 	{
-		EVECTORS_AUTO(ev,8);
+		EVECTORS_AUTO(8,ev,evbase);
 
 		for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
 			struct kevent k;

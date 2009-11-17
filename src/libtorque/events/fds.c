@@ -46,25 +46,16 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn){
 	return 0;
 }
 
-int add_fd_to_evcore(evhandler *eh,struct evectors *ev,int fd,libtorquercb rfxn,
-					libtorquewcb tfxn,void *cbstate){
+int add_fd_to_evhandler(evhandler *eh,int fd,libtorquercb rfxn,
+				libtorquewcb tfxn,void *cbstate){
+	EVECTOR_AUTOS(1,ev,evbase);
+
 	if((unsigned)fd >= eh->evsources->fdarraysize){
 		return -1;
 	}
-	if(add_fd_event(ev,fd,rfxn,tfxn)){
+	if(add_fd_event(&ev,fd,rfxn,tfxn)){
 		return -1;
 	}
 	setup_evsource(eh->evsources->fdarray,fd,rfxn,tfxn,cbstate);
-	return 0;
-}
-
-int add_fd_to_evhandler(evhandler *eh,int fd,libtorquercb rfxn,
-					libtorquewcb tfxn,void *cbstate){
-	// FIXME no, use our own since ridding ourselves of the lock
-	struct evectors *ev = eh->externalvec;
-
-	if(add_fd_to_evcore(eh,ev,fd,rfxn,tfxn,cbstate) == 0){
-		return flush_evector_changes(eh,ev);
-	}
-	return -1;
+	return flush_evector_changes(eh,&ev);
 }

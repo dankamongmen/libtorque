@@ -111,8 +111,17 @@ typedef struct evectors {
 	int vsizes,changesqueued;
 } evectors;
 
+#ifdef LIBTORQUE_FREEBSD
 #define EVECTOR_AUTOS(count,name,n2) struct kevent n2[count]; evectors name = \
  { .eventv = n2, .changev = n2, .vsize = (count), .changesqueued = 0, }
+#else
+#define EVECTOR_AUTOS(count,name,n2) \
+	struct epoll_ctl_data ctlarr[count]; \
+	kevententry evarr[count]; \
+	evectors name = { .eventv = { .ctldata = ctlarr, .events = evarr, }, \
+		.changev = { .ctldata = ctlarr, .events = evarr, }, \
+		.vsizes = (count), .changesqueued = 0, }
+#endif
 
 struct evhandler;
 
