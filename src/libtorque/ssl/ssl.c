@@ -388,7 +388,6 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 	if(csc == NULL){
 		return -1;
 	}
-	printf("states: %p %p\n",sc->cbstate,csc->cbstate);
 	if((csc->ssl = SSL_new(sc->sslctx)) == NULL){
 		free_ssl_cbstate(csc);
 		return -1;
