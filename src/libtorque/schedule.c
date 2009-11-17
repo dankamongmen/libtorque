@@ -126,7 +126,13 @@ thread(void *void_marshal){
 		goto earlyerr;
 	}
 	ev->nexttid = marshal->ctx->headtid;
-	marshal->ctx->ev = ev;
+	if(marshal->ctx->ev == NULL){
+		ev->nextev = ev;
+		marshal->ctx->ev = ev;
+	}else{
+		ev->nextev = marshal->ctx->ev->nextev;
+		marshal->ctx->ev->nextev = ev;
+	}
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
 	pthread_mutex_unlock(&marshal->lock);

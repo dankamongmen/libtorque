@@ -1,5 +1,6 @@
 #include <string.h>
 #include <libtorque/events/sysdep.h>
+#include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
 
 // We do not enforce, but do expect and require:

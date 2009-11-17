@@ -5,11 +5,13 @@
 extern "C" {
 #endif
 
+#include <libtorque/libtorque.h>
 #include <libtorque/events/sources.h>
 
+struct evectors;
 struct evhandler;
 
-int add_fd_to_evcore(evhandler *,struct evectors *,int,libtorquercb,
+int add_fd_to_evcore(struct evhandler *,struct evectors *,int,libtorquercb,
 						libtorquewcb,void *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull (1,2)));

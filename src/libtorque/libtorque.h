@@ -13,6 +13,27 @@ struct libtorque_ctx;
 // be called before a successful call to libtorque_init(). libtorque_init() may
 // not be called again until libtorque_stop() has been called. Implicitly, only
 // one thread may call libtorque_init().
+// Create a new libtorque context on the current cpuset. The best performance
+// on the widest set of loads and requirements is achieved by using one
+// libtorque instance on as many uncontested processing elements as possible,
+// but various reasons exist for running multiple instances:
+//
+// - Differentiated services (QoS): Sets of connections could be guaranteed
+//    sets of processing elements
+// - Combination of multiple (possibly closed-source) libtorque clients
+// - libtorque's scheduling, especially initially, is likely to be subobtimal
+//    for some architecture + code combinations; certain situations might be
+//    improved using such a technique (I've not got examples, and such cases
+//    ought be controllable via hints/feedbacks/heuristics).
+// - Trading performance for fault-tolerance (putting less-essential events in
+//    their own libtorque "ring" in case of lock ups in buggy callbacks, using
+//    distinct alternate signal stacks...).
+// - Trading performance for priority separation (see sched_setscheduler()).
+//
+// If multiple instances are used, the highest performance will generally be
+// had running them all with as large a cpuset as possible (ie, overlapping
+// cpusets are no problem, and usually desirable). Again, make sure you really
+// want to be using multiple instances.
 struct libtorque_ctx *libtorque_init(void)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
@@ -23,8 +44,12 @@ typedef struct torquercbstate {
 	void *cbstate;
 } torquercbstate;
 
-// Returning anything other than 0 will see the descriptor closed, and removed
-// from the evhandler's notification queue.
+// Multiple threads may add event sources to a libtorque instance concurrently,
+// so long as they are not adding the same event source (ie, the callers must
+// be able to guarantee the signals, fds, whatever are not the same). The
+// registration implementation is lock- and indeed wait-free.
+
+// Read callbacks get a dyad: their opaque callback state, and our own.
 typedef int (*libtorquercb)(int,torquercbstate *);
 typedef int (*libtorquewcb)(int,void *);
 
@@ -51,12 +76,18 @@ int libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,libtorquercb,
 	__attribute__ ((nonnull(1,3)));
 #endif
 
-// Reset the library, destroying all associated threads and state and returning
-// 0 on success. No libtorque functions, save libtorque_init(), may be called
-// following a call to libtorque_stop() (whether it is successful or not).
-// libtorque_init() must not be called from multiple threads, or while another
-// thread is calling a libtorque function. A successful return guarantees that
-// no further callbacks will be issued.
+// Wait until the libtorque threads exit via pthread_join(), but don't send
+// them the termination signal ourselves. Rather, we're waiting for either an
+// intentional or freak exit of the threads. This version is slightly more
+// robust than calling libtorque_stop() from an external control thread, in
+// that the threads' exit will result in immediate program progression. With
+// the other method, the threads could die, but your control threads is still
+// running; it's in a sigwait() or something, not a pthread_join() (which would
+// succeed immediately). The context, and all of its data, are destroyed.
+int libtorque_block(struct libtorque_ctx *)
+	__attribute__ ((visibility("default")));
+
+// Signal and reap the running threads, and free the context.
 int libtorque_stop(struct libtorque_ctx *)
 	__attribute__ ((visibility("default")));
 

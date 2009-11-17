@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <libtorque/events/fds.h>
 #include <libtorque/events/sysdep.h>
+#include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
 
 static inline int

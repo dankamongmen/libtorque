@@ -27,15 +27,6 @@ typedef struct evthreadstats {
 #undef STATDEF
 } evthreadstats;
 
-typedef struct evhandler {
-	int efd;
-	pthread_t nexttid;
-	pthread_mutex_t lock;
-	evtables *evsources;
-	struct evectors *externalvec;
-	evthreadstats stats;
-} evhandler;
-
 evsource *create_evsources(unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));

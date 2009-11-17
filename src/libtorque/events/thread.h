@@ -6,8 +6,19 @@ extern "C" {
 #endif
 
 struct evtables;
+struct evectors;
 
 #include <libtorque/events/sources.h>
+
+typedef struct evhandler {
+	int efd;
+	pthread_t nexttid;
+	struct evhandler *nextev;
+	pthread_mutex_t lock;
+	struct evtables *evsources;
+	struct evectors *externalvec;
+	evthreadstats stats;
+} evhandler;
 
 evhandler *create_evhandler(struct evtables *)
 	__attribute__ ((warn_unused_result))

@@ -143,7 +143,7 @@ TAGS:=.tags
 
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
-GLOBOBJDEPS:=$(CINC) $(MAKEFILE_LIST)
+GLOBOBJDEPS:=$(TAGS) $(CINC) $(MAKEFILE_LIST)
 
 # Debugging flags. These aren't normally used.
 DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
