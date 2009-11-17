@@ -147,13 +147,13 @@ GLOBOBJDEPS:=$(CINC) $(MAKEFILE_LIST)
 DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
 
 # Main compilation flags. Define with += to inherit from system-specific flags.
-IFLAGS:=-I$(SRCDIR)
+IFLAGS+=-I$(SRCDIR)
 MFLAGS:=-fpic -march=$(MARCH)
 ifdef MTUNE
 MFLAGS+=-mtune=$(MTUNE)
 endif
 # Not using: -Wpadded, -Wconversion
-WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
+WFLAGS+=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
         -Wstrict-prototypes -Wmissing-declarations -Wnested-externs \
         -Wsign-compare -Wpointer-arith -Wbad-function-cast -Wcast-qual \
         -Wdeclaration-after-statement -Wfloat-equal -Wpacked -Winvalid-pch \
@@ -189,10 +189,10 @@ WFLAGS:=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # -fipa-matrix-reorg
 # These require -pthread:
 # -ftree-parallelize-loops
-OFLAGS:=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
+OFLAGS+=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
 	-fvisibility=hidden -fipa-cp -ftree-loop-linear -ftree-loop-im \
 	-ftree-loop-ivcanon -fno-common
-CFLAGS:=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
+CFLAGS+=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 CFLAGS+=$(DEBUGFLAGS)
 LIBFLAGS+=-lpthread
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \

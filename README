@@ -59,7 +59,10 @@ systems, and earlier versions, is intended.
 libtorque does not employ the GNU autoconf tools, but is reliant upon GNU Make
 and the GNU Compiler Collection. gcc is tracked quite closely, and only recent
 versions might be supported at any time; 4.3 is the minimum gcc version
-explicitly supported or recommended.
+explicitly supported or recommended
+
+gcc 4.2, and also llvm using the 4.2 frontend, appear to work if some -W
+options are removed from WFLAGS. The results have not been extensively tested.
 
 --libc/pthreads requirements--------------------------------------------------
 
