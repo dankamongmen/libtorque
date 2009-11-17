@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/libtorque.h>

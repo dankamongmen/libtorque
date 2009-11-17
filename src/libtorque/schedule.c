@@ -45,7 +45,7 @@ unsigned long pthread_self_getnumeric(void){
 	unsigned long *key;
 
 	pthread_once(&openssl_once,setup_openssl_idkey);
-	if((key = pthread_getspecific(openssl_id_key)) == NULL)||
+	if((key = pthread_getspecific(openssl_id_key)) == NULL){
 		key = setup_new_sslid(); // what if this fails? FIXME
 	}
 	return *key;

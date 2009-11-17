@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
 #include <pthread.h>
@@ -12,11 +13,19 @@ static void
 handle_event(evhandler *eh,const kevententry *e){
 	int ret = 0;
 
+#ifdef LIBTORQUE_LINUX
 	if(e->events & EPOLLIN){
-		ret |= handle_evsource_read(eh->evsources->fdarray,e->data.fd);
+#else
+	if(e->filter == EVFILT_READ){
+#endif
+		ret |= handle_evsource_read(eh->evsources->fdarray,KEVENTENTRY_FD(e));
 	}
+#ifdef LIBTORQUE_LINUX
 	if(e->events & EPOLLOUT){
-		ret |= handle_evsource_write(eh->evsources->fdarray,e->data.fd);
+#else
+	if(e->filter == EVFILT_WRITE){
+#endif
+		ret |= handle_evsource_write(eh->evsources->fdarray,KEVENTENTRY_FD(e));
 	}
 }
 
@@ -40,7 +49,11 @@ void event_thread(evhandler *e){
 		events = Kevent(e->efd,PTR_TO_CHANGEV(ev),ev->changesqueued,
 					PTR_TO_EVENTV(ev),ev->vsizes);
 		for(z = 0 ; z < events ; ++z){
+#ifdef LIBTORQUE_LINUX
 			handle_event(e,&PTR_TO_EVENTV(ev)->events[z]);
+#else
+			handle_event(e,&PTR_TO_EVENTV(ev)[z]);
+#endif
 		}
 		++e->stats.rounds;
 	}
@@ -149,7 +162,7 @@ err:
 
 evhandler *create_evhandler(evtables *evsources){
 	evhandler *ret;
-	int fd;
+	int fd,flags;
 
 // Until the epoll API stabilizes a bit... :/
 #ifdef LIBTORQUE_LINUX
@@ -160,18 +173,21 @@ evhandler *create_evhandler(evtables *evsources){
 #define SAFE_EPOLL_CLOEXEC NR_OPEN
 #endif
 	if((fd = epoll_create(SAFE_EPOLL_CLOEXEC)) < 0){
-#undef SAFE_EPOLL_CLOEXEC
 		return NULL;
 	}
+	if(SAFE_EPOLL_CLOEXEC == 0){
+		if(((flags = fcntl(fd,F_GETFD)) < 0) ||
+				fcntl(fd,F_SETFD,flags | FD_CLOEXEC)){
+			close(fd);
+			return NULL;
+		}
+	}
+#undef SAFE_EPOLL_CLOEXEC
 #elif defined(LIBTORQUE_FREEBSD)
 	if((fd = kqueue()) < 0){
 		return NULL;
 	}
-	if(set_fd_close_on_exec(fd)){
-		close(fd);
-		return NULL;
-	}
-	if(set_fd_nonblocking(fd)){
+	if(((flags = fcntl(fd,F_GETFD)) < 0) || fcntl(fd,F_SETFD,flags | FD_CLOEXEC)){
 		close(fd);
 		return NULL;
 	}

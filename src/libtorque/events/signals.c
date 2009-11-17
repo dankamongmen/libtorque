@@ -78,7 +78,7 @@ add_signal_event(evhandler *eh,const sigset_t *sigs,libtorquecb rfxn,void *cbsta
 				continue;
 			}
 			EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
-			if(add_evector_kevents(ev,&k,1)){
+			if(add_evector_kevents(eh->externalvec,&k,1)){
 				return -1;
 			}
 		}

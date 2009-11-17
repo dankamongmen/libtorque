@@ -24,7 +24,7 @@ extern "C" {
 #define PTR_TO_EVENTV(ev) (&(ev)->eventv)
 #define PTR_TO_CHANGEV(ev) (&(ev)->changev)
 typedef struct epoll_event kevententry;
-#define KEVENTENTRY_FD(kptr) ((k)->data.fd)
+#define KEVENTENTRY_FD(k) ((k)->data.fd)
 
 struct kevent { // each element an array, each array the same number of members
 	struct epoll_ctl_data {
@@ -72,8 +72,8 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 #define PTR_TO_EVENTV(ev) ((ev)->eventv)
 #define PTR_TO_CHANGEV(ev) ((ev)->changev)
 typedef struct kevent kevententry;
-#define KEVENTENTRY_FD(kptr) ((int)(k)->ident)
-#define KEVENTENTRY_SIG(kptr) ((int)(k)->ident) // Doesn't exist on Linux
+#define KEVENTENTRY_FD(k) ((int)(k)->ident)
+#define KEVENTENTRY_SIG(k) ((int)(k)->ident) // Doesn't exist on Linux
 
 #include <pthread.h>
 
@@ -97,7 +97,7 @@ Kevent(int kq,struct kevent *changelist,int nchanges,
 
 // State necessary for changing the domain of events and/or having them
 // reported. One is required to do any event handling, under any scheme, and
-// many plausible schemes will employ multiple evectorss.
+// many plausible schemes will employ multiple evectors.
 typedef struct evectors {
 	// compat-<OS>.h provides a kqueue-like interface (in terms of change
 	// vectorization, which linux doesn't support) for non-BSD's
