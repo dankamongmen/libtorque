@@ -144,7 +144,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 		if(topologize(ctx,topmap,cpu,thread,core,pkg)){
 			goto err;
 		}
-		if(spawn_thread(ctx,z)){
+		if(spawn_thread(ctx)){
 			goto err;
 		}
 		++cpu;
@@ -156,6 +156,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 
 err:
 	unpin_thread(ctx);
+	reap_threads(ctx);
 	while((*cputc)--){
 		free_cpudetails((*types) + ctx->cpu_typecount);
 	}

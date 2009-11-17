@@ -236,6 +236,7 @@ thread(void *void_marshal){
 		destroy_evhandler(ev);
 		goto earlyerr;
 	}
+	ev->nexttid = marshal->ctx->headtid;
 	marshal->ctx->ev = ev;
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
@@ -254,10 +255,11 @@ earlyerr:
 }
 
 // Must be pinned to the desired CPU upon entry! // FIXME verify?
-int spawn_thread(libtorque_ctx *ctx,unsigned z){
+int spawn_thread(libtorque_ctx *ctx){
 	tguard tidguard = {
 		.ctx = ctx,
 	};
+	pthread_t tid;
 	int ret = 0;
 
 	if(pthread_mutex_init(&tidguard.lock,NULL)){
@@ -267,7 +269,7 @@ int spawn_thread(libtorque_ctx *ctx,unsigned z){
 		pthread_mutex_destroy(&tidguard.lock);
 		return -1;
 	}
-	if(pthread_create(&ctx->tids[z],NULL,thread,&tidguard)){
+	if(pthread_create(&tid,NULL,thread,&tidguard)){
 		pthread_mutex_destroy(&tidguard.lock);
 		pthread_cond_destroy(&tidguard.cond);
 		return -1;
@@ -277,21 +279,24 @@ int spawn_thread(libtorque_ctx *ctx,unsigned z){
 		ret |= pthread_cond_wait(&tidguard.cond,&tidguard.lock);
 	}
 	if(tidguard.status != THREAD_STARTED){
-		pthread_join(ctx->tids[z],NULL);
 		ret = -1;
 	}
 	ret |= pthread_mutex_unlock(&tidguard.lock);
 	ret |= pthread_cond_destroy(&tidguard.cond);
 	ret |= pthread_mutex_destroy(&tidguard.lock);
+	if(ret){
+		pthread_join(tid,NULL);
+	}else{
+		ctx->headtid = tid;
+	}
 	return ret;
 }
 
-int reap_threads(libtorque_ctx *ctx,unsigned tidcount){
+int reap_threads(libtorque_ctx *ctx){
 	int ret = 0;
-	unsigned z;
 
-	for(z = 0 ; z < tidcount ; ++z){
-		ret |= reap_thread(ctx->tids[z]);
+	if(ctx->ev){
+		ret = reap_thread(ctx->headtid);
 	}
 	return ret;
 }

@@ -33,14 +33,23 @@ handle_event(evhandler *eh,const kevententry *e){
 static int
 rxsignal(int sig,torquercbstate *nullv __attribute__ ((unused))){
 	if(sig == EVTHREAD_TERM){
+		void *ret = PTHREAD_CANCELED;
 		evhandler *e = tsd_evhandler;
 		struct rusage ru;
 
 		getrusage(RUSAGE_THREAD,&ru);
 		e->stats.utimeus = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
 		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
-		destroy_evhandler(e);
-		pthread_exit(PTHREAD_CANCELED);
+		if(e->nexttid){
+			pthread_kill(e->nexttid,EVTHREAD_TERM);
+			if(pthread_join(e->nexttid,&ret)){
+				ret = NULL;
+			}
+		}
+		if(destroy_evhandler(e)){
+			ret = NULL;
+		}
+		pthread_exit(ret);
 	}
 	return 0;
 }

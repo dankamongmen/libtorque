@@ -138,7 +138,7 @@ int libtorque_stop(libtorque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx){
-		ret |= reap_threads(ctx,ctx->cpucount);
+		ret |= reap_threads(ctx);
 		free_libtorque_ctx(ctx);
 	}
 	return 0;

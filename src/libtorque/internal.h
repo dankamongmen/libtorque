@@ -101,10 +101,9 @@ typedef struct libtorque_ctx {
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
 	cpu_set_t origmask;		// affinityid validity map
 	evtables eventtables;		// callback state tables
+	pthread_t headtid;		// tid of list leader (for shutdown)
 	// FIXME all these CPU_SETSIZE arrays are (usually) pretty wasteful
 	unsigned affinmap[CPU_SETSIZE];	// maps into the cpu desc table
-	// Allocate these upon detecting cpu count FIXME
-	pthread_t tids[CPU_SETSIZE];
 } libtorque_ctx;
 
 #endif

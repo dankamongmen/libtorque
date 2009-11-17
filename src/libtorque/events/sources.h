@@ -29,6 +29,7 @@ typedef struct evthreadstats {
 
 typedef struct evhandler {
 	int efd;
+	pthread_t nexttid;
 	pthread_mutex_t lock;
 	evtables *evsources;
 	struct evectors *externalvec;
