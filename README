@@ -172,7 +172,7 @@ of files is not considered an error by the 'deinstall' target.
 
 libtorque can be brought up to date via 'git pull'. The 'clean' target ought
 never be necessary to run, save when hacking on the build process itself (or
-changing build parameters, as noted above), or after source files are removed.
+changing build parameters, as noted above), or (re)moving source files.
 
 ----------------------------------------------------------------libtorque-----
 -=+ IV. Design Issues +=-

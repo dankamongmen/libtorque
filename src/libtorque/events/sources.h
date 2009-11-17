@@ -23,7 +23,7 @@ struct evectors;
 
 typedef struct evthreadstats {
 #define STATDEF(x) uintmax_t x;
-#include <libtorque/events/stats.h>
+#include <libtorque/events/x-stats.h>
 #undef STATDEF
 } evthreadstats;
 

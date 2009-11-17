@@ -206,7 +206,7 @@ static void print_evstats(const evthreadstats *stats){
 #define PRINTSTAT(s,field) \
 	do { if((s)->field){ printf(#field ": %ju\n",(s)->field); } }while(0)
 #define STATDEF(field) PRINTSTAT(stats,field);
-#include <libtorque/events/stats.h>
+#include <libtorque/events/x-stats.h>
 #undef STATDEF
 #undef PRINTSTAT
 }
