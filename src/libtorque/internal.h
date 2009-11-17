@@ -109,7 +109,7 @@ typedef struct libtorque_ctx {
 		unsigned core;
 		unsigned package;
 	} cpu_map[CPU_SETSIZE];	
-	// Allocate these upon detecting cpu count, and opaqify tdata FIXME
+	// Allocate these upon detecting cpu count FIXME
 	pthread_t tids[CPU_SETSIZE];
 } libtorque_ctx;
 
