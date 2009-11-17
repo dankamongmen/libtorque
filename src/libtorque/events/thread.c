@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <pthread.h>
+#include <sys/resource.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
 #include <libtorque/events/signals.h>
@@ -33,7 +34,11 @@ static int
 rxsignal(int sig,torquercbstate *nullv __attribute__ ((unused))){
 	if(sig == EVTHREAD_TERM){
 		evhandler *e = tsd_evhandler;
+		struct rusage ru;
 
+		getrusage(RUSAGE_THREAD,&ru);
+		e->stats.utimeus = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
+		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
 		destroy_evhandler(e);
 		pthread_exit(PTHREAD_CANCELED);
 	}
