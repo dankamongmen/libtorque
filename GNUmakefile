@@ -9,6 +9,7 @@
 MAJORVER:=0
 MINORVER:=0
 RELEASEVER:=1
+DFLAGS+=-DLIBTORQUE_VERSIONSTR="\"$(MAJORVER).$(MINORVER).$(RELEASEVER)\""
 
 # Don't run shell commands unnecessarily. Cache commonly-used results here.
 UNAME:=$(shell uname)
