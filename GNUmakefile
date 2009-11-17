@@ -60,8 +60,10 @@ else
 DFLAGS+=-DLIBTORQUE_WITHOUT_SSL
 endif
 
-# This can be a URL; it's the docbook-to-manpage XSL
+# Any old XSLT processor ought do, but you might need change the invocation.
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
+# This can be a URL; it's the docbook-to-manpage XSL
+#DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
 
 #
 # USER SPECIFICATION AREA ENDS
@@ -283,7 +285,6 @@ $(OUT)/%.i: %.c $(GLOBOBJDEPS)
 	$(CC) $(CFLAGS) -E $< -o $@
 
 # Should the network be inaccessible, and local copies are installed, try:
-#DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
 #DOC2MANXSL?=--nonet
 $(OUT)/%.3: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)

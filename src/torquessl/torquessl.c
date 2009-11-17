@@ -66,11 +66,11 @@ static void
 usage(const char *argv0){
 	fprintf(stderr,"usage: %s [ options ]\n",argv0);
 	fprintf(stderr,"\t-h: print this message\n");
-	fprintf(stderr,"\t--version: print version info\n");
 	fprintf(stderr,"\t-p port: specify TCP port for service (default: %hu)\n",DEFAULT_PORT);
 	fprintf(stderr,"\t-C cafile: provide additional certificate authority\n");
 	fprintf(stderr,"\t-k keyfile: provide server key (requires -c)\n");
 	fprintf(stderr,"\t-c certfile: provide server cert (requires -k)\n");
+	fprintf(stderr,"\t--version: print version info\n");
 }
 
 static int
