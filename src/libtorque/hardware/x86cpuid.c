@@ -1115,16 +1115,30 @@ amd_l23assoc(unsigned idx,unsigned lines){
 	return 0;
 }
 
+static inline unsigned
+scale_amd_l23tlb(unsigned dents,unsigned psize){
+	if(psize == 4u * 1024 * 1024){
+		return dents / 2;
+	}else if(psize == 2u * 1024 * 1024){
+		return dents;
+	}else if(psize == 1u * 1024 * 1024 * 1024){
+		return dents;
+	}
+	return 0;
+}
+
 static int
-decode_amd_l23dtlb(uint32_t reg,unsigned *dassoc,unsigned *dents){
+decode_amd_l23dtlb(uint32_t reg,unsigned *dassoc,unsigned *dents,unsigned psize){
 	*dents = (reg >> 16u) & 0xfffu;
+	*dents = scale_amd_l23tlb(*dents,psize);
 	*dassoc = amd_l23assoc(reg >> 28u,*dents);
 	return (*dents && *dassoc) ? 0 : -1;
 }
 
 static int
-decode_amd_l23itlb(uint32_t reg,unsigned *iassoc,unsigned *ients){
+decode_amd_l23itlb(uint32_t reg,unsigned *iassoc,unsigned *ients,unsigned psize){
 	*ients = reg & 0xfffu;
+	*ients = scale_amd_l23tlb(*ients,psize);
 	*iassoc = amd_l23assoc((reg >> 12u) & 0xf,*ients);
 	return (*ients && *iassoc) ? 0 : -1;
 }
@@ -1165,7 +1179,7 @@ id_amd_gbtlbs(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpreg
 	tlb.tlbtype = tlb2.tlbtype = MEMTYPE_DATA;
 	itlb.tlbtype = itlb2.tlbtype = MEMTYPE_CODE;
 	if(amd_dtlb_presentp(gpregs[0])){
-		if(decode_amd_l23dtlb(gpregs[0],&tlb.associativity,&tlb.entries)){
+		if(decode_amd_l23dtlb(gpregs[0],&tlb.associativity,&tlb.entries,tlb.pagesize)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb) == NULL){
@@ -1173,7 +1187,7 @@ id_amd_gbtlbs(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpreg
 		}
 	}
 	if(amd_itlb_presentp(gpregs[0])){
-		if(decode_amd_l23itlb(gpregs[0],&itlb.associativity,&itlb.entries)){
+		if(decode_amd_l23itlb(gpregs[0],&itlb.associativity,&itlb.entries,itlb.pagesize)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb) == NULL){
@@ -1181,7 +1195,7 @@ id_amd_gbtlbs(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpreg
 		}
 	}
 	if(amd_dtlb_presentp(gpregs[1])){
-		if(decode_amd_l23dtlb(gpregs[1],&tlb2.associativity,&tlb2.entries)){
+		if(decode_amd_l23dtlb(gpregs[1],&tlb2.associativity,&tlb2.entries,tlb2.pagesize)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb2) == NULL){
@@ -1189,7 +1203,7 @@ id_amd_gbtlbs(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpreg
 		}
 	}
 	if(amd_itlb_presentp(gpregs[1])){
-		if(decode_amd_l23itlb(gpregs[1],&itlb2.associativity,&itlb2.entries)){
+		if(decode_amd_l23itlb(gpregs[1],&itlb2.associativity,&itlb2.entries,itlb2.pagesize)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb2) == NULL){
@@ -1249,7 +1263,7 @@ id_amd_23caches(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpr
 	tlb.tlbtype = tlb24.tlbtype = MEMTYPE_DATA;
 	itlb.tlbtype = itlb24.tlbtype = MEMTYPE_CODE;
 	if(amd_dtlb_presentp(gpregs[0])){
-		if(decode_amd_l23dtlb(gpregs[0],&tlb24.associativity,&tlb24.entries)){
+		if(decode_amd_l23dtlb(gpregs[0],&tlb24.associativity,&tlb24.entries,tlb24.pagesize)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb24) == NULL){
@@ -1257,7 +1271,7 @@ id_amd_23caches(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpr
 		}
 	}
 	if(amd_itlb_presentp(gpregs[0])){
-		if(decode_amd_l23itlb(gpregs[0],&itlb24.associativity,&itlb24.entries)){
+		if(decode_amd_l23itlb(gpregs[0],&itlb24.associativity,&itlb24.entries,itlb24.pagesize)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb24) == NULL){
@@ -1265,7 +1279,7 @@ id_amd_23caches(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpr
 		}
 	}
 	if(amd_dtlb_presentp(gpregs[1])){
-		if(decode_amd_l23dtlb(gpregs[1],&tlb.associativity,&tlb.entries)){
+		if(decode_amd_l23dtlb(gpregs[1],&tlb.associativity,&tlb.entries,tlb.pagesize)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&tlb) == NULL){
@@ -1273,7 +1287,7 @@ id_amd_23caches(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpr
 		}
 	}
 	if(amd_itlb_presentp(gpregs[1])){
-		if(decode_amd_l23itlb(gpregs[1],&itlb.associativity,&itlb.entries)){
+		if(decode_amd_l23itlb(gpregs[1],&itlb.associativity,&itlb.entries,itlb.pagesize)){
 			return -1;
 		}
 		if(add_tlb(&cpud->tlbs,&cpud->tlbdescs,&itlb) == NULL){
