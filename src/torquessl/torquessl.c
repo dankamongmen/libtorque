@@ -58,6 +58,11 @@ make_ssl_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 #define DEFAULT_PORT ((uint16_t)4433)
 
 static void
+print_version(void){
+	fprintf(stderr,"torquessl from libtorque " LIBTORQUE_VERSIONSTR "\n");
+}
+
+static void
 usage(const char *argv0){
 	fprintf(stderr,"usage: %s [ options ]\n",argv0);
 	fprintf(stderr,"\t-h: print this message\n");
@@ -73,11 +78,19 @@ parse_args(int argc,char **argv,const char **certfile,const char **keyfile,
 			const char **cafile,uint16_t *port){
 #define SET_ARG_ONCE(opt,arg,val) do{ if(!*(arg)){ *arg = val; }\
 	else{ fprintf(stderr,"Provided '%c' twice\n",(opt)); goto err; }} while(0)
-
+	int lflag;
+	const struct option opts[] = {
+		{	 .name = "version",
+			.has_arg = 0,
+			.flag = &lflag,
+			.val = 'v',
+		},
+		{	 .name = NULL, .has_arg = 0, .flag = 0, .val = 0, },
+	};
 	const char *argv0 = *argv;
 	int c;
 
-	while((c = getopt(argc,argv,"c:k:C:p:h")) > 0){
+	while((c = getopt_long(argc,argv,"c:k:C:p:h",opts,NULL)) >= 0){
 		switch(c){
 		case 'p': { int p = atoi(optarg);
 			if(p > 0xffff || p == 0){
@@ -98,6 +111,14 @@ parse_args(int argc,char **argv,const char **certfile,const char **keyfile,
 		case 'h':
 			usage(argv0);
 			exit(EXIT_SUCCESS);
+		case 0: // long option
+			switch(lflag){
+				case 'v':
+					print_version();
+					exit(EXIT_SUCCESS);
+				default:
+					goto err;
+			}
 		default:
 			goto err;
 		}
