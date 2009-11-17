@@ -100,32 +100,32 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 static int
 detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 	struct top_map *topmap = NULL;
-	unsigned z,cpu;
+	unsigned z,aid,cpucount;
 	cpu_set_t mask;
 
 	*cputc = 0;
 	*types = NULL;
 	// we're basically doing this in the main loop. purge! FIXME
-	if((ctx->cpucount = detect_cpucount(ctx,&mask)) <= 0){
+	if((cpucount = detect_cpucount(ctx,&mask)) <= 0){
 		goto err;
 	}
 	// Might be quite large; we don't want it allocated on the stack
-	if((topmap = malloc(ctx->cpucount * sizeof(*topmap))) == NULL){
+	if((topmap = malloc(cpucount * sizeof(*topmap))) == NULL){
 		goto err;
 	}
-	memset(topmap,0,ctx->cpucount * sizeof(*topmap));
-	for(z = 0, cpu = 0 ; z < ctx->cpucount ; ++z){
+	memset(topmap,0,cpucount * sizeof(*topmap));
+	for(z = 0, aid = 0 ; z < cpucount ; ++z){
 		libtorque_cput cpudetails;
 		unsigned thread,core,pkg;
 		typeof(*types) cputype;
 
-		while(cpu < CPU_SETSIZE && !CPU_ISSET(cpu,&mask)){
-			++cpu;
+		while(aid < CPU_SETSIZE && !CPU_ISSET(aid,&mask)){
+			++aid;
 		}
-		if(cpu == CPU_SETSIZE){
+		if(aid == CPU_SETSIZE){
 			goto err;
 		}
-		if(detect_cpudetails(cpu,&cpudetails,&thread,&core,&pkg)){
+		if(detect_cpudetails(aid,&cpudetails,&thread,&core,&pkg)){
 			goto err;
 		}
 		if( (cputype = match_cputype(*cputc,*types,&cpudetails)) ){
@@ -138,16 +138,16 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
-		if(associate_affinityid(ctx,cpu,(unsigned)(cputype - *types)) < 0){
+		if(associate_affinityid(ctx,aid,(unsigned)(cputype - *types)) < 0){
 			goto err;
 		}
-		if(topologize(ctx,topmap,cpu,thread,core,pkg)){
+		if(topologize(ctx,topmap,aid,thread,core,pkg)){
 			goto err;
 		}
 		if(spawn_thread(ctx)){
 			goto err;
 		}
-		++cpu;
+		++aid;
 	}
 	if(unpin_thread(ctx)){
 		goto err;
@@ -163,7 +163,6 @@ err:
 	*cputc = 0;
 	free(*types);
 	*types = NULL;
-	ctx->cpucount = 0;
 	free(topmap);
 	return -1;
 }

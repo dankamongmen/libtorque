@@ -93,7 +93,6 @@ typedef struct libtorque_rxbuf {
 // our cpuset, and only those NUMA nodes which we can reach).
 typedef struct libtorque_ctx {
 	struct evhandler *ev;
-	unsigned cpucount;		// number of processing elements
 	unsigned nodecount;		// number of NUMA nodes
 	unsigned cpu_typecount;		// number of processing element types
 	libtorque_cput *cpudescs;	// dynarray of cpu_typecount elements
