@@ -10,24 +10,24 @@
 
 <!ENTITY dhrelease "0.0.1">
 
-<!-- TITLE should be something like "User commands",           -->
+<!-- TITLE should be something like "User commands",	   -->
 <!-- "&dhpackage; command-line reference" or similar (see e.g. -->
 <!-- http://www.tldp.org/HOWTO/Man-Page/q2.html). But limit    -->
 <!-- it to 30    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" chars.   -->
 <!ENTITY dhtitle "libtorque command reference">
   
-<!-- This is the application/package name.                     -->
+<!-- This is the application/package name.		     -->
 <!ENTITY dhucpackage "TORQUESSL">
 <!ENTITY dhpackage "torquessl">
 
 <!-- If the application e.g. belongs to a package like X.org,  -->
 <!-- this should be set to the package/suite name instead of   -->
-<!-- dhpackage.                                                -->
+<!-- dhpackage.						-->
 <!ENTITY dhproduct "libtorque">
 
-<!-- SECTION should be 1-8, maybe w/ subsection other          -->
-<!-- parameters are allowed: see man(7), man(1) and            -->
-<!-- http://www.tldp.org/HOWTO/Man-Page/q2.html.               -->
+<!-- SECTION should be 1-8, maybe w/ subsection other	  -->
+<!-- parameters are allowed: see man(7), man(1) and	    -->
+<!-- http://www.tldp.org/HOWTO/Man-Page/q2.html.	       -->
 <!ENTITY dhsection "1">
 
 ]>
