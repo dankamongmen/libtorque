@@ -60,6 +60,16 @@ else
 DFLAGS+=-DLIBTORQUE_WITHOUT_SSL
 endif
 
+ifeq ($(UNAME),FreeBSD)
+DFLAGS+=-DLIBTORQUE_WITHOUT_NUMA
+else
+ifndef LIBTORQUE_WITHOUT_NUMA
+LIBFLAGS+=-lnuma
+else
+DFLAGS+=-DLIBTORQUE_WITHOUT_NUMA
+endif
+endif
+
 # Any old XSLT processor ought do, but you might need change the invocation.
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 # This can be a URL; it's the docbook-to-manpage XSL
@@ -74,7 +84,7 @@ XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 # System-specific variables closed to external specification
 ifeq ($(UNAME),Linux)
 DFLAGS+=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
-LFLAGS:=-Wl,--warn-shared-textrel
+LFLAGS+=-Wl,--warn-shared-textrel
 MANBIN:=mandb
 LDCONFIG:=ldconfig -n
 else
