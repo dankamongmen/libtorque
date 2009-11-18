@@ -3,9 +3,8 @@
 #include <stdint.h>
 #include <sys/resource.h>
 #include <libtorque/internal.h>
+#include <libtorque/hardware/numa.h>
 #include <libtorque/hardware/memory.h>
-
-// LibNUMA looks like the only real candidate for NUMA discovery (linux only)
 
 static libtorque_nodet *
 add_node(unsigned *count,libtorque_nodet **nodes,const libtorque_nodet *node){
@@ -67,10 +66,18 @@ int detect_memories(libtorque_ctx *ctx){
 	if(add_node(&ctx->nodecount,&ctx->manodes,&umamem) == NULL){
 		return -1;
 	}
+	if(detect_numa(ctx)){
+		goto err;
+	}
 	return 0;
+
+err:
+	free_memories(ctx);
+	return -1;
 }
 
 void free_memories(libtorque_ctx *ctx){
+	free_numa(ctx);
 	free(ctx->manodes);
 	ctx->manodes = NULL;
 	ctx->nodecount = 0;
