@@ -113,11 +113,19 @@ int topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
 	return 0;
 }
 
-void reset_topology(libtorque_ctx *ctx){
-	typeof(*ctx->sched_zone) *sz;
+static void
+free_topology(libtorque_topt *top){
+	while(top){
+		libtorque_topt *tmp;
 
-	while( (sz = ctx->sched_zone) ){
-		ctx->sched_zone = sz->next;
-		free(sz);
+		free_topology(top->sub);
+		tmp = top->next;
+		free(top);
+		top = tmp;
 	}
+}
+
+void reset_topology(libtorque_ctx *ctx){
+	free_topology(ctx->sched_zone);
+	ctx->sched_zone = NULL;
 }
