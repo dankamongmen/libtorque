@@ -77,15 +77,11 @@ typedef struct kevent kevententry;
 
 #include <pthread.h>
 
-// A pthread_testcancel() has been added at the entry, since epoll() is a
-// cancellation point on Linux. Perhaps better to disable cancellation across
-// both, as we have timeouts?
 static inline int
 Kevent(int kq,struct kevent *changelist,int nchanges,
 		struct kevent *eventlist,int nevents){
 	int ret;
 
-	pthread_testcancel();
 	while((ret = kevent(kq,changelist,nchanges,eventlist,nevents,NULL)) < 0){
 		if(errno != EINTR){ // loop on EINTR
 			break;
