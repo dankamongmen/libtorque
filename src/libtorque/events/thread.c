@@ -57,16 +57,15 @@ rxsignal(int sig,torquercbstate *nullv __attribute__ ((unused))){
 void event_thread(evhandler *e){
 	tsd_evhandler = e;
 	while(1){
-		evectors *ev = e->externalvec; // FIXME really? surely not.
 		int events,z;
 
-		events = Kevent(e->efd,PTR_TO_CHANGEV(ev),ev->changesqueued,
-					PTR_TO_EVENTV(ev),ev->vsizes);
+		events = Kevent(e->efd,PTR_TO_CHANGEV(&e->evec),e->evec.changesqueued,
+					PTR_TO_EVENTV(&e->evec),e->evec.vsizes);
 		for(z = 0 ; z < events ; ++z){
 #ifdef LIBTORQUE_LINUX
-			handle_event(e,&PTR_TO_EVENTV(ev)->events[z]);
+			handle_event(e,&PTR_TO_EVENTV(&e->evec)->events[z]);
 #else
-			handle_event(e,&PTR_TO_EVENTV(ev)[z]);
+			handle_event(e,&PTR_TO_EVENTV(&e->evec)[z]);
 #endif
 		}
 		++e->stats.rounds;
@@ -104,26 +103,19 @@ destroy_evector(struct kevent **kv){
 #endif
 }
 
-static evectors *
-create_evectors(void){
-	evectors *ret;
-
-	if((ret = malloc(sizeof(*ret))) == NULL){
-		return NULL;
-	}
+static int
+init_evectors(evectors *ev){
 	// We probably want about a half (small) page's worth...? FIXME
-	ret->vsizes = 512;
-	if(create_evector(&ret->eventv,ret->vsizes)){
-		free(ret);
-		return NULL;
+	ev->vsizes = 512;
+	if(create_evector(&ev->eventv,ev->vsizes)){
+		return -1;
 	}
-	if(create_evector(&ret->changev,ret->vsizes)){
-		destroy_evector(&ret->eventv);
-		free(ret);
-		return NULL;
+	if(create_evector(&ev->changev,ev->vsizes)){
+		destroy_evector(&ev->eventv);
+		return -1;
 	}
-	ret->changesqueued = 0;
-	return ret;
+	ev->changesqueued = 0;
+	return 0;
 }
 
 static void
@@ -131,25 +123,22 @@ destroy_evectors(evectors *e){
 	if(e){
 		destroy_evector(&e->changev);
 		destroy_evector(&e->eventv);
-		free(e);
 	}
 }
 
 static int
 add_evhandler_baseevents(evhandler *e){
-	evectors *ev;
 	sigset_t s;
 
-	if((ev = create_evectors()) == NULL){
+	if(init_evectors(&e->evec)){
 		return -1;
 	}
-	e->externalvec = ev;
 	if(sigemptyset(&s) || sigaddset(&s,EVTHREAD_SIGNAL) || sigaddset(&s,EVTHREAD_TERM)){
+		destroy_evectors(&e->evec);
 		return -1;
 	}
 	if(add_signal_to_evhandler(e,&s,rxsignal,NULL)){
-		e->externalvec = NULL;
-		destroy_evectors(ev);
+		destroy_evectors(&e->evec);
 		return -1;
 	}
 	return 0;
@@ -170,6 +159,9 @@ evhandler *create_evhandler(evtables *evsources){
 	evhandler *ret;
 	int fd,flags;
 
+	if(evsources == NULL){
+		return NULL;
+	}
 // Until the epoll API stabilizes a bit... :/
 #ifdef LIBTORQUE_LINUX
 #ifdef EPOLL_CLOEXEC
@@ -222,7 +214,7 @@ int destroy_evhandler(evhandler *e){
 
 	if(e){
 		print_evstats(&e->stats);
-		destroy_evectors(e->externalvec);
+		destroy_evectors(&e->evec);
 		ret |= close(e->efd);
 		free(e);
 	}

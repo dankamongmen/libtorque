@@ -35,7 +35,6 @@ int add_evector_kevents(evectors *e,const struct kevent *k,int kcount){
 int flush_evector_changes(evhandler *eh,evectors *ev){
 	int ret = 0;
 
-	// printf("Performing %d changes on %d\n",ev->changesqueued,eh->efd);
 	if(ev->changesqueued){
 #ifdef LIBTORQUE_LINUX
 		ret = Kevent(eh->efd,&ev->changev,ev->changesqueued,NULL,0);

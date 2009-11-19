@@ -8,15 +8,16 @@ extern "C" {
 struct evtables;
 struct evectors;
 
+#include <libtorque/events/sysdep.h>
 #include <libtorque/events/sources.h>
 
 typedef struct evhandler {
 	int efd;
 	pthread_t nexttid;
 	struct evhandler *nextev;
-	struct evtables *evsources;
-	struct evectors *externalvec;
-	evthreadstats stats;
+	struct evtables *evsources;	// lives in libtorque_ctx, shared
+	evectors evec;			// one for each thread
+	evthreadstats stats;		// one for each thread
 } evhandler;
 
 evhandler *create_evhandler(struct evtables *)

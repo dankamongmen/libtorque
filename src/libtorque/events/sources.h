@@ -81,7 +81,6 @@ static inline int handle_evsource_write(evsource *,int)
 
 static inline int
 handle_evsource_read(evsource *evs,int n){
-	// printf("handling read on %d\n",n);
 	torquercbstate rcb = {
 		.cbstate = evs[n].cbstate,
 	};
@@ -94,7 +93,6 @@ handle_evsource_read(evsource *evs,int n){
 
 static inline int
 handle_evsource_write(evsource *evs,int n){
-	// printf("handling write on %d\n",n);
 	if(evs[n].rxfxn){
 		return evs[n].txfxn(n,evs[n].cbstate);
 	}
