@@ -60,6 +60,7 @@ create_libtorque_ctx(void){
 		ret->manodes = NULL;
 		ret->cpu_typecount = 0;
 		ret->nodecount = 0;
+		ret->ev = NULL;
 	}
 	return ret;
 }
