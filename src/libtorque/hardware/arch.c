@@ -229,6 +229,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 	if(unpin_thread(&mask)){
 		goto err;
 	}
+	free(topmap);
 	return 0;
 
 err:
