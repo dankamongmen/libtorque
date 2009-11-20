@@ -40,6 +40,7 @@ struct libtorque_ctx *libtorque_init(void)
 	__attribute__ ((malloc));
 
 typedef struct torquercbstate {
+	void *torquestate;
 	void *rxbuf;
 	void *cbstate;
 } torquercbstate;

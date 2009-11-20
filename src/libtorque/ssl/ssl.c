@@ -229,6 +229,15 @@ SSL *new_ssl_conn(SSL_CTX *ctx){
 	return SSL_new(ctx);
 }
 
+int ssl_tx(ssl_cbstate *ssl,const void *buf,int len){
+	int ret;
+
+	if((ret = SSL_write(ssl->ssl,buf,len)) < len){
+		// FIXME set up
+	}
+	return ret;
+}
+
 static int ssl_rxfxn(int,torquercbstate *);
 
 static int
@@ -241,6 +250,7 @@ ssl_txrxfxn(int fd,void *cbs){
 	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) > 0){
 		torquercbstate rcb = {
+			.torquestate = sc,
 			.rxbuf = &sc->rxb,
 			.cbstate = sc->cbstate,
 		};
@@ -276,6 +286,7 @@ ssl_rxfxn(int fd,torquercbstate *cbs){
 	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) >= 0){
 		torquercbstate rcb = {
+			.torquestate = sc,
 			.rxbuf = &sc->rxb,
 			.cbstate = sc->cbstate,
 		};
