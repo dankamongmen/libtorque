@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all test testarchdetect testpercpu hardtest testssl docs clean \
+.PHONY: all test testarchdetect hardtest testssl docs clean \
 	mrproper install unsafe-install deinstall
 .DEFAULT_GOAL:=test
 
@@ -99,7 +99,6 @@ INSTALL:=install -v
 
 # Codenames are factored out, to accommodate changing them later.
 ARCHDETECT:=archdetect
-PERCPU:=percpu
 SSLSRV:=torquessl
 TORQUE:=torque
 
@@ -111,7 +110,6 @@ TOOLDIR:=tools
 MANDIR:=doc/man
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
 ARCHDETECTDIRS:=$(SRCDIR)/$(ARCHDETECT)
-PERCPUDIRS:=$(SRCDIR)/$(PERCPU)
 SSLSRVDIRS:=$(SRCDIR)/$(SSLSRV)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
 
@@ -131,14 +129,12 @@ CSRC:=$(shell find $(CSRCDIRS) -type f -name \*.c -print)
 CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
 ARCHDETECTSRC:=$(foreach dir, $(ARCHDETECTDIRS), $(filter $(dir)/%, $(CSRC)))
 ARCHDETECTOBJ:=$(addprefix $(OUT)/,$(ARCHDETECTSRC:%.c=%.o))
-PERCPUSRC:=$(foreach dir, $(PERCPUDIRS), $(filter $(dir)/%, $(CSRC)))
-PERCPUOBJ:=$(addprefix $(OUT)/,$(PERCPUSRC:%.c=%.o))
 SSLSRVSRC:=$(foreach dir, $(SSLSRVDIRS), $(filter $(dir)/%, $(CSRC)))
 SSLSRVOBJ:=$(addprefix $(OUT)/,$(SSLSRVSRC:%.c=%.o))
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
-BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(PERCPU) $(SSLSRV))
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(SSLSRV))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
@@ -211,8 +207,6 @@ LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc
 ARCHDETECTCFLAGS:=$(CFLAGS)
 ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
-PERCPUCFLAGS:=$(CFLAGS)
-PERCPULFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 SSLSRVCFLAGS:=$(CFLAGS)
 SSLSRVLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 TORQUECFLAGS:=$(CFLAGS) -shared
@@ -225,16 +219,11 @@ all: test docs
 
 docs: $(DOCS)
 
-test: $(BINS) $(LIBS) testarchdetect testpercpu
+test: $(BINS) $(LIBS) testarchdetect
 
 testarchdetect: $(BINOUT)/$(ARCHDETECT)
 	@echo -n "Testing $(<F): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $<
-
-PERCPUARGS:="echo percpu"
-testpercpu: $(BINOUT)/$(PERCPU)
-	@echo -n "Testing $(<F): "
-	env LD_LIBRARY_PATH=$(LIBOUT) $< $(PERCPUARGS)
 
 SSLKEY:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).key
 SSLCERT:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).cert
@@ -250,7 +239,6 @@ VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v --track-origins=yes
 hardtest: test
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
-	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(PERCPU) $(PERCPUARGS)
 
 $(LIBOUT)/$(TORQUESOL): $(LIBOUT)/$(TORQUEREAL)
 	@mkdir -p $(@D)
@@ -271,10 +259,6 @@ $(LIBOUT)/$(TORQUESTAT): $(TORQUEOBJ)
 $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(ARCHDETECTCFLAGS) -o $@ $(ARCHDETECTOBJ) $(ARCHDETECTLFLAGS)
-
-$(BINOUT)/$(PERCPU): $(PERCPUOBJ) $(LIBS)
-	@mkdir -p $(@D)
-	$(CC) $(PERCPUCFLAGS) -o $@ $(PERCPUOBJ) $(PERCPULFLAGS)
 
 $(BINOUT)/$(SSLSRV): $(SSLSRVOBJ) $(LIBS)
 	@mkdir -p $(@D)
