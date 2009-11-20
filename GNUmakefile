@@ -236,7 +236,7 @@ $(SSLCERT) $(SSLKEY): $(GLOBOBJDEPS)
 	openssl req -utf8 -batch -nodes -out $(SSLCERT) -keyout $(SSLKEY) -x509 -new
 
 VALGRIND:=valgrind
-VALGRINDOPTS:=--tool=memcheck --leak-check=full --error-exitcode=1 -v --track-origins=yes
+VALGRINDOPTS:=--tool=memcheck --leak-check=full --trace-children=yes --show-reachable=yes --error-exitcode=1 -v --track-origins=yes
 hardtest: test
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
 
