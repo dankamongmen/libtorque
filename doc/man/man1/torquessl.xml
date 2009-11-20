@@ -141,11 +141,11 @@
 			<citerefentry>
 				<refentrytitle>cpuset</refentrytitle>
 				<manvolnum>4</manvolnum>
-			</citerefentry>
+			</citerefentry>,
 			<citerefentry>
 				<refentrytitle>cpuset</refentrytitle>
 				<manvolnum>7</manvolnum>
-			</citerefentry>
+			</citerefentry>,
 			<citerefentry>
 				<refentrytitle>numa</refentrytitle>
 				<manvolnum>7</manvolnum>
