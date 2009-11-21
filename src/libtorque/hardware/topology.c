@@ -10,10 +10,15 @@ const libtorque_topt *libtorque_get_topology(libtorque_ctx *ctx){
 }
 
 static inline libtorque_topt *
-create_zone(unsigned id){
+create_zone(unsigned id,unsigned cputype){
 	libtorque_topt *s;
 
 	if( (s = malloc(sizeof(*s))) ){
+		if((s->cpudescs = malloc(sizeof(*s->cpudescs))) == NULL){
+			free(s);
+			return NULL;
+		}
+		s->cpudescs[0] = cputype;
 		CPU_ZERO(&s->schedulable);
 		s->groupid = id;
 		s->sub = NULL;
@@ -22,7 +27,7 @@ create_zone(unsigned id){
 }
 
 static libtorque_topt *
-find_sched_group(libtorque_topt **sz,unsigned id){
+find_sched_group(libtorque_topt **sz,unsigned id,unsigned cputype){
 	libtorque_topt *n;
 
 	while(*sz){
@@ -34,7 +39,7 @@ find_sched_group(libtorque_topt **sz,unsigned id){
 		}
 		sz = &(*sz)->next;
 	}
-	if( (n = create_zone(id)) ){
+	if( (n = create_zone(id,cputype)) ){
 		n->next = *sz;
 		*sz = n;
 	}
@@ -70,13 +75,13 @@ first_aid(cpu_set_t *cs){
 // in *tm, which must be zeroed out prior to topology detection, and not
 // touched between calls. It must have space for a top_map per invocation.
 int topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
-			unsigned thread,unsigned core,unsigned pkg){
+		unsigned thread,unsigned core,unsigned pkg,unsigned cputype){
 	libtorque_topt *sg;
 
 	if(aid >= CPU_SETSIZE){
 		return -1;
 	}
-	if((sg = find_sched_group(&ctx->sched_zone,pkg)) == NULL){
+	if((sg = find_sched_group(&ctx->sched_zone,pkg,cputype)) == NULL){
 		return -1;
 	}
 	// If we share the package, it mustn't be a new package. Quod, we
@@ -91,14 +96,14 @@ int topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
 			if((oid = first_aid(&sg->schedulable)) >= CPU_SETSIZE){
 				return -1;
 			}
-			sg->sub = create_zone(tm[oid].core);
+			sg->sub = create_zone(tm[oid].core,cputype);
 			if(sg->sub == NULL){
 				return -1;
 			}
 			CPU_SET(oid,&sg->sub->schedulable);
 			sg->sub->next = NULL;
 		}
-		if((sc = find_sched_group(&sg->sub,core)) == NULL){
+		if((sc = find_sched_group(&sg->sub,core,cputype)) == NULL){
 			return -1;
 		}
 		CPU_SET(aid,&sc->schedulable);

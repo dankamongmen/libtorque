@@ -66,7 +66,7 @@ struct top_map {
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
 int topologize(struct libtorque_ctx *,struct top_map *,unsigned,unsigned,
-						unsigned,unsigned);
+					unsigned,unsigned,unsigned);
 void reset_topology(struct libtorque_ctx *);
 
 #ifdef __cplusplus

@@ -215,7 +215,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
-		if(topologize(ctx,topmap,aid,thread,core,pkg)){
+		if(topologize(ctx,topmap,aid,thread,core,pkg,(unsigned)(cputype - *types))){
 			goto err;
 		}
 		if(spawn_thread(ctx)){

@@ -11,9 +11,17 @@
 
 struct evhandler;
 
+// See the comment in hardware/topology.h. For simply walking the topology, the
+// following rules apply:
+//  - the schedulable set of cpus for a group is the union of schedulable cpus
+//     of its subgroups.
+//  - every group has at least one schedulable cpu.
+//  - groupids are relevant only within a set of siblings.
+//  - there is a cpu descriptor for each schedulable cpu.
 typedef struct libtorque_topt {
 	cpu_set_t schedulable;
-	unsigned groupid;		// x86: Core for multicores, or package
+	unsigned groupid;
+	unsigned *cpudescs;
 	struct libtorque_topt *next,*sub;
 } libtorque_topt;
 
