@@ -39,6 +39,7 @@ rxsignal(int sig,torquercbstate *nullv __attribute__ ((unused))){
 		int r;
 
 		getrusage(RUSAGE_THREAD,&ru);
+		--e->stats.events;
 		e->stats.utimeus = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
 		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
 		pthread_kill(e->nexttid,EVTHREAD_TERM);
@@ -61,7 +62,6 @@ void event_thread(evhandler *e){
 
 		events = Kevent(e->efd,PTR_TO_CHANGEV(&e->evec),e->evec.changesqueued,
 					PTR_TO_EVENTV(&e->evec),e->evec.vsizes);
-		++e->stats.rounds;
 		if(events <= 0){
 			continue;
 		}
@@ -73,6 +73,7 @@ void event_thread(evhandler *e){
 		handle_event(e,&PTR_TO_EVENTV(&e->evec)[--events]);
 #endif
 		}while(events);
+		++e->stats.rounds;
 	}
 }
 
