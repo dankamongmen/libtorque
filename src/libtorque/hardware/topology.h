@@ -48,7 +48,13 @@ struct libtorque_topt;
 //  - DMA connects to a memory
 //  - DCA connects to a cache
 //  - PIO connects to a processor
-
+//
+// What we've described is a topology well-suited to placing handlers close
+// together, ie those which share code and data. We want also, however, to
+// support their separation. That'll involve the same relations, but with a
+// different base isomorphism defined upon it...everywhere that we bound
+// together in the first instance, we must now break apart. Or do you simply
+// favor trading events across groups to within groups? Must investigate...
 const struct libtorque_topt *libtorque_get_topology(struct libtorque_ctx *)
 	__attribute__ ((visibility("default")));
 
