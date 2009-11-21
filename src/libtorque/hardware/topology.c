@@ -121,6 +121,7 @@ free_topology(libtorque_topt *top){
 		libtorque_topt *tmp;
 
 		free_topology(top->sub);
+		free(top->cpudescs);
 		tmp = top->next;
 		free(top);
 		top = tmp;
