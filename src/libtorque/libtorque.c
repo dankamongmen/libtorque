@@ -66,8 +66,8 @@ create_libtorque_ctx(void){
 
 static void
 free_libtorque_ctx(libtorque_ctx *ctx){
-	free(ctx->eventtables.sigarray);
-	free(ctx->eventtables.fdarray);
+	destroy_evsources(ctx->eventtables.sigarray);
+	destroy_evsources(ctx->eventtables.fdarray);
 	free_architecture(ctx);
 	free(ctx);
 }
