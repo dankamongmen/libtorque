@@ -15,9 +15,6 @@ create_zone(unsigned id){
 
 	if( (s = malloc(sizeof(*s))) ){
 		CPU_ZERO(&s->schedulable);
-		s->memories = s->tlbs = 0;
-		s->memdescs = NULL;
-		s->tlbdescs = NULL;
 		s->groupid = id;
 		s->sub = NULL;
 	}

@@ -14,9 +14,6 @@ struct evhandler;
 typedef struct libtorque_topt {
 	cpu_set_t schedulable;
 	unsigned groupid;		// x86: Core for multicores, or package
-	unsigned memories,tlbs;
-	struct libtorque_memt *memdescs;	// FIXME store indexes!
-	struct libtorque_tlbt *tlbdescs;	// FIXME store indexes!
 	struct libtorque_topt *next,*sub;
 } libtorque_topt;
 
