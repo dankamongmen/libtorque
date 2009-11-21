@@ -92,14 +92,13 @@ typedef struct libtorque_rxbuf {
 // called, and as it was then restricted (ie, only those processing elements in
 // our cpuset, and only those NUMA nodes which we can reach).
 typedef struct libtorque_ctx {
-	struct evhandler *ev;
 	unsigned nodecount;		// number of NUMA nodes
 	unsigned cpu_typecount;		// number of processing element types
 	libtorque_cput *cpudescs;	// dynarray of cpu_typecount elements
 	libtorque_nodet *manodes;	// dynarray of NUMA node descriptors
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
 	evtables eventtables;		// callback state tables
-	pthread_t headtid;		// tid of list leader (for shutdown)
+	struct evhandler *ev;		// evhandler of list leader
 } libtorque_ctx;
 
 #endif

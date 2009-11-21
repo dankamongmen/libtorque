@@ -110,13 +110,15 @@ thread(void *void_marshal){
 		destroy_evhandler(ev);
 		goto earlyerr;
 	}
-	ev->nexttid = marshal->ctx->headtid;
 	if(marshal->ctx->ev == NULL){
 		ev->nextev = ev;
 		marshal->ctx->ev = ev;
+		ev->nexttid = pthread_self();
 	}else{
 		ev->nextev = marshal->ctx->ev->nextev;
 		marshal->ctx->ev->nextev = ev;
+		ev->nexttid = marshal->ctx->ev->nexttid;
+		marshal->ctx->ev->nexttid = pthread_self();
 	}
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
@@ -166,8 +168,6 @@ int spawn_thread(libtorque_ctx *ctx){
 	ret |= pthread_mutex_destroy(&tidguard.lock);
 	if(ret){
 		pthread_join(tid,NULL);
-	}else{
-		ctx->headtid = tid;
 	}
 	return ret;
 }
@@ -176,7 +176,7 @@ int reap_threads(libtorque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx->ev){
-		ret = reap_thread(ctx->headtid);
+		ret = reap_thread(ctx->ev->nexttid);
 	}
 	return ret;
 }
