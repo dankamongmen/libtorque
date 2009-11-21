@@ -15,8 +15,8 @@ typedef struct libtorque_topt {
 	cpu_set_t schedulable;
 	unsigned groupid;		// x86: Core for multicores, or package
 	unsigned memories,tlbs;
-	struct libtorque_memt *memdescs;
-	struct libtorque_tlbt *tlbdescs;
+	struct libtorque_memt *memdescs;	// FIXME store indexes!
+	struct libtorque_tlbt *tlbdescs;	// FIXME store indexes!
 	struct libtorque_topt *next,*sub;
 } libtorque_topt;
 
@@ -100,8 +100,6 @@ typedef struct libtorque_ctx {
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
 	evtables eventtables;		// callback state tables
 	pthread_t headtid;		// tid of list leader (for shutdown)
-	// FIXME CPU_SETSIZE arrays are (usually) pretty wasteful
-	unsigned affinmap[CPU_SETSIZE];	// maps into the cpu desc table
 } libtorque_ctx;
 
 #endif

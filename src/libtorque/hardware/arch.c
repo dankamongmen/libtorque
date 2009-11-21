@@ -215,9 +215,6 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 				goto err;
 			}
 		}
-		if(associate_affinityid(ctx,aid,(unsigned)(cputype - *types)) < 0){
-			goto err;
-		}
 		if(topologize(ctx,topmap,aid,thread,core,pkg)){
 			goto err;
 		}

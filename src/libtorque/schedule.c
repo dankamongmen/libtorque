@@ -52,21 +52,6 @@ unsigned long pthread_self_getnumeric(void){
 }
 #endif
 
-// Returns the cputype index (for use with libtorque_cpu_getdesc() of a given
-// affinity ID. FIXME we ought return the cpudesc itself. That way, we could
-// check the validity mask, and return NULL if it's a bad affinity ID.
-unsigned libtorque_affinitymapping(const libtorque_ctx *ctx,unsigned aid){
-	return ctx->affinmap[aid];
-}
-
-int associate_affinityid(libtorque_ctx *ctx,unsigned aid,unsigned idx){
-	if(aid < sizeof(ctx->affinmap) / sizeof(*ctx->affinmap)){
-		ctx->affinmap[aid] = idx;
-		return 0;
-	}
-	return -1;
-}
-
 // Pins the current thread to the given cpuset ID, ie [0..cpuset_size()).
 int pin_thread(unsigned aid){
 	cpu_set_t mask;

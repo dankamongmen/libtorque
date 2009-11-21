@@ -309,8 +309,7 @@ print_cpuset(const libtorque_ctx *ctx,const libtorque_topt *s,unsigned depth){
 			return -1;
 		}
 		if(s->sub == NULL){
-			ret = printf("(%ux processor type %u)\n",total,
-				libtorque_affinitymapping(ctx,lastset) + 1);
+			ret = printf("(%ux processor type ?)\n",total);
 		}else{
 			ret = printf("(%u threads total)\n",total);
 		}

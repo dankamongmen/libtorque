@@ -17,11 +17,7 @@ typedef cpuset_t cpu_set_t;
 
 struct libtorque_ctx;
 
-unsigned libtorque_affinitymapping(const struct libtorque_ctx *,unsigned)
-	__attribute__ ((visibility("default")));
-
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int associate_affinityid(struct libtorque_ctx *,unsigned,unsigned);
 int pin_thread(unsigned);
 int spawn_thread(struct libtorque_ctx *);
 int reap_threads(struct libtorque_ctx *);
