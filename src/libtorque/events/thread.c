@@ -57,18 +57,22 @@ rxsignal(int sig,torquercbstate *nullv __attribute__ ((unused))){
 void event_thread(evhandler *e){
 	tsd_evhandler = e;
 	while(1){
-		int events,z;
+		int events;
 
 		events = Kevent(e->efd,PTR_TO_CHANGEV(&e->evec),e->evec.changesqueued,
 					PTR_TO_EVENTV(&e->evec),e->evec.vsizes);
-		for(z = 0 ; z < events ; ++z){
-#ifdef LIBTORQUE_LINUX
-			handle_event(e,&PTR_TO_EVENTV(&e->evec)->events[z]);
-#else
-			handle_event(e,&PTR_TO_EVENTV(&e->evec)[z]);
-#endif
-		}
 		++e->stats.rounds;
+		if(events <= 0){
+			continue;
+		}
+		e->stats.events += events;
+		do{
+#ifdef LIBTORQUE_LINUX
+		handle_event(e,&PTR_TO_EVENTV(&e->evec)->events[--events]);
+#else
+		handle_event(e,&PTR_TO_EVENTV(&e->evec)[--events]);
+#endif
+		}while(events);
 	}
 }
 
