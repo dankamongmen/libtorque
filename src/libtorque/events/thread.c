@@ -36,15 +36,15 @@ rxsignal(int sig,torquercbstate *nullv __attribute__ ((unused))){
 		void *ret = PTHREAD_CANCELED;
 		evhandler *e = tsd_evhandler;
 		struct rusage ru;
+		int r;
 
 		getrusage(RUSAGE_THREAD,&ru);
 		e->stats.utimeus = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
 		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
-		if(e->nexttid){
-			pthread_kill(e->nexttid,EVTHREAD_TERM);
-			if(pthread_join(e->nexttid,&ret)){
-				ret = NULL;
-			}
+		pthread_kill(e->nexttid,EVTHREAD_TERM);
+		// We rely on EDEADLK to cut off our circular join()list
+		if((r = pthread_join(e->nexttid,&ret)) && r != EDEADLK){
+			ret = NULL;
 		}
 		if(destroy_evhandler(e)){
 			ret = NULL;
