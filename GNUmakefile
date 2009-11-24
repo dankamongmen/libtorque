@@ -1,6 +1,6 @@
 .DELETE_ON_ERROR:
-.PHONY: all test testarchdetect hardtest testssl docs clean \
-	mrproper install unsafe-install deinstall
+.PHONY: all test testarchdetect hardtest testssl docs clean mrproper flow \
+	install unsafe-install deinstall
 .DEFAULT_GOAL:=test
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
@@ -212,6 +212,9 @@ SSLSRVLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 LFLAGS+=$(LIBFLAGS)
+
+flow:
+	cflow $(IFLAGS) $(DFLAGS) $(TORQUESRC) 2>/dev/null
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
