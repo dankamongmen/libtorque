@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <sys/timerfd.h>
-#include <libtorque/events/fds.h>
+#include <libtorque/events/fd.h>
 #include <libtorque/events/timer.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>

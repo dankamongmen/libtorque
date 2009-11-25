@@ -4,12 +4,12 @@
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
-#include <libtorque/events/fds.h>
+#include <libtorque/events/fd.h>
 #include <libtorque/events/timer.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
-#include <libtorque/events/signals.h>
+#include <libtorque/events/signal.h>
 #include <libtorque/events/sources.h>
 
 static unsigned long

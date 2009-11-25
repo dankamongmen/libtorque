@@ -1,9 +1,9 @@
 #include <unistd.h>
 #include <signal.h>
-#include <libtorque/events/fds.h>
+#include <libtorque/events/fd.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
-#include <libtorque/events/signals.h>
+#include <libtorque/events/signal.h>
 #include <libtorque/events/sources.h>
 
 #ifdef LIBTORQUE_LINUX

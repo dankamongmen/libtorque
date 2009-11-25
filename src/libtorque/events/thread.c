@@ -5,7 +5,7 @@
 #include <sys/resource.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
-#include <libtorque/events/signals.h>
+#include <libtorque/events/signal.h>
 #include <libtorque/events/sources.h>
 
 static __thread evhandler *tsd_evhandler;
