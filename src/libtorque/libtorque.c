@@ -5,6 +5,7 @@
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/events/fds.h>
+#include <libtorque/events/timer.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
@@ -108,6 +109,15 @@ libtorque_ctx *libtorque_init(void){
 int libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 			libtorquercb fxn,void *state){
 	if(add_signal_to_evhandler(ctx->ev,sigs,fxn,state)){
+		return -1;
+	}
+	ctx->ev = ctx->ev->nextev;
+	return 0;
+}
+
+int libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
+			libtorquercb fxn,void *state){
+	if(add_timer_to_evhandler(ctx->ev,t,fxn,state)){
 		return -1;
 	}
 	ctx->ev = ctx->ev->nextev;

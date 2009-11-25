@@ -7,6 +7,7 @@ extern "C" {
 
 #include <signal.h>
 
+struct itimerspec;
 struct libtorque_ctx;
 
 // Initialize the library, returning 0 on success. No libtorque functions may
@@ -54,13 +55,19 @@ typedef struct torquercbstate {
 typedef int (*libtorquercb)(int,torquercbstate *);
 typedef int (*libtorquewcb)(int,void *);
 
-// Handle the specified signals.
+// Invoke the callback upon receipt of the specified signals.
 int libtorque_addsignal(struct libtorque_ctx *,const sigset_t *,libtorquercb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2,3)));
 
-// Handle the specified file descriptor.
+// After a minimum time interval, invoke the callback as soon as possible
+int libtorque_addtimer(struct libtorque_ctx *,const struct itimerspec *,libtorquercb,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1,2,3)));
+
+// Watch for events on the specified file descriptor, and invoke the callbacks.
 int libtorque_addfd(struct libtorque_ctx *,int,libtorquercb,libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
