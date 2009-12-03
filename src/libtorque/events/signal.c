@@ -17,8 +17,8 @@ signalfd_demultiplexer(int fd,torquercbstate *cbstate){
 
 	do{
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
-			ret |= handle_evsource_read(e->evsources->sigarray,
-							si.ssi_signo);
+			ret |= handle_evsource_read(cbstate->torquectx->ctx,
+				e->evsources->sigarray,si.ssi_signo);
 			// FIXME do... what, exactly with ret?
 		}else if(r >= 0){
 			// FIXME stat short read! return -1?

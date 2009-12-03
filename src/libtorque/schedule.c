@@ -123,7 +123,7 @@ thread(void *void_marshal){
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
 	pthread_mutex_unlock(&marshal->lock);
-	event_thread(ev);
+	event_thread(marshal->ctx,ev);
 	destroy_evhandler(ev);
 	return NULL;
 

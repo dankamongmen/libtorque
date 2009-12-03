@@ -71,17 +71,21 @@ set_evsource_tx(evsource *evs,int n,libtorquewcb tx){
 	evs[n].txfxn = tx;
 }
 
-static inline int handle_evsource_read(evsource *,int)
+static inline int handle_evsource_read(libtorque_ctx *,evsource *,int)
 	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull(1)));
+	__attribute__ ((nonnull(1,2)));
 
 static inline int handle_evsource_write(evsource *,int)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
 static inline int
-handle_evsource_read(evsource *evs,int n){
+handle_evsource_read(libtorque_ctx *ctx,evsource *evs,int n){
+	libtorque_cbctx torquectx = {
+		.ctx = ctx,
+	};
 	torquercbstate rcb = {
+		.torquectx = &torquectx,
 		.cbstate = evs[n].cbstate,
 	};
 
