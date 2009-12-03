@@ -134,7 +134,8 @@ SSLSRVOBJ:=$(addprefix $(OUT)/,$(SSLSRVSRC:%.c=%.o))
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
-BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(SSLSRV))
+TESTBINS:=echoserver
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(SSLSRV) $(TESTBINS))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
@@ -266,6 +267,15 @@ $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 $(BINOUT)/$(SSLSRV): $(SSLSRVOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(SSLSRVCFLAGS) -o $@ $(SSLSRVOBJ) $(SSLSRVLFLAGS)
+
+# The .o files generated for $(TESTBINS) get removed post-build due to their
+# status as "intermediate files". The following directive precludes said
+# operation, should it be necessary or desirable:
+#.SECONDARY: $(addsuffix .o,$(addprefix $(OUT)/tools/testing/,$(TESTBINS)))
+
+$(BINOUT)/%: $(OUT)/tools/testing/%.o $(LIBS)
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
 $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
