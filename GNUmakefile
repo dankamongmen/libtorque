@@ -212,6 +212,8 @@ SSLSRVCFLAGS:=$(CFLAGS)
 SSLSRVLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 TORQUECFLAGS:=$(CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
+TESTBINCFLAGS:=$(CFLAGS)
+TESTBINLFLAGS:=$(LFLAGS) -Wl,-R$(LIBOUT) -L$(LIBOUT) -ltorque
 LFLAGS+=$(LIBFLAGS)
 
 flow:
@@ -275,7 +277,7 @@ $(BINOUT)/$(SSLSRV): $(SSLSRVOBJ) $(LIBS)
 
 $(BINOUT)/%: $(OUT)/tools/testing/%.o $(LIBS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+	$(CC) $(TESTBINCFLAGS) -o $@ $^ $(TESTBINLFLAGS)
 
 $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
