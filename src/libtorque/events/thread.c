@@ -164,9 +164,6 @@ evhandler *create_evhandler(evtables *evsources){
 	evhandler *ret;
 	int fd,flags;
 
-	if(evsources == NULL){
-		return NULL;
-	}
 // Until the epoll API stabilizes a bit... :/
 #ifdef LIBTORQUE_LINUX
 #ifdef EPOLL_CLOEXEC

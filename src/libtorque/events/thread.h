@@ -22,6 +22,7 @@ typedef struct evhandler {
 
 evhandler *create_evhandler(struct evtables *)
 	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));
 
 int destroy_evhandler(evhandler *);
