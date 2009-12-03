@@ -98,6 +98,7 @@ typedef struct tguard {
 static void *
 thread(void *void_marshal){
 	tguard *marshal = void_marshal;
+	libtorque_ctx *ctx = NULL;
 	evhandler *ev = NULL;
 
 	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
@@ -120,10 +121,13 @@ thread(void *void_marshal){
 		ev->nexttid = marshal->ctx->ev->nexttid;
 		marshal->ctx->ev->nexttid = pthread_self();
 	}
+	ctx = marshal->ctx;
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
 	pthread_mutex_unlock(&marshal->lock);
-	event_thread(marshal->ctx,ev);
+	// After this point, anything we wish to use from tguard must have been
+	// copied onto our own stack (hence broadcasting prior to unlocking).
+	event_thread(ctx,ev);
 	destroy_evhandler(ev);
 	return NULL;
 
