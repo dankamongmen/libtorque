@@ -14,7 +14,13 @@
 #include <libtorque/libtorque.h>
 
 static int
-conn_handler(int fd,torquercbstate *v __attribute__ ((unused))){
+echo_server(int fd,torquercbstate *v){
+	fprintf(stdout,"Data on %d (%p)\n",fd,v);
+	return 0;
+}
+
+static int
+conn_handler(int fd,torquercbstate *v){
 	struct sockaddr_in sina;
 	socklen_t slen;
 	int sd;
@@ -23,7 +29,10 @@ conn_handler(int fd,torquercbstate *v __attribute__ ((unused))){
 	do{
 		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) >= 0){
 			fprintf(stdout,"Got new connection on sd %d\n",sd);
-			close(sd); // FIXME
+			if(libtorque_addfd(v->torquectx->ctx,sd,echo_server,NULL,NULL)){
+				fprintf(stderr,"Couldn't add client sd %d\n",sd);
+				close(sd);
+			}
 		}
 	}while(errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK);
 	fprintf(stdout,"Returning from accept() callback errno %d\n",errno);

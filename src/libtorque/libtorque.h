@@ -9,6 +9,7 @@ extern "C" {
 
 struct itimerspec;
 struct libtorque_ctx;
+struct libtorque_cbctx;
 
 // Initialize the library, returning 0 on success. No libtorque functions may
 // be called before a successful call to libtorque_init(). libtorque_init() may
@@ -41,7 +42,7 @@ struct libtorque_ctx *libtorque_init(void)
 	__attribute__ ((malloc));
 
 typedef struct torquercbstate {
-	void *torquestate;
+	struct libtorque_cbctx *torquectx;
 	void *rxbuf;
 	void *cbstate;
 } torquercbstate;

@@ -90,6 +90,11 @@ typedef struct libtorque_rxbuf {
 	size_t bufate;			// how much input the client's released
 } libtorque_rxbuf;
 
+typedef struct libtorque_cbctx {
+	struct libtorque_ctx *ctx;
+	void *cbstate;
+} libtorque_cbctx;
+
 // Whenever a field is added to this structure, make sure it's
 //  a) initialized in create_libtorque_ctx(), and
 //  b) free()d (and reset) in the appropriate cleanup
