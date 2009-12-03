@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <getopt.h>
@@ -13,20 +14,19 @@
 #include <libtorque/libtorque.h>
 
 static int
-conn_handler(int fd __attribute__ ((unused)),torquercbstate *v){
-	const char *buf;
-	size_t len;
+conn_handler(int fd,torquercbstate *v __attribute__ ((unused))){
+	struct sockaddr_in sina;
+	socklen_t slen;
+	int sd;
 
-	buf = rxbuffer_valid(v->rxbuf,&len);
-	if(len == 0){
-		// fprintf(stdout,"[%4d] closed\n",fd);
-		return -1;
-	}
-	/*if(ssl_tx(v->torquestate,buf,len) < (int)len){
-		return -1;
-	}*/
-	fprintf(stdout,"[%4d] %.*s\n",fd,(int)len,buf);
-	rxbuffer_advance(v->rxbuf,len);
+	fprintf(stdout,"Got a connection on %d\n",fd);
+	do{
+		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) >= 0){
+			fprintf(stdout,"Got new connection on sd %d\n",sd);
+			close(sd); // FIXME
+		}
+	}while(errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK);
+	fprintf(stdout,"Returning from accept() callback errno %d\n",errno);
 	return 0;
 }
 
@@ -148,6 +148,7 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't create server sd\n");
 		goto err;
 	}
+	printf("Registering server sd %d, port %hu\n",sd,ntohs(sin.sin_port));
 	if(libtorque_addfd(ctx,sd,conn_handler,NULL,NULL)){
 		fprintf(stderr,"Couldn't add server sd %d\n",sd);
 		goto err;
