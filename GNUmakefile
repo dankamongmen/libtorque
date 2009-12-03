@@ -134,8 +134,8 @@ SSLSRVOBJ:=$(addprefix $(OUT)/,$(SSLSRVSRC:%.c=%.o))
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
-TESTBINS:=echoserver
-BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(SSLSRV) $(TESTBINS))
+TESTBINS:=$(addprefix $(BINOUT)/,echoserver) # FIXME autodiscover these
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(SSLSRV))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
@@ -225,7 +225,7 @@ all: test docs
 
 docs: $(DOCS)
 
-test: $(BINS) $(LIBS) testarchdetect
+test: $(BINS) $(LIBS) $(TESTBINS) testarchdetect
 
 testarchdetect: $(BINOUT)/$(ARCHDETECT)
 	@echo -n "Testing $(<F): "
