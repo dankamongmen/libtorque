@@ -55,13 +55,13 @@ typedef struct torquercbstate {
 typedef int (*libtorquercb)(int,torquercbstate *);
 typedef int (*libtorquewcb)(int,void *);
 
-// Invoke the callback upon receipt of the specified signals.
+// Invoke the callback upon receipt of any of the specified signals.
 int libtorque_addsignal(struct libtorque_ctx *,const sigset_t *,libtorquercb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2,3)));
 
-// After a minimum time interval, invoke the callback as soon as possible
+// After a minimum time interval, invoke the callback as soon as possible.
 int libtorque_addtimer(struct libtorque_ctx *,const struct itimerspec *,libtorquercb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
@@ -72,6 +72,12 @@ int libtorque_addfd(struct libtorque_ctx *,int,libtorquercb,libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
+
+// Watch for events on the specified path, and invoke the callback.
+int libtorque_addpath(struct libtorque_ctx *,const char *,libtorquercb,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1,2,3)));
 
 #ifndef LIBTORQUE_WITHOUT_SSL
 #include <openssl/ssl.h>

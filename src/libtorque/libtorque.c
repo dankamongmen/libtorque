@@ -5,6 +5,7 @@
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/events/fd.h>
+#include <libtorque/events/path.h>
 #include <libtorque/events/timer.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/events/sysdep.h>
@@ -130,6 +131,14 @@ int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquercb rx,
 		return -1;
 	}
 	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,state)){
+		return -1;
+	}
+	ctx->ev = ctx->ev->nextev;
+	return 0;
+}
+
+int libtorque_addpath(libtorque_ctx *ctx,const char *path,libtorquercb rx,void *state){
+	if(add_fswatch_to_evhandler(ctx->ev,path,rx,state)){
 		return -1;
 	}
 	ctx->ev = ctx->ev->nextev;
