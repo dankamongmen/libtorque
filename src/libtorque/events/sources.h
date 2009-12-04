@@ -86,11 +86,11 @@ static inline int
 handle_evsource_read(libtorque_ctx *ctx,evsource *evs,int n){
 	libtorque_cbctx torquectx = {
 		.ctx = ctx,
-		.cbstate = evs[n].cbctx,
 	};
 	torquercbstate rcb = {
 		.torquectx = &torquectx,
 		.cbstate = evs[n].cbstate,
+		.rxbuf = evs[n].cbctx,
 	};
 
 	if(evs[n].rxfxn){
