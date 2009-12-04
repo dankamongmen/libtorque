@@ -1,6 +1,7 @@
 #ifndef LIBTORQUE_WITHOUT_SSL
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <arpa/inet.h>
@@ -135,8 +136,10 @@ openssl_verify_callback(int preverify_ok,X509_STORE_CTX *xctx __attribute__ ((un
 	return preverify_ok;
 }
 
+// This is currently server-oriented. Provide client functionality also FIXME.
 SSL_CTX *libtorque_ssl_ctx(const char *certfile,const char *keyfile,
 			const char *cafile,unsigned cliver){
+	unsigned char sessionid[64 / CHAR_BIT]; // FIXME really...? REALLY?!?
 	SSL_CTX *ret;
 
 	// Need to accept SSLv2, SSLv3, and TLSv1 ClientHellos if we want
@@ -144,7 +147,18 @@ SSL_CTX *libtorque_ssl_ctx(const char *certfile,const char *keyfile,
 	if((ret = SSL_CTX_new(SSLv23_method())) == NULL){
 		return NULL;
 	}
+	// But we do not want to actually serve insecure SSLv2.
 	if(!(SSL_CTX_set_options(ret,SSL_OP_NO_SSLv2) & SSL_OP_NO_SSLv2)){
+		SSL_CTX_free(ret);
+		return NULL;
+	}
+	// Create a pseudorandom SessionID (and thus verify RNG functionality).
+	if(RAND_pseudo_bytes(sessionid,sizeof(sessionid))){
+		SSL_CTX_free(ret);
+		return NULL;
+	}
+	// Enable SSL session resumption by setting a per-libtorque SessionID.
+	if(SSL_CTX_set_session_id_context(ret,sessionid,sizeof(sessionid)) != 1){
 		SSL_CTX_free(ret);
 		return NULL;
 	}
