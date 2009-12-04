@@ -41,8 +41,13 @@ conn_handler(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	fprintf(stdout,"Got a connection on %d\n",fd);
 	do{
 		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) >= 0){
+			int flags;
+
 			fprintf(stdout,"Got new connection on sd %d\n",sd);
-			if(libtorque_addfd(cbctx->ctx,sd,echo_server,NULL,NULL)){
+			if(((flags = fcntl(sd,F_GETFL)) < 0) ||
+					fcntl(sd,F_SETFL,flags | (long)O_NONBLOCK)){
+				close(sd);
+			}else if(libtorque_addfd(cbctx->ctx,sd,echo_server,NULL,NULL)){
 				fprintf(stderr,"Couldn't add client sd %d\n",sd);
 				close(sd);
 			}
