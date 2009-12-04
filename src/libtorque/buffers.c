@@ -18,6 +18,12 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 	int r;
 
 	do{
+		if(rxb->buftot - rxb->bufoff == 0){
+			if(callback(rxb,fd,cbctx,cbstate)){
+				return -1;
+			}
+			// FIXME if no space was cleared, grow that fucker
+		}
 		if((r = read(fd,rxb->buffer + rxb->bufate,rxb->buftot - rxb->bufoff)) > 0){
 			rxb->bufoff += r;
 		}else if(r == 0){
