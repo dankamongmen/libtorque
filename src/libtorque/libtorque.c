@@ -182,7 +182,7 @@ int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 	if((cbs = create_ssl_cbstate(ctx,sslctx,state,rx,tx)) == NULL){
 		return -1;
 	}
-	if(libtorque_addfd(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){
+	if(libtorque_addfd_unbuffered(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){
 		free_ssl_cbstate(cbs);
 		return -1;
 	}
