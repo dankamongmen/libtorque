@@ -27,7 +27,6 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	if(write(fd,buf,len) < (int)len){
 		return -1; // FIXME
 	}
-	fprintf(stdout,"[%4d] %.*s\n",fd,(int)len,buf);
 	rxbuffer_advance(cbctx->rxbuf,len);
 	return 0;
 }
