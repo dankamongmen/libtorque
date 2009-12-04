@@ -57,7 +57,8 @@ rxbuffer_valid(const libtorque_rxbuf *rxb,size_t *valid){
 	return rxb->buffer + rxb->bufate;
 }
 
-int buffered_rxfxn(int,libtorque_cbctx *,void *);
+int buffered_rxfxn(int,libtorque_cbctx *,void *)
+	__attribute__ ((nonnull(2)));
 
 #ifndef LIBTORQUE_WITHOUT_SSL
 #include <openssl/ssl.h>
