@@ -90,9 +90,21 @@ libtorque_init_sigmasked(void){
 }
 
 libtorque_ctx *libtorque_init(void){
+	struct sigaction oldact;
 	libtorque_ctx *ret;
 	sigset_t old,add;
 
+	// If SIGPIPE isn't being handled or at least ignored, start ignoring
+	// it (don't blow away a preexisting handler, though).
+	if(sigaction(SIGPIPE,NULL,&oldact)){
+		return NULL;
+	}
+	if(oldact.sa_handler == SIG_DFL){
+		oldact.sa_handler = SIG_IGN;
+		if(sigaction(SIGPIPE,&oldact,NULL)){
+			return NULL;
+		}
+	}
 	if(sigemptyset(&add) || sigaddset(&add,EVTHREAD_SIGNAL)
 			|| sigaddset(&add,EVTHREAD_TERM)){
 		return NULL;
