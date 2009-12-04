@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <libtorque/buffers.h>
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
@@ -125,12 +126,32 @@ int libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
 	return 0;
 }
 
-int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquercb rx,
+int libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
 				libtorquewcb tx,void *state){
 	if(fd < 0){
 		return -1;
 	}
-	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,state)){
+	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,NULL,state)){
+		return -1;
+	}
+	ctx->ev = ctx->ev->nextev;
+	return 0;
+}
+
+// We only currently provide one buffering scheme. When that changes, we still
+// won't want to expose anything more than necessary to applications...
+int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquercb rx,
+				libtorquewcb tx,void *state){
+	libtorque_rxbuf *rxbuf;
+
+	if(fd < 0){
+		return -1;
+	}
+	if((rxbuf = create_rxbuffer()) == NULL){
+		return -1;
+	}
+	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,rxbuf,state)){
+		free_rxbuffer(rxbuf);
 		return -1;
 	}
 	ctx->ev = ctx->ev->nextev;

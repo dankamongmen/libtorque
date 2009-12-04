@@ -12,7 +12,7 @@ struct evectors;
 struct evhandler;
 
 int add_fd_to_evhandler(struct evhandler *,int,libtorquercb,
-						libtorquewcb,void *)
+				libtorquewcb,void *,void *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull (1)));
 

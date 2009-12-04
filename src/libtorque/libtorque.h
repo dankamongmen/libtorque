@@ -74,6 +74,14 @@ int libtorque_addfd(struct libtorque_ctx *,int,libtorquercb,libtorquewcb,void *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
+// The same as libtorque_addfd_unbuffered, but manage buffering in the
+// application, calling back immediately on all events.
+int libtorque_addfd_unbuffered(struct libtorque_ctx *,int,libtorquercb,
+					libtorquewcb,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)));
+
 // Watch for events on the specified path, and invoke the callback.
 int libtorque_addpath(struct libtorque_ctx *,const char *,libtorquercb,void *)
 	__attribute__ ((visibility("default")))

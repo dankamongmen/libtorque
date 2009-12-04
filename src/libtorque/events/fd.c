@@ -47,7 +47,7 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn){
 }
 
 int add_fd_to_evhandler(evhandler *eh,int fd,libtorquercb rfxn,
-				libtorquewcb tfxn,void *cbstate){
+			libtorquewcb tfxn,void *cbctx,void *cbstate){
 	EVECTOR_AUTOS(1,ev,evbase);
 
 	if((unsigned)fd >= eh->evsources->fdarraysize){
@@ -56,6 +56,6 @@ int add_fd_to_evhandler(evhandler *eh,int fd,libtorquercb rfxn,
 	if(add_fd_event(&ev,fd,rfxn,tfxn)){
 		return -1;
 	}
-	setup_evsource(eh->evsources->fdarray,fd,rfxn,tfxn,cbstate);
+	setup_evsource(eh->evsources->fdarray,fd,rfxn,tfxn,cbctx,cbstate);
 	return flush_evector_changes(eh,&ev);
 }

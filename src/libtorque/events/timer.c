@@ -38,7 +38,7 @@ int add_timer_to_evhandler(evhandler *eh,const struct itimerspec *t,
 		close(fd);
 		return -1;
 	}
-	if(add_fd_to_evhandler(eh,fd,rfxn,NULL,cbstate)){
+	if(add_fd_to_evhandler(eh,fd,rfxn,NULL,NULL,cbstate)){
 		close(fd);
 		return -1;
 	}

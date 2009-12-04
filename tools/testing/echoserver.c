@@ -15,7 +15,20 @@
 
 static int
 echo_server(int fd,torquercbstate *v){
-	fprintf(stdout,"Data on %d (%p)\n",fd,v);
+	const char *buf;
+	size_t len;
+
+	fprintf(stdout,"Received data on %d\n",fd);
+	buf = rxbuffer_valid(v->rxbuf,&len);
+	if(len == 0){
+		fprintf(stdout,"[%4d] closed\n",fd);
+		return -1;
+	}
+	if(write(fd,buf,len) < (int)len){
+		return -1; // FIXME
+	}
+	fprintf(stdout,"[%4d] %.*s\n",fd,(int)len,buf);
+	rxbuffer_advance(v->rxbuf,len);
 	return 0;
 }
 

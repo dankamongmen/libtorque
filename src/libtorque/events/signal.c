@@ -64,7 +64,7 @@ int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
 		if((fd = signalfd(-1,sigs,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			return -1;
 		}
-		if(add_fd_to_evhandler(eh,fd,signalfd_demultiplexer,NULL,eh)){
+		if(add_fd_to_evhandler(eh,fd,signalfd_demultiplexer,NULL,NULL,eh)){
 			close(fd);
 			return -1;
 		}
@@ -95,7 +95,8 @@ int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
 #endif
 	for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
 		if(sigismember(sigs,z)){
-			setup_evsource(eh->evsources->sigarray,z,rfxn,NULL,cbstate);
+			setup_evsource(eh->evsources->sigarray,z,rfxn,
+					NULL,NULL,cbstate);
 		}
 	}
 	return 0;

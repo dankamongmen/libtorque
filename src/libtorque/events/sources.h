@@ -16,7 +16,7 @@ extern "C" {
 typedef struct evsource {
 	libtorquercb rxfxn;
 	libtorquewcb txfxn;
-	void *cbstate;
+	void *cbctx,*cbstate;	// cbctx is ours, cbstate is the client's
 } evsource;
 
 struct evectors;
@@ -40,7 +40,8 @@ evsource *create_evsources(unsigned)
 // having the fd cleared, we design to not care about it at all -- there is no
 // feedback from the callback functions, and nothing needs to call anything
 // upon closing an fd.
-static inline void setup_evsource(evsource *,int,libtorquercb,libtorquewcb,void *)
+static inline void setup_evsource(evsource *,int,libtorquercb,libtorquewcb,
+					void *,void *)
 	__attribute__ ((nonnull(1)));
 
 // We need no locking here, because the only time someone should call
@@ -49,9 +50,11 @@ static inline void setup_evsource(evsource *,int,libtorquercb,libtorquewcb,void 
 // already being used, it must have been removed from the event queue (by
 // guarantees of the epoll/kqueue mechanisms), and thus no events exist for it.
 static inline void
-setup_evsource(evsource *evs,int n,libtorquercb rfxn,libtorquewcb tfxn,void *v){
+setup_evsource(evsource *evs,int n,libtorquercb rfxn,libtorquewcb tfxn,
+		void *ctx,void *v){
 	evs[n].rxfxn = rfxn;
 	evs[n].txfxn = tfxn;
+	evs[n].cbctx = ctx;
 	evs[n].cbstate = v;
 }
 
@@ -83,6 +86,7 @@ static inline int
 handle_evsource_read(libtorque_ctx *ctx,evsource *evs,int n){
 	libtorque_cbctx torquectx = {
 		.ctx = ctx,
+		.cbstate = evs[n].cbctx,
 	};
 	torquercbstate rcb = {
 		.torquectx = &torquectx,

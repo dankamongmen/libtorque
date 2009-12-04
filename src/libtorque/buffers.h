@@ -15,6 +15,9 @@ rxbuffer_advance(libtorque_rxbuf *rxb,size_t s){
 
 #define RXBUFSIZE (16 * 1024)
 
+static inline int initialize_rxbuffer(libtorque_rxbuf *)
+	__attribute__ ((warn_unused_result));
+
 static inline int
 initialize_rxbuffer(libtorque_rxbuf *rxb){
 	if( (rxb->buffer = malloc(RXBUFSIZE)) ){
@@ -23,6 +26,23 @@ initialize_rxbuffer(libtorque_rxbuf *rxb){
 		return 0;
 	}
 	return -1;
+}
+
+static inline libtorque_rxbuf *create_rxbuffer(void)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((malloc));
+
+static inline libtorque_rxbuf *
+create_rxbuffer(void){
+	libtorque_rxbuf *ret;
+
+	if( (ret = malloc(sizeof(*ret))) ){
+		if(initialize_rxbuffer(ret)){
+			free(ret);
+			ret = NULL;
+		}
+	}
+	return ret;
 }
 
 static inline void
