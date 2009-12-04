@@ -1,14 +1,8 @@
-============================================
-libtorque, a multithreaded I/O event library
-Copyright © 2009 Nick Black <dank@qemfd.net>
-Render this document with fixed-width fonts.
-============================================
-
-Wiki - http://dank.qemfd.net/dankwiki/index.php/Libtorque
-Mailing list - http://groups.google.com/group/libtorque-devel
-GitHub project page - http://github.com/dankamongmen/libtorque
-Primary git repository - git://github.com/dankamongmen/libtorque.git
-Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
+                       ============================================
+                       libtorque, a multithreaded I/O event library
+                       Copyright © 2009 Nick Black <dank@qemfd.net>
+                       Render this document with fixed-width fonts.
+                       ============================================
 ___________________________________________________________________
 888 ,e, 888        d8           "...tear the roof off the sucka..."
 888  "  888 88e   d88    e88 88e  888,8,  e88 888 8888 8888  ,e e,
@@ -17,6 +11,28 @@ ___________________________________________________________________
 888 888 888 88"   888    "88 88"  888     "88 888  "88 88"   "YeeP"
 _____________________________________________ 888 _________________
 continuation-based unix i/o for manycore numa\888/© nick black 2009
+
+Wiki - http://dank.qemfd.net/dankwiki/index.php/Libtorque
+Mailing list - http://groups.google.com/group/libtorque-devel
+GitHub project page - http://github.com/dankamongmen/libtorque
+Primary git repository - git://github.com/dankamongmen/libtorque.git
+Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
+
+ I. History and licensing
+ II. Minimum requirements
+  1. architecture
+  2. operating system
+  3. compiler
+  4. libc/pthreads
+  5. cpuset
+  6. numa
+  7. doc
+  8. misc
+ III. Building libtorque
+ IV. Design issues
+ V. Writing libtorque applications
+  1. overview
+  2. common mistakes
 
 ----------------------------------------------------------------libtorque-----
 -=+ I. History and licensing +=-
@@ -222,3 +238,122 @@ changing build parameters, as noted above), or (re)moving source files.
   If no more than one thread can wait for an event, and either one-shot
   handling or edge-triggering is used, a majority of locking and possible
   contention can be excised from the core.
+
+----------------------------------------------------------------libtorque-----
+-=+ V. Writing libtorque applications +=-
+----------------------------------------------------------------libtorque-----
+
+--overview------------------------------------------------------------------
+
+The only interfaces available to users of libtorque are those in libtorque.h,
+which attempts to be authoritative and current regarding technical details.
+Numerous example applications live in tools/testing/ and various src/
+directories. That having been said:
+
+ - A libtorque_ctx is required to use any libtorque functionality. A program
+   may use more than one libtorque_ctx, although this constrains event handling
+   and is thus not generally optimal. This support exists because:
+
+    - multiple libraries used by an app might each use libtorque
+    - multiple-architecture processes might one day need it
+    - it seems unlikely that refusing to support multiple contexts would lead
+       to any bugs being discovered more quickly
+   
+   This is not primarily a security- or billing-related issue; to effect
+   QoS and accounting, multiple libtorque applications ought be run in distinct
+   operating system containers. Alternatively, use libtorque's priority system
+   in conjunction with handrolled stats.
+
+ - A libtorque_ctx can be created only via libtorque_init(). It cannot be used
+   after passing it to libtorque_stop(). Side-effects of libtorque_init()
+   include:
+
+   - (re-)detection of system topology and processor details
+   - populating allocated processors with an event thread each (note that
+      N libtorque contexts in a process lead to N threads per processor,
+      assuming the process's cpuset doesn't change between initializations)
+   - SIGPIPE is ignored if it was previously handled via the default action
+   - SIGTERM and SIGURG will be intercepted by (some instance of) libtorque
+      subject to operating system-specific rules. See kqueue(7) or signalfd(2)
+      (this also applies to any signals registered via libtorque_addsignal())
+   - allocation of moderate amounts of memory and a handful of file descriptors
+
+ - Add event sources to the libtorque context via libtorque_add*(). Fundamental
+   event sources include:
+
+    - file descriptors (rx / tx)
+    - signals (rx)
+    - timers (absolute or relative; see timerfd(2) or kqueue(7))
+    - filesystem events (see inotify(7) or kqueue(7))
+    - pthread condition variables
+
+   Synthesized atop these are numerous derived sources (event systems)...
+
+    - SSLv3/TLSv1 servers and clients
+    - DNS queries
+    - Network events (via netlink/PF_ROUTE sockets)
+
+   ...and also stream transforms:
+
+    - SSLv3/TLSv1
+    - gzip/bzip2
+    - architecture-adaptive buffering
+
+   Event sources may be registered with more than one libtorque context; the
+   events will be repeated to (and thus handled by) all associated contexts.
+
+ - Once registered, libtorque will immediately begin facilitating callbacks for
+   the specified event. No more than one libtorque thread will dispatch a given
+   event's handler at once (though subsequent events may be handled by any
+   thread). Locking is thus only necessary for mutable data referenced by
+   multiple events' handlers (including, for instance, thread-unsafe libraries
+   called by potentially-concurrent handlers).
+
+   This is efficiently implemented via exclusive use of edge-triggered I/O
+   notification (we'd otherwise need locks in the event dispatching).
+   Edge-triggered I/O is covered in epoll_wait(2) and kqueue(2); most important
+   to note is that all available data must be read in each callback, or events
+   will cease to be generated. This means every dequeuing operation (read(2),
+   accept(2), etc) must be repeated until either:
+
+    - An attempt to dequeue returns with EAGAIN or EWOULDBLOCK. Further
+       read-type events will be processed and dispatched as they occur.
+    - Further handling would block on some other resource, a mutex for instance
+       or perhaps buffer space. Ensure appropriate related continuations are
+       registered, and compose a read-type callback across them (this is the
+       most general definition of an event queue as mentioned in epoll_wait(2)).
+    - EOF is reached (read() returns 0). Either close(2) the descriptor or, if
+       still writing, ensure appropriate related continuations are registered,
+       as no more read-type events will be dispatched.
+    - The connection is invalidated, in which case it must be close(2)d lest it
+       possibly be leaked (there is no assurance of further read-type events).
+
+ - It is (currently) critical that handlers not block. Only non-blocking or
+   asynchronous I/O operations ought be used, and preferably only file
+   descriptors explicitly marked non-blocking. Rather than sleeping on a
+   contended mutex, update the continuation and yield the processing context.
+   Remember that non-blocking operation is typically meaningless in the context
+   of a disk-backed read(2); asynchronous I/O is thus preferable for disk reads
+   (especially since a "non-blocking" read retried or failed at the block layer
+   can block arbitrarily). Major computations upon which handling is dependent
+   ought be implemented via libtorque's opportunistic or dedicated
+   compute-thread infrastructure and more fine-grained continuations.
+
+ - Handlers can themselves call libtorque functions (even libtorque_stop()),
+   even on their own contexts (this is of course necessary for any kind of
+   accept(2)ing socket).
+
+--common mistakes-----------------------------------------------------------
+
+ - Using libtorque_addfd() for a listen(2)ing socket. The proper activation is
+   libtorque_addfd_unbuffered(). The accept(2)ing callback will never be
+   invoked from a default (buffered) fd.
+
+ - Failing to account for EINTR or short returns. Whether a system call
+   interrupted by signal delivery is automatically restarted depends on the
+   operating system and libc, the capability operand, the system call, and the
+   current signal-handling state. Since libtorque intercepts signals prior to
+   uninterested threads' receipt (see signalfd(2) and kqueue(2)), applications
+   needn't worry about yielding on EINTR, nor unbounded looping thereon. Also,
+   EINTR is indicated only when no data had been moved upon signal delivery; a
+   short result is returned otherwise.
