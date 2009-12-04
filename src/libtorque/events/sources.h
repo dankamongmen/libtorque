@@ -89,7 +89,6 @@ static inline int handle_evsource_write(evsource *,int)
 
 static inline int
 handle_evsource_read(evsource *evs,int n){
-	printf("handle read on %d\n",n);
 	if(evs[n].rxfxn){
 		return evs[n].rxfxn(n,&evs[n].cbctx,evs[n].cbstate);
 	}

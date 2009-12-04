@@ -70,7 +70,8 @@ int libtorque_addfd(struct libtorque_ctx *,int,libtorquercb,libtorquewcb,void *)
 	__attribute__ ((nonnull(1)));
 
 // The same as libtorque_addfd_unbuffered, but manage buffering in the
-// application, calling back immediately on all events.
+// application, calling back immediately on all events. This is (currently) the
+// preferred methodology for accept(2)ing sockets.
 int libtorque_addfd_unbuffered(struct libtorque_ctx *,int,libtorquercb,
 					libtorquewcb,void *)
 	__attribute__ ((visibility("default")))

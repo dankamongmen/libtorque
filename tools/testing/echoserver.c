@@ -171,7 +171,7 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	printf("Registering server sd %d, port %hu\n",sd,ntohs(sin.sin_port));
-	if(libtorque_addfd(ctx,sd,conn_handler,NULL,NULL)){
+	if(libtorque_addfd_unbuffered(ctx,sd,conn_handler,NULL,NULL)){
 		fprintf(stderr,"Couldn't add server sd %d\n",sd);
 		goto err;
 	}
