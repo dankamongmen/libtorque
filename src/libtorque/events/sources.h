@@ -14,9 +14,10 @@ extern "C" {
 // The alignment ought be determined at runtime based off L1 parameters, and
 // combined with software indexing FIXME.
 typedef struct evsource {
-	libtorquercb rxfxn;
-	libtorquewcb txfxn;
-	void *cbctx,*cbstate;	// cbctx is ours, cbstate is the client's
+	libtorquercb rxfxn;	// read-type event callback function
+	libtorquewcb txfxn;	// write-type event callback function
+	libtorque_cbctx cbctx;	// libtorque internal per-source state
+	void *cbstate;		// client per-source callback state
 } evsource;
 
 struct evectors;
@@ -41,7 +42,7 @@ evsource *create_evsources(unsigned)
 // feedback from the callback functions, and nothing needs to call anything
 // upon closing an fd.
 static inline void setup_evsource(evsource *,int,libtorquercb,libtorquewcb,
-					void *,void *)
+					libtorque_cbctx *,void *)
 	__attribute__ ((nonnull(1)));
 
 // We need no locking here, because the only time someone should call
@@ -51,10 +52,14 @@ static inline void setup_evsource(evsource *,int,libtorquercb,libtorquewcb,
 // guarantees of the epoll/kqueue mechanisms), and thus no events exist for it.
 static inline void
 setup_evsource(evsource *evs,int n,libtorquercb rfxn,libtorquewcb tfxn,
-		void *ctx,void *v){
+		libtorque_cbctx *ctx,void *v){
 	evs[n].rxfxn = rfxn;
 	evs[n].txfxn = tfxn;
-	evs[n].cbctx = ctx;
+	if(ctx){
+		evs[n].cbctx = *ctx;
+	}else{
+		memset(&evs[n].cbctx,0,sizeof(evs[n].cbctx));
+	}
 	evs[n].cbstate = v;
 }
 
@@ -74,27 +79,18 @@ set_evsource_tx(evsource *evs,int n,libtorquewcb tx){
 	evs[n].txfxn = tx;
 }
 
-static inline int handle_evsource_read(libtorque_ctx *,evsource *,int)
+static inline int handle_evsource_read(evsource *,int)
 	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull(1,2)));
+	__attribute__ ((nonnull(1)));
 
 static inline int handle_evsource_write(evsource *,int)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
 static inline int
-handle_evsource_read(libtorque_ctx *ctx,evsource *evs,int n){
-	libtorque_cbctx torquectx = {
-		.ctx = ctx,
-	};
-	torquercbstate rcb = {
-		.torquectx = &torquectx,
-		.cbstate = evs[n].cbstate,
-		.rxbuf = evs[n].cbctx,
-	};
-
+handle_evsource_read(evsource *evs,int n){
 	if(evs[n].rxfxn){
-		return evs[n].rxfxn(n,&rcb);
+		return evs[n].rxfxn(n,&evs[n].cbctx,evs[n].cbstate);
 	}
 	return -1;
 }

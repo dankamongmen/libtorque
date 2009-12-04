@@ -92,7 +92,8 @@ typedef struct libtorque_rxbuf {
 
 typedef struct libtorque_cbctx {
 	struct libtorque_ctx *ctx;
-	void *cbstate;
+	libtorque_rxbuf *rxbuf;		// FIXME
+	void *cbstate;			// arbitrary crap FIXME
 } libtorque_cbctx;
 
 // Whenever a field is added to this structure, make sure it's

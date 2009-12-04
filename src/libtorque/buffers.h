@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <stdlib.h>
 #include <libtorque/internal.h>
 
 // The simplest receive buffer.
@@ -55,6 +56,8 @@ rxbuffer_valid(const libtorque_rxbuf *rxb,size_t *valid){
 	*valid = rxb->bufoff - rxb->bufate;
 	return rxb->buffer + rxb->bufate;
 }
+
+int buffered_rxfxn(int,libtorque_cbctx *,void *);
 
 #ifndef LIBTORQUE_WITHOUT_SSL
 #include <openssl/ssl.h>

@@ -128,10 +128,15 @@ int libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
 
 int libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
 				libtorquewcb tx,void *state){
+	libtorque_cbctx cbctx = {
+		.ctx = ctx,
+		.cbstate = NULL,
+	};
+
 	if(fd < 0){
 		return -1;
 	}
-	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,NULL,state)){
+	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,&cbctx,state)){
 		return -1;
 	}
 	ctx->ev = ctx->ev->nextev;
@@ -142,16 +147,19 @@ int libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
 // won't want to expose anything more than necessary to applications...
 int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquercb rx,
 				libtorquewcb tx,void *state){
-	libtorque_rxbuf *rxbuf;
+	libtorque_cbctx cbctx = {
+		.ctx = ctx,
+		.cbstate = rx,
+	};
 
 	if(fd < 0){
 		return -1;
 	}
-	if((rxbuf = create_rxbuffer()) == NULL){
+	if((cbctx.rxbuf = create_rxbuffer()) == NULL){
 		return -1;
 	}
-	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,rxbuf,state)){
-		free_rxbuffer(rxbuf);
+	if(add_fd_to_evhandler(ctx->ev,fd,buffered_rxfxn,tx,&cbctx,state)){
+		free_rxbuffer(cbctx.rxbuf);
 		return -1;
 	}
 	ctx->ev = ctx->ev->nextev;

@@ -14,26 +14,26 @@
 #include <libtorque/libtorque.h>
 
 static int
-echo_server(int fd,torquercbstate *v){
+echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	const char *buf;
 	size_t len;
 
-	fprintf(stdout,"Received data on %d\n",fd);
-	buf = rxbuffer_valid(v->rxbuf,&len);
+	buf = rxbuffer_valid(cbctx->rxbuf,&len);
 	if(len == 0){
 		fprintf(stdout,"[%4d] closed\n",fd);
 		return -1;
 	}
+	fprintf(stdout,"[%4d] Read %zu bytes\n",fd,len);
 	if(write(fd,buf,len) < (int)len){
 		return -1; // FIXME
 	}
 	fprintf(stdout,"[%4d] %.*s\n",fd,(int)len,buf);
-	rxbuffer_advance(v->rxbuf,len);
+	rxbuffer_advance(cbctx->rxbuf,len);
 	return 0;
 }
 
 static int
-conn_handler(int fd,torquercbstate *v){
+conn_handler(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	struct sockaddr_in sina;
 	socklen_t slen;
 	int sd;
@@ -42,7 +42,7 @@ conn_handler(int fd,torquercbstate *v){
 	do{
 		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) >= 0){
 			fprintf(stdout,"Got new connection on sd %d\n",sd);
-			if(libtorque_addfd(v->torquectx->ctx,sd,echo_server,NULL,NULL)){
+			if(libtorque_addfd(cbctx->ctx,sd,echo_server,NULL,NULL)){
 				fprintf(stderr,"Couldn't add client sd %d\n",sd);
 				close(sd);
 			}

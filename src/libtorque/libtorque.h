@@ -41,19 +41,14 @@ struct libtorque_ctx *libtorque_init(void)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
 
-typedef struct torquercbstate {
-	struct libtorque_cbctx *torquectx;
-	void *rxbuf;
-	void *cbstate;
-} torquercbstate;
-
 // Multiple threads may add event sources to a libtorque instance concurrently,
 // so long as they are not adding the same event source (ie, the callers must
 // be able to guarantee the signals, fds, whatever are not the same). The
 // registration implementation is lock- and indeed wait-free.
 
-// Read callbacks get a dyad: their opaque callback state, and our own.
-typedef int (*libtorquercb)(int,torquercbstate *);
+// Read callbacks get a triad: our callback state, and their own. Ours is just
+// as opaque to them as theirs is to us.
+typedef int (*libtorquercb)(int,struct libtorque_cbctx *,void *);
 typedef int (*libtorquewcb)(int,void *);
 
 // Invoke the callback upon receipt of any of the specified signals.

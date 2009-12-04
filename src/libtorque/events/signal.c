@@ -9,16 +9,16 @@
 #ifdef LIBTORQUE_LINUX
 #include <sys/signalfd.h>
 static int
-signalfd_demultiplexer(int fd,torquercbstate *cbstate){
-	evhandler *e = cbstate->cbstate;
+signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
+					void *cbstate){
 	struct signalfd_siginfo si;
+	evhandler *e = cbstate;
 	int ret = 0;
 	ssize_t r;
 
 	do{
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
-			ret |= handle_evsource_read(cbstate->torquectx->ctx,
-				e->evsources->sigarray,si.ssi_signo);
+			ret |= handle_evsource_read(e->evsources->sigarray,si.ssi_signo);
 			// FIXME do... what, exactly with ret?
 		}else if(r >= 0){
 			// FIXME stat short read! return -1?

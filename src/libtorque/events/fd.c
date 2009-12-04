@@ -47,7 +47,7 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn){
 }
 
 int add_fd_to_evhandler(evhandler *eh,int fd,libtorquercb rfxn,
-			libtorquewcb tfxn,void *cbctx,void *cbstate){
+			libtorquewcb tfxn,libtorque_cbctx *cbctx,void *cbstate){
 	EVECTOR_AUTOS(1,ev,evbase);
 
 	if((unsigned)fd >= eh->evsources->fdarraysize){

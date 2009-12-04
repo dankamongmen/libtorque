@@ -11,7 +11,7 @@
 static __thread evhandler *tsd_evhandler;
 
 static void
-handle_event(libtorque_ctx *ctx,evhandler *eh,const kevententry *e){
+handle_event(evhandler *eh,const kevententry *e){
 	int ret = 0;
 
 #ifdef LIBTORQUE_LINUX
@@ -19,7 +19,7 @@ handle_event(libtorque_ctx *ctx,evhandler *eh,const kevententry *e){
 #else
 	if(e->filter == EVFILT_READ){
 #endif
-		ret |= handle_evsource_read(ctx,eh->evsources->fdarray,KEVENTENTRY_FD(e));
+		ret |= handle_evsource_read(eh->evsources->fdarray,KEVENTENTRY_FD(e));
 	}
 #ifdef LIBTORQUE_LINUX
 	if(e->events & EPOLLOUT){
@@ -31,7 +31,8 @@ handle_event(libtorque_ctx *ctx,evhandler *eh,const kevententry *e){
 }
 
 static int
-rxsignal(int sig,torquercbstate *nullv __attribute__ ((unused))){
+rxsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
+				void *cbstate __attribute__ ((unused))){
 	if(sig == EVTHREAD_TERM){
 		void *ret = PTHREAD_CANCELED;
 		evhandler *e = tsd_evhandler;
@@ -52,10 +53,11 @@ rxsignal(int sig,torquercbstate *nullv __attribute__ ((unused))){
 		}
 		pthread_exit(ret);
 	}
+	// FIXME else?
 	return 0;
 }
 
-void event_thread(libtorque_ctx *ctx,evhandler *e){
+void event_thread(evhandler *e){
 	tsd_evhandler = e;
 	while(1){
 		int events;
@@ -68,9 +70,9 @@ void event_thread(libtorque_ctx *ctx,evhandler *e){
 		e->stats.events += events;
 		do{
 #ifdef LIBTORQUE_LINUX
-		handle_event(ctx,e,&PTR_TO_EVENTV(&e->evec)->events[--events]);
+		handle_event(e,&PTR_TO_EVENTV(&e->evec)->events[--events]);
 #else
-		handle_event(ctx,e,&PTR_TO_EVENTV(&e->evec)[--events]);
+		handle_event(e,&PTR_TO_EVENTV(&e->evec)[--events]);
 #endif
 		}while(events);
 		++e->stats.rounds;

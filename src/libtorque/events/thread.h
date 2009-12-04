@@ -27,7 +27,9 @@ evhandler *create_evhandler(struct evtables *)
 
 int destroy_evhandler(evhandler *);
 
-void event_thread(libtorque_ctx *,evhandler *) __attribute__ ((noreturn));
+void event_thread(evhandler *)
+	__attribute__ ((nonnull(1)))
+	__attribute__ ((noreturn));
 
 #ifdef __cplusplus
 }

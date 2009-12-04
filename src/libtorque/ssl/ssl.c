@@ -238,7 +238,7 @@ int ssl_tx(ssl_cbstate *ssl,const void *buf,int len){
 	return ret;
 }
 
-static int ssl_rxfxn(int,torquercbstate *);
+static int ssl_rxfxn(int,struct libtorque_cbctx *,void *);
 
 static int
 ssl_txrxfxn(int fd,void *cbs){
@@ -251,14 +251,10 @@ ssl_txrxfxn(int fd,void *cbs){
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) > 0){
 		libtorque_cbctx torquectx = {
 			.ctx = NULL, // FIXME
+			.rxbuf = &sc->rxb,
 			.cbstate = sc,
 		};
-		torquercbstate rcb = {
-			.torquectx = &torquectx,
-			.rxbuf = &sc->rxb,
-			.cbstate = sc->cbstate,
-		};
-		if(sc->rxfxn(fd,&rcb)){
+		if(sc->rxfxn(fd,&torquectx,sc->cbstate)){
 			free_ssl_cbstate(sc);
 			close(fd);
 			return -1;
@@ -279,8 +275,8 @@ ssl_txrxfxn(int fd,void *cbs){
 }
 
 static int
-ssl_rxfxn(int fd,torquercbstate *cbs){
-	ssl_cbstate *sc = cbs->cbstate;
+ssl_rxfxn(int fd,struct libtorque_cbctx *cbctx,void *cbstate){
+	ssl_cbstate *sc = cbctx->cbstate;
 	int r,err;
 
 	if(sc->rxfxn == NULL){
@@ -291,14 +287,10 @@ ssl_rxfxn(int fd,torquercbstate *cbs){
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) >= 0){
 		libtorque_cbctx torquectx = {
 			.ctx = NULL, // FIXME
+			.rxbuf = &sc->rxb,
 			.cbstate = sc,
 		};
-		torquercbstate rcb = {
-			.torquectx = &torquectx,
-			.rxbuf = &sc->rxb,
-			.cbstate = sc->cbstate,
-		};
-		if(sc->rxfxn(fd,&rcb)){
+		if(sc->rxfxn(fd,&torquectx,cbstate)){
 			free_ssl_cbstate(sc);
 			close(fd);
 			return -1;
@@ -331,8 +323,8 @@ ssl_txfxn(int fd,void *cbs){
 static int accept_conttxfxn(int,void *);
 
 static int
-accept_contrxfxn(int fd,torquercbstate *cbs){
-	ssl_cbstate *sc = cbs->cbstate;
+accept_contrxfxn(int fd,struct libtorque_cbctx *cbctx,void *cbstate __attribute__ ((unused))){
+	ssl_cbstate *sc = cbctx->cbstate;
 	int ret;
 
 	if((ret = SSL_accept(sc->ssl)) == 1){
@@ -449,8 +441,8 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 	return 0;
 }
 
-int ssl_accept_rxfxn(int fd,torquercbstate *cbs){
-	const ssl_cbstate *sc = cbs->cbstate;
+int ssl_accept_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate __attribute__ ((unused))){
+	const ssl_cbstate *sc = cbctx->cbstate;
 	struct sockaddr_in sina;
 	socklen_t slen;
 	int sd;
