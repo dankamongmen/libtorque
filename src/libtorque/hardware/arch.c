@@ -191,6 +191,8 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 		goto err;
 	}
 	memset(topmap,0,cpucount * sizeof(*topmap));
+	// FIXME parallelize this (see bug 24) -- move the code before
+	// spawn_thread() into it, and make it thread safe.
 	for(z = 0, aid = 0 ; z < cpucount ; ++z){
 		libtorque_cput cpudetails;
 		unsigned thread,core,pkg;
