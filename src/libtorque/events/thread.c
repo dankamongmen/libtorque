@@ -36,13 +36,20 @@ rxsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 	if(sig == EVTHREAD_TERM){
 		void *ret = PTHREAD_CANCELED;
 		evhandler *e = tsd_evhandler;
-		struct rusage ru;
 		int r;
 
+		// FIXME this is kind of lame. I'd like to emulate
+		// RUSAGE_THREAD when it's unavailable, and either way the test
+		// ought be based on whether RUSAGE_THREAD is *expected*, not
+		// *defined* (Linux 2.6.26+) for future-proofing.
+#ifdef RUSAGE_THREAD
+		struct rusage ru;
 		getrusage(RUSAGE_THREAD,&ru);
-		--e->stats.events;
 		e->stats.utimeus = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
 		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
+#endif
+		e->stats.utimeus = e->stats.stimeus = 0;
+		--e->stats.events;
 		pthread_kill(e->nexttid,EVTHREAD_TERM);
 		// We rely on EDEADLK to cut off our circular join()list
 		if((r = pthread_join(e->nexttid,&ret)) && r != EDEADLK){
