@@ -6,6 +6,7 @@
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/events/fd.h>
+#include <libtorque/events/evq.h>
 #include <libtorque/events/path.h>
 #include <libtorque/events/timer.h>
 #include <libtorque/hardware/arch.h>
@@ -48,12 +49,23 @@ initialize_etables(evtables *e){
 	return 0;
 }
 
+static void
+free_etables(evtables *e){
+	destroy_evsources(e->sigarray);
+	destroy_evsources(e->fdarray);
+}
+
 static inline libtorque_ctx *
 create_libtorque_ctx(void){
 	libtorque_ctx *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
 		if(initialize_etables(&ret->eventtables)){
+			free(ret);
+			return NULL;
+		}
+		if(initialize_evq(&ret->evq)){
+			free_etables(&ret->eventtables);
 			free(ret);
 			return NULL;
 		}
@@ -69,8 +81,7 @@ create_libtorque_ctx(void){
 
 static void
 free_libtorque_ctx(libtorque_ctx *ctx){
-	destroy_evsources(ctx->eventtables.sigarray);
-	destroy_evsources(ctx->eventtables.fdarray);
+	free_etables(&ctx->eventtables);
 	free_architecture(ctx);
 	free(ctx);
 }
