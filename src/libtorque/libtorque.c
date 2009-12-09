@@ -79,11 +79,15 @@ create_libtorque_ctx(void){
 	return ret;
 }
 
-static void
+static int
 free_libtorque_ctx(libtorque_ctx *ctx){
+	int ret = 0;
+
 	free_etables(&ctx->eventtables);
 	free_architecture(ctx);
+	ret |= destroy_evq(&ctx->evq);
 	free(ctx);
+	return ret;
 }
 
 static libtorque_ctx *
@@ -218,7 +222,7 @@ int libtorque_stop(libtorque_ctx *ctx){
 
 	if(ctx){
 		ret |= reap_threads(ctx);
-		free_libtorque_ctx(ctx);
+		ret |= free_libtorque_ctx(ctx);
 	}
 	return 0;
 }
