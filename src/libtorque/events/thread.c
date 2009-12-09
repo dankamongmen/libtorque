@@ -169,8 +169,7 @@ initialize_evhandler(evhandler *e,evtables *evsources,int fd){
 	return 0;
 }
 
-evhandler *create_evhandler(evtables *evsources){
-	evhandler *ret;
+int create_efd(void){
 	int fd,flags;
 
 // Until the epoll API stabilizes a bit... :/
@@ -182,32 +181,41 @@ evhandler *create_evhandler(evtables *evsources){
 #define SAFE_EPOLL_CLOEXEC NR_OPEN
 #endif
 	if((fd = epoll_create(SAFE_EPOLL_CLOEXEC)) < 0){
-		return NULL;
+		return -1;
 	}
 	if(SAFE_EPOLL_CLOEXEC == 0){
 		if(((flags = fcntl(fd,F_GETFD)) < 0) ||
 				fcntl(fd,F_SETFD,flags | FD_CLOEXEC)){
 			close(fd);
-			return NULL;
+			return -1;
 		}
 	}
 #undef SAFE_EPOLL_CLOEXEC
 #elif defined(LIBTORQUE_FREEBSD)
 	if((fd = kqueue()) < 0){
-		return NULL;
+		return -1;
 	}
 	if(((flags = fcntl(fd,F_GETFD)) < 0) || fcntl(fd,F_SETFD,flags | FD_CLOEXEC)){
 		close(fd);
-		return NULL;
+		return -1;
 	}
 #endif
-	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_evhandler(ret,evsources,fd) == 0){
-			return ret;
+	return fd;
+}
+
+evhandler *create_evhandler(evtables *evsources){
+	evhandler *ret;
+	int fd;
+
+	if((fd = create_efd()) >= 0){
+		if( (ret = malloc(sizeof(*ret))) ){
+			if(initialize_evhandler(ret,evsources,fd) == 0){
+				return ret;
+			}
+			free(ret);
 		}
-		free(ret);
+		close(fd);
 	}
-	close(fd);
 	return NULL;
 }
 

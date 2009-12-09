@@ -25,6 +25,9 @@ evhandler *create_evhandler(struct evtables *)
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));
 
+int create_efd(void)
+	__attribute__ ((warn_unused_result));
+
 int destroy_evhandler(evhandler *);
 
 void event_thread(evhandler *)
