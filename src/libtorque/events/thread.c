@@ -203,18 +203,14 @@ int create_efd(void){
 	return fd;
 }
 
-evhandler *create_evhandler(evtables *evsources){
+evhandler *create_evhandler(evtables *evsources,int fd){
 	evhandler *ret;
-	int fd;
 
-	if((fd = create_efd()) >= 0){
-		if( (ret = malloc(sizeof(*ret))) ){
-			if(initialize_evhandler(ret,evsources,fd) == 0){
-				return ret;
-			}
-			free(ret);
+	if( (ret = malloc(sizeof(*ret))) ){
+		if(initialize_evhandler(ret,evsources,fd) == 0){
+			return ret;
 		}
-		close(fd);
+		free(ret);
 	}
 	return NULL;
 }

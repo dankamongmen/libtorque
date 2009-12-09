@@ -20,7 +20,7 @@ typedef struct evhandler {
 	evthreadstats stats;		// one for each thread
 } evhandler;
 
-evhandler *create_evhandler(struct evtables *)
+evhandler *create_evhandler(struct evtables *,int)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));
