@@ -37,9 +37,9 @@ int flush_evector_changes(evhandler *eh,evectors *ev){
 
 	if(ev->changesqueued){
 #ifdef LIBTORQUE_LINUX
-		ret = Kevent(eh->efd,&ev->changev,ev->changesqueued,NULL,0);
+		ret = Kevent(eh->evq->efd,&ev->changev,ev->changesqueued,NULL,0);
 #else
-		ret = Kevent(eh->efd,ev->changev,ev->changesqueued,NULL,0);
+		ret = Kevent(eh->evq->efd,ev->changev,ev->changesqueued,NULL,0);
 #endif
 		ev->changesqueued = 0;
 	}

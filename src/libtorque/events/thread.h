@@ -11,8 +11,12 @@ struct evectors;
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/sources.h>
 
+typedef struct evqueue {
+	int efd;
+} evqueue;
+
 typedef struct evhandler {
-	int efd;			// can be shared
+	evqueue *evq;			// can be (likely is) shared
 	pthread_t nexttid;
 	struct evhandler *nextev;	// makes a circular linked list
 	struct evtables *evsources;	// lives in libtorque_ctx, shared
@@ -20,7 +24,7 @@ typedef struct evhandler {
 	evthreadstats stats;		// one for each thread
 } evhandler;
 
-evhandler *create_evhandler(struct evtables *,int)
+evhandler *create_evhandler(struct evtables *,evqueue *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));

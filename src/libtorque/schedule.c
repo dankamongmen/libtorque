@@ -99,6 +99,7 @@ static void *
 thread(void *void_marshal){
 	tguard *marshal = void_marshal;
 	evhandler *ev = NULL;
+	evqueue evq;
 	int efd;
 
 	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
@@ -110,7 +111,8 @@ thread(void *void_marshal){
 	if((efd = create_efd()) < 0){
 		goto earlyerr;
 	}
-	if((ev = create_evhandler(&marshal->ctx->eventtables,efd)) == NULL){
+	evq.efd = efd;
+	if((ev = create_evhandler(&marshal->ctx->eventtables,&evq)) == NULL){
 		close(efd);
 		goto earlyerr;
 	}

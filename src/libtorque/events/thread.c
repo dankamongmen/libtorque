@@ -69,7 +69,7 @@ void event_thread(evhandler *e){
 	while(1){
 		int events;
 
-		events = Kevent(e->efd,PTR_TO_CHANGEV(&e->evec),e->evec.changesqueued,
+		events = Kevent(e->evq->efd,PTR_TO_CHANGEV(&e->evec),e->evec.changesqueued,
 					PTR_TO_EVENTV(&e->evec),e->evec.vsizes);
 		if(events <= 0){
 			continue;
@@ -159,10 +159,10 @@ add_evhandler_baseevents(evhandler *e){
 }
 
 static int
-initialize_evhandler(evhandler *e,evtables *evsources,int fd){
+initialize_evhandler(evhandler *e,evtables *evsources,evqueue *evq){
 	memset(e,0,sizeof(*e));
 	e->evsources = evsources;
-	e->efd = fd;
+	e->evq = evq;
 	if(add_evhandler_baseevents(e)){
 		return -1;
 	}
@@ -203,11 +203,11 @@ int create_efd(void){
 	return fd;
 }
 
-evhandler *create_evhandler(evtables *evsources,int fd){
+evhandler *create_evhandler(evtables *evsources,evqueue *evq){
 	evhandler *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_evhandler(ret,evsources,fd) == 0){
+		if(initialize_evhandler(ret,evsources,evq) == 0){
 			return ret;
 		}
 		free(ret);
@@ -224,13 +224,21 @@ static void print_evstats(const evthreadstats *stats){
 #undef PRINTSTAT
 }
 
+static int
+destroy_evqueue(evqueue *evq){
+	int ret = 0;
+
+	ret |= close(evq->efd);
+	return ret;
+}
+
 int destroy_evhandler(evhandler *e){
 	int ret = 0;
 
 	if(e){
 		print_evstats(&e->stats);
 		destroy_evectors(&e->evec);
-		ret |= close(e->efd);
+		ret |= destroy_evqueue(e->evq);
 		free(e);
 	}
 	return ret;
