@@ -153,8 +153,9 @@ TAGS:=.tags
 # include all header files in this list; it'd be nice to refine that FIXME.
 GLOBOBJDEPS:=$(TAGS) $(CINC) $(MAKEFILE_LIST)
 
-# Debugging flags. These aren't normally used.
+# Debugging flags. Normally unused, but uncomment the 2nd line to enable.
 DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
+DFLAGS+=$(DEBUGFLAGS)
 
 # Main compilation flags. Define with += to inherit from system-specific flags.
 IFLAGS+=-I$(SRCDIR)
@@ -245,7 +246,7 @@ $(SSLCERT) $(SSLKEY): $(GLOBOBJDEPS)
 
 VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --trace-children=yes --show-reachable=yes --error-exitcode=1 -v --track-origins=yes
-hardtest: test
+hardtest: $(BINS) $(LIBS) $(TESTBINS)
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
 
 $(LIBOUT)/$(TORQUESOL): $(LIBOUT)/$(TORQUEREAL)
