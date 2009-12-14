@@ -33,6 +33,7 @@ Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
  V. Writing libtorque applications
   1. overview
   2. common mistakes
+ VI. FAQ
 
 ----------------------------------------------------------------libtorque-----
 -=+ I. History and licensing +=-
@@ -357,3 +358,12 @@ directories. That having been said:
    needn't worry about yielding on EINTR, nor unbounded looping thereon. Also,
    EINTR is indicated only when no data had been moved upon signal delivery; a
    short result is returned otherwise.
+
+----------------------------------------------------------------libtorque-----
+-=+ VI. FAQ +=-
+----------------------------------------------------------------libtorque-----
+
+Q: Can an (unthreaded) program use libtorque even if it doesn't use -pthread
+   during compilation?
+A: Yes. Most of the binaries built as part of libtorque don't use -pthread;
+   see CFLAGS vs MT_CFLAGS in the GNUmakefile.
