@@ -238,6 +238,18 @@ int destroy_evqueue(evqueue *evq){
 	return ret;
 }
 
+int init_evqueue(evqueue *e){
+	if(pthread_mutex_init(&e->lock,NULL)){
+		return -1;
+	}
+	if((e->efd = create_efd()) < 0){
+		pthread_mutex_destroy(&e->lock);
+		return -1;
+	}
+	e->refcount = 0;
+	return 0;
+}
+
 int destroy_evhandler(evhandler *e){
 	int ret = 0;
 
