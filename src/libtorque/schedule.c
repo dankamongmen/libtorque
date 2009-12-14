@@ -107,11 +107,7 @@ thread(void *void_marshal){
 	// efd is only live for us through being passed to create_evhandler().
 	// once we've done that, destroy_evhandler() is responsible for
 	// closing it down. thus, no close(efd) in the "earlyerr" handler.
-	if((evq.efd = create_efd()) < 0){
-		goto earlyerr;
-	}
-	if(pthread_mutex_init(&evq.lock,NULL)){
-		close(evq.efd);
+	if(init_evqueue(&evq)){
 		goto earlyerr;
 	}
 	evq.refcount = 1;
