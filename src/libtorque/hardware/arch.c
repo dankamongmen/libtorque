@@ -133,20 +133,6 @@ unpin_thread(const cpu_set_t *cset){
 //  - sched_getaffinity(0) (linux)
 //  - CPUID function 0x0000_000b (x2APIC/Topology Enumeration)
 
-// FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
-// setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
-static inline unsigned
-portable_cpuset_count(const cpu_set_t *mask){
-	unsigned count = 0,cpu;
-
-	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
-		if(CPU_ISSET(cpu,mask)){
-			++count;
-		}
-	}
-	return count;
-}
-
 // Returns a positive integer number of processing elements on success. A non-
 // positive return value indicates failure to determine the processor count.
 // A "processor" is "something on which we can schedule a running thread". On a

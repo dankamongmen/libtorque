@@ -15,6 +15,20 @@ extern "C" {
 typedef cpuset_t cpu_set_t;
 #endif
 
+// FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
+// setups (including RHEL5). This one only requires CPU_SETSIZE and CPU_ISSET.
+static inline unsigned
+portable_cpuset_count(const cpu_set_t *mask){
+	unsigned count = 0,cpu;
+
+	for(cpu = 0 ; cpu < CPU_SETSIZE ; ++cpu){
+		if(CPU_ISSET(cpu,mask)){
+			++count;
+		}
+	}
+	return count;
+}
+
 struct libtorque_ctx;
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
