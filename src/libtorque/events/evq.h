@@ -5,10 +5,13 @@
 extern "C" {
 #endif
 
-struct libtorque_evq;
+struct evqueue;
 
-int initialize_evq(struct libtorque_evq *);
-int destroy_evq(struct libtorque_evq *);
+int init_evqueue(struct evqueue *)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)));
+
+int destroy_evqueue(struct evqueue *);
 
 #ifdef __cplusplus
 }

@@ -96,10 +96,11 @@ typedef struct libtorque_cbctx {
 	void *cbstate;			// arbitrary crap FIXME
 } libtorque_cbctx;
 
-typedef struct libtorque_evq {
-	pthread_mutex_t qlock;
+typedef struct evqueue {
 	int efd;
-} libtorque_evq;
+	unsigned refcount;
+	pthread_mutex_t lock;
+} evqueue;
 
 // Whenever a field is added to this structure, make sure it's
 //  a) initialized in create_libtorque_ctx(), and
@@ -108,7 +109,7 @@ typedef struct libtorque_evq {
 // called, and as it was then restricted (ie, only those processing elements in
 // our cpuset, and only those NUMA nodes which we can reach).
 typedef struct libtorque_ctx {
-	libtorque_evq evq;		// shared evq
+	evqueue evq;			// shared evq
 	unsigned nodecount;		// number of NUMA nodes
 	unsigned cpu_typecount;		// number of processing element types
 	libtorque_cput *cpudescs;	// dynarray of cpu_typecount elements

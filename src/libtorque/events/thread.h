@@ -12,12 +12,6 @@ struct evectors;
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/sources.h>
 
-typedef struct evqueue {
-	int efd;
-	unsigned refcount;
-	pthread_mutex_t lock;
-} evqueue;
-
 typedef struct evhandler {
 	evqueue *evq;			// can be (likely is) shared
 	pthread_t nexttid;
@@ -32,16 +26,10 @@ evhandler *create_evhandler(struct evtables *,evqueue *)
 	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((malloc));
 
-int init_evqueue(evqueue *)
-	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull(1)));
-
 int create_efd(void)
 	__attribute__ ((warn_unused_result));
 
 int destroy_evhandler(evhandler *);
-
-int destroy_evqueue(evqueue *);
 
 void event_thread(evhandler *)
 	__attribute__ ((nonnull(1)))

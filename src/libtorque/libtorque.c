@@ -64,7 +64,7 @@ create_libtorque_ctx(void){
 			free(ret);
 			return NULL;
 		}
-		if(initialize_evq(&ret->evq)){
+		if(init_evqueue(&ret->evq)){
 			free_etables(&ret->eventtables);
 			free(ret);
 			return NULL;
@@ -85,7 +85,7 @@ free_libtorque_ctx(libtorque_ctx *ctx){
 
 	free_etables(&ctx->eventtables);
 	free_architecture(ctx);
-	ret |= destroy_evq(&ctx->evq);
+	ret |= destroy_evqueue(&ctx->evq);
 	free(ctx);
 	return ret;
 }

@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <libtorque/internal.h>
+#include <libtorque/events/evq.h>
 #include <libtorque/events/thread.h>
 #include <libtorque/events/sysdep.h>
 
@@ -132,7 +133,7 @@ thread(void *void_marshal){
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
 	pthread_mutex_unlock(&marshal->lock);
-	// After this point, anything we wish to use from tguard must have been
+	// After this point, anything we wish to use from marshal must've been
 	// copied onto our own stack (hence broadcasting prior to unlocking).
 	event_thread(ev);
 	destroy_evhandler(ev);

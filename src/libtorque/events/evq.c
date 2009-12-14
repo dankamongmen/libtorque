@@ -2,20 +2,28 @@
 #include <libtorque/events/evq.h>
 #include <libtorque/events/thread.h>
 
-int initialize_evq(libtorque_evq *evq){
-	if(pthread_mutex_init(&evq->qlock,NULL) == 0){
-		if((evq->efd = create_efd()) >= 0){
-			return 0;
-		}
-		pthread_mutex_destroy(&evq->qlock);
-	}
-	return -1;
-}
-
-int destroy_evq(libtorque_evq *evq){
+int destroy_evqueue(evqueue *evq){
 	int ret = 0;
 
-	ret |= pthread_mutex_destroy(&evq->qlock);
-	ret |= close(evq->efd);
+	if(pthread_mutex_lock(&evq->lock)){
+		return -1;
+	}
+	if(--evq->refcount == 0){
+		ret |= close(evq->efd);
+		evq->efd = -1;
+	}
+	ret |= pthread_mutex_unlock(&evq->lock);
 	return ret;
+}
+
+int init_evqueue(evqueue *e){
+	if(pthread_mutex_init(&e->lock,NULL)){
+		return -1;
+	}
+	if((e->efd = create_efd()) < 0){
+		pthread_mutex_destroy(&e->lock);
+		return -1;
+	}
+	e->refcount = 1;
+	return 0;
 }
