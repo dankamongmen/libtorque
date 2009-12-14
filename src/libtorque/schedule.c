@@ -116,8 +116,7 @@ thread(void *void_marshal){
 	}
 	evq.refcount = 1;
 	if((ev = create_evhandler(&marshal->ctx->eventtables,&evq)) == NULL){
-		close(evq.efd);
-		pthread_mutex_destroy(&evq.lock);
+		destroy_evqueue(&evq);
 		goto earlyerr;
 	}
 	if(pthread_mutex_lock(&marshal->lock)){

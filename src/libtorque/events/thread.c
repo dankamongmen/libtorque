@@ -224,8 +224,7 @@ static void print_evstats(const evthreadstats *stats){
 #undef PRINTSTAT
 }
 
-static int
-destroy_evqueue(evqueue *evq){
+int destroy_evqueue(evqueue *evq){
 	int ret = 0;
 
 	if(pthread_mutex_lock(&evq->lock)){

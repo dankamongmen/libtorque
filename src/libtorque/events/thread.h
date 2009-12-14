@@ -37,6 +37,8 @@ int create_efd(void)
 
 int destroy_evhandler(evhandler *);
 
+int destroy_evqueue(evqueue *);
+
 void event_thread(evhandler *)
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((noreturn));
