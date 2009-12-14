@@ -1,4 +1,5 @@
 #include <string.h>
+#include <unistd.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
@@ -45,3 +46,26 @@ int flush_evector_changes(evhandler *eh,evectors *ev){
 	}
 	return ret;
 }
+
+#ifdef LIBTORQUE_LINUX
+int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
+					void *cbstate){
+	struct signalfd_siginfo si;
+	evhandler *e = cbstate;
+	int ret = 0;
+	ssize_t r;
+
+	do{
+		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
+			ret |= handle_evsource_read(e->evsources->sigarray,si.ssi_signo);
+			// FIXME do... what, exactly with ret?
+		}else if(r >= 0){
+			// FIXME stat short read! return -1?
+		}
+	}while(r >= 0 && errno != EINTR);
+	if(errno != EAGAIN){
+		// FIXME stat on error reading signalfd! return -1?
+	}
+	return 0;
+}
+#endif

@@ -20,6 +20,7 @@ extern "C" {
 // See kevent(7) on FreeBSD.
 #ifdef LIBTORQUE_LINUX
 #include <sys/epoll.h>
+#include <sys/signalfd.h>
 
 #define PTR_TO_EVENTV(ev) (&(ev)->eventv)
 #define PTR_TO_CHANGEV(ev) (&(ev)->changev)
@@ -64,6 +65,10 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 	}
 	return ret;
 }
+
+struct libtorque_cbctx;
+
+int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
 #elif defined(LIBTORQUE_FREEBSD)
 #include <stdint.h>
 #include <sys/types.h>

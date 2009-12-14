@@ -79,6 +79,9 @@ typedef struct libtorque_cput {
 typedef struct evtables {
 	struct evsource *fdarray,*sigarray;
 	unsigned sigarraysize,fdarraysize;
+#ifdef LIBTORQUE_LINUX
+	int common_signalfd;
+#endif
 } evtables;
 
 // This is the simplest possible RX buffer; fixed-length, one piece, not even

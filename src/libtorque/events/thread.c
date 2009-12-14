@@ -32,7 +32,7 @@ handle_event(evhandler *eh,const kevententry *e){
 }
 
 static int
-rxsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
+rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 				void *cbstate __attribute__ ((unused))){
 	if(sig == EVTHREAD_TERM){
 		void *ret = PTHREAD_CANCELED;
@@ -145,22 +145,36 @@ destroy_evectors(evectors *e){
 // signals (on Linux, this is done via a common signalfd()). Either way, we
 // don't want to touch the evsources more than once.
 int initialize_common_sources(struct evtables *evt){
-	if(EVTHREAD_SIGNAL >= evt->sigarraysize || EVTHREAD_TERM >= evt->sigarraysize){
-		return -1;
-	}
-	setup_evsource(evt->sigarray,EVTHREAD_SIGNAL,rxsignal,NULL,NULL,NULL);
-	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxsignal,NULL,NULL,NULL);
-	return 0;
-}
-
-static int
-add_evhandler_baseevents(evhandler *e){
 	sigset_t s;
 
 	if(sigemptyset(&s) || sigaddset(&s,EVTHREAD_SIGNAL) || sigaddset(&s,EVTHREAD_TERM)){
 		return -1;
 	}
-	if(add_signal_to_evhandler(e,&s,rxsignal,NULL)){
+	if(EVTHREAD_SIGNAL >= evt->sigarraysize || EVTHREAD_TERM >= evt->sigarraysize){
+		return -1;
+	}
+	setup_evsource(evt->sigarray,EVTHREAD_SIGNAL,rxcommonsignal,NULL,NULL,NULL);
+	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,NULL,NULL);
+#ifdef LIBTORQUE_LINUX
+	if((evt->common_signalfd = signalfd(-1,&s,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
+		return -1;
+	}
+	setup_evsource(evt->fdarray,evt->common_signalfd,signalfd_demultiplexer,NULL,NULL,NULL);
+#endif
+	return 0;
+}
+
+static inline int
+add_evhandler_baseevents(evhandler *e){
+	sigset_t s;
+
+	if(add_signal_to_evhandler(e,&s,rxcommonsignal,NULL)){
+		return -1;
+	}
+	if(sigemptyset(&s) || sigaddset(&s,EVTHREAD_SIGNAL) || sigaddset(&s,EVTHREAD_TERM)){
+		return -1;
+	}
+	if(add_signal_to_evhandler(e,&s,rxcommonsignal,NULL)){
 		return -1;
 	}
 	return 0;

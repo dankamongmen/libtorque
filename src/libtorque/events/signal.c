@@ -6,31 +6,6 @@
 #include <libtorque/events/signal.h>
 #include <libtorque/events/sources.h>
 
-#ifdef LIBTORQUE_LINUX
-#include <sys/signalfd.h>
-static int
-signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
-					void *cbstate){
-	struct signalfd_siginfo si;
-	evhandler *e = cbstate;
-	int ret = 0;
-	ssize_t r;
-
-	do{
-		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
-			ret |= handle_evsource_read(e->evsources->sigarray,si.ssi_signo);
-			// FIXME do... what, exactly with ret?
-		}else if(r >= 0){
-			// FIXME stat short read! return -1?
-		}
-	}while(r >= 0 && errno != EINTR);
-	if(errno != EAGAIN){
-		// FIXME stat on error reading signalfd! return -1?
-	}
-	return 0;
-}
-#endif
-
 // from kevent(2) on FreeBSD 6.4:
 // EVFILT_SIGNAL  Takes the signal number to monitor as the identifier and
 // 	returns when the given signal is delivered to the process.

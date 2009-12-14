@@ -54,10 +54,16 @@ initialize_etables(evtables *e){
 	return 0;
 }
 
-static void
+static int
 free_etables(evtables *e){
-	destroy_evsources(e->sigarray);
-	destroy_evsources(e->fdarray);
+	int ret = 0;
+
+#ifdef LIBTORQUE_LINUX
+	ret |= close(e->common_signalfd);
+#endif
+	ret |= destroy_evsources(e->sigarray);
+	ret |= destroy_evsources(e->fdarray);
+	return ret;
 }
 
 static inline libtorque_ctx *
@@ -88,7 +94,7 @@ static int
 free_libtorque_ctx(libtorque_ctx *ctx){
 	int ret = 0;
 
-	free_etables(&ctx->eventtables);
+	ret |= free_etables(&ctx->eventtables);
 	free_architecture(ctx);
 	ret |= destroy_evqueue(&ctx->evq);
 	free(ctx);
