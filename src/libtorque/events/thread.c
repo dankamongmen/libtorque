@@ -51,6 +51,11 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 #endif
 		e->stats.utimeus = e->stats.stimeus = 0;
 		--e->stats.events;
+		// There's no POSIX thread cancellation going on here, nor are
+		// we terminating due to signal; we're catching the signal and
+		// exiting from this thread only. The trigger signal might be
+		// delivered to any one of our threads; if we're here, though,
+		// we cannot be holding the efd. Progress is thus assured.
 		pthread_kill(e->nexttid,EVTHREAD_TERM);
 		// We rely on EDEADLK to cut off our circular join()list
 		if((r = pthread_join(e->nexttid,&ret)) && r != EDEADLK){
