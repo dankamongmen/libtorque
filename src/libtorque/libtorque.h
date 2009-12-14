@@ -11,10 +11,6 @@ struct itimerspec;
 struct libtorque_ctx;
 struct libtorque_cbctx;
 
-// Initialize the library, returning 0 on success. No libtorque functions may
-// be called before a successful call to libtorque_init(). libtorque_init() may
-// not be called again until libtorque_stop() has been called. Implicitly, only
-// one thread may call libtorque_init().
 // Create a new libtorque context on the current cpuset. The best performance
 // on the widest set of loads and requirements is achieved by using one
 // libtorque instance on as many uncontested processing elements as possible,
@@ -106,7 +102,8 @@ int libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,libtorquercb,
 int libtorque_block(struct libtorque_ctx *)
 	__attribute__ ((visibility("default")));
 
-// Signal and reap the running threads, and free the context.
+// Signal and reap the running threads, and free the context. No further calls
+// may be made using this context following libtorque_stop().
 int libtorque_stop(struct libtorque_ctx *)
 	__attribute__ ((visibility("default")));
 
