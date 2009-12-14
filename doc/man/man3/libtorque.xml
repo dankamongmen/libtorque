@@ -64,7 +64,7 @@
 	<refsynopsisdiv>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>int <function>libtorque_init</function></funcdef>
+			<funcdef>struct libtorque_ctx *<function>libtorque_init</function></funcdef>
 			<paramdef>
 				<parameter>void</parameter>
 			</paramdef>
@@ -74,7 +74,7 @@
 			<funcprototype>
 			<funcdef>int <function>libtorque_stop</function></funcdef>
 			<paramdef>
-				<parameter>void</parameter>
+				<parameter>struct libtorque_ctx *</parameter>
 			</paramdef>
 			</funcprototype>
 		</funcsynopsis>
