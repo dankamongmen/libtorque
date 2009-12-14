@@ -167,7 +167,6 @@ int libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
 int libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
 				libtorquewcb tx,void *state){
 	libtorque_cbctx cbctx = {
-		.ctx = ctx,
 		.cbstate = NULL,
 	};
 
@@ -186,7 +185,6 @@ int libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
 int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquercb rx,
 				libtorquewcb tx,void *state){
 	libtorque_cbctx cbctx = {
-		.ctx = ctx,
 		.cbstate = rx,
 	};
 
@@ -227,6 +225,12 @@ int libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 	return 0;
 }
 #endif
+
+// Performs a thread-local lookup of the current ctx. This must not be cached
+// beyond the lifetime of the callback instance!
+struct libtorque_ctx *libtorque_getcurctx(void){
+	return get_thread_ctx();
+}
 
 int libtorque_stop(libtorque_ctx *ctx){
 	int ret = 0;

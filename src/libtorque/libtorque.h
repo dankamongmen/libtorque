@@ -91,6 +91,12 @@ int libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,libtorquercb,
 	__attribute__ ((nonnull(1,3)));
 #endif
 
+// Performs a thread-local lookup of the current ctx. This must not be cached
+// beyond the lifetime of the callback instance!
+struct libtorque_ctx *libtorque_getcurctx(void)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result));
+
 // Wait until the libtorque threads exit via pthread_join(), but don't send
 // them the termination signal ourselves. Rather, we're waiting for either an
 // intentional or freak exit of the threads. This version is slightly more

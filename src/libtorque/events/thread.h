@@ -31,12 +31,17 @@ int create_efd(void)
 
 int destroy_evhandler(evhandler *);
 
-void event_thread(evhandler *)
-	__attribute__ ((nonnull(1)))
+void event_thread(libtorque_ctx *,evhandler *)
+	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((noreturn));
 
 // Used to set up common signal-related evtable sources during initialization
 int initialize_common_sources(struct evtables *);
+
+// Performs a thread-local lookup to get the libtorque context or evhandler. Do
+// not cache across callback invocations!
+evhandler *get_thread_evh(void);
+libtorque_ctx *get_thread_ctx(void);
 
 #ifdef __cplusplus
 }

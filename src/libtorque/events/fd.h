@@ -16,6 +16,8 @@ int add_fd_to_evhandler(struct evhandler *,int,libtorquercb,
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull (1)));
 
+int add_commonfds_to_evhandler(struct evhandler *,libtorquercb);
+
 #ifdef __cplusplus
 }
 #endif

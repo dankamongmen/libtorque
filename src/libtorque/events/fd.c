@@ -59,3 +59,16 @@ int add_fd_to_evhandler(evhandler *eh,int fd,libtorquercb rfxn,
 	setup_evsource(eh->evsources->fdarray,fd,rfxn,tfxn,cbctx,cbstate);
 	return flush_evector_changes(eh,&ev);
 }
+
+int add_commonfds_to_evhandler(evhandler *eh,libtorquercb rcb){
+	int fd = eh->evsources->common_signalfd;
+	EVECTOR_AUTOS(1,ev,evbase);
+
+	if((unsigned)fd >= eh->evsources->fdarraysize){
+		return -1;
+	}
+	if(add_fd_event(&ev,fd,rcb,NULL)){
+		return -1;
+	}
+	return flush_evector_changes(eh,&ev);
+}

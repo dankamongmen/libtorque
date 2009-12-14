@@ -49,15 +49,14 @@ int flush_evector_changes(evhandler *eh,evectors *ev){
 
 #ifdef LIBTORQUE_LINUX
 int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
-					void *cbstate){
+			void *cbstate __attribute__ ((unused))){
 	struct signalfd_siginfo si;
-	evhandler *e = cbstate;
 	int ret = 0;
 	ssize_t r;
 
 	do{
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
-			ret |= handle_evsource_read(e->evsources->sigarray,si.ssi_signo);
+			ret |= handle_evsource_read(get_thread_evh()->evsources->sigarray,si.ssi_signo);
 			// FIXME do... what, exactly with ret?
 		}else if(r >= 0){
 			// FIXME stat short read! return -1?

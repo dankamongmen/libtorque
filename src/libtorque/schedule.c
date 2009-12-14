@@ -100,8 +100,10 @@ static void *
 thread(void *void_marshal){
 	tguard *marshal = void_marshal;
 	evhandler *ev = NULL;
+	libtorque_ctx *ctx;
 	evqueue evq;
 
+	ctx = marshal->ctx;
 	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
 		goto earlyerr;
 	}
@@ -134,7 +136,7 @@ thread(void *void_marshal){
 	pthread_mutex_unlock(&marshal->lock);
 	// After this point, anything we wish to use from marshal must've been
 	// copied onto our own stack (hence broadcasting prior to unlocking).
-	event_thread(ev);
+	event_thread(ctx,ev);
 	destroy_evhandler(ev);
 	return NULL;
 

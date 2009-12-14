@@ -264,7 +264,6 @@ ssl_txrxfxn(int fd,void *cbs){
 	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) > 0){
 		libtorque_cbctx torquectx = {
-			.ctx = NULL, // FIXME
 			.rxbuf = &sc->rxb,
 			.cbstate = sc,
 		};
@@ -300,7 +299,6 @@ ssl_rxfxn(int fd,struct libtorque_cbctx *cbctx,void *cbstate){
 	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) >= 0){
 		libtorque_cbctx torquectx = {
-			.ctx = NULL, // FIXME
 			.rxbuf = &sc->rxb,
 			.cbstate = sc,
 		};

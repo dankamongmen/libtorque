@@ -3,13 +3,23 @@
 #include <signal.h>
 #include <pthread.h>
 #include <sys/resource.h>
+#include <libtorque/events/fd.h>
 #include <libtorque/events/evq.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
 #include <libtorque/events/signal.h>
 #include <libtorque/events/sources.h>
 
+static __thread libtorque_ctx *tsd_ctx;
 static __thread evhandler *tsd_evhandler;
+
+evhandler *get_thread_evh(void){
+	return tsd_evhandler;
+}
+
+libtorque_ctx *get_thread_ctx(void){
+	return tsd_ctx;
+}
 
 static void
 handle_event(evhandler *eh,const kevententry *e){
@@ -70,8 +80,9 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 	return 0;
 }
 
-void event_thread(evhandler *e){
+void event_thread(libtorque_ctx *ctx,evhandler *e){
 	tsd_evhandler = e;
+	tsd_ctx = ctx;
 	while(1){
 		int events;
 
@@ -146,13 +157,19 @@ destroy_evectors(evectors *e){
 	}
 }
 
+static inline int
+prep_common_sigset(sigset_t *s){
+	return sigemptyset(s) || sigaddset(s,EVTHREAD_SIGNAL) ||
+			sigaddset(s,EVTHREAD_TERM);
+}
+
 // All event queues (evqueues) will need to register events on the common
 // signals (on Linux, this is done via a common signalfd()). Either way, we
 // don't want to touch the evsources more than once.
 int initialize_common_sources(struct evtables *evt){
 	sigset_t s;
 
-	if(sigemptyset(&s) || sigaddset(&s,EVTHREAD_SIGNAL) || sigaddset(&s,EVTHREAD_TERM)){
+	if(prep_common_sigset(&s)){
 		return -1;
 	}
 	if(EVTHREAD_SIGNAL >= evt->sigarraysize || EVTHREAD_TERM >= evt->sigarraysize){
@@ -171,18 +188,33 @@ int initialize_common_sources(struct evtables *evt){
 
 static inline int
 add_evhandler_baseevents(evhandler *e){
-	sigset_t s;
+#ifdef LIBTORQUE_FREEBSD
+	EVECTORS_AUTO(8,ev,evbase);
 
-	if(add_signal_to_evhandler(e,&s,rxcommonsignal,NULL)){
-		return -1;
-	}
-	if(sigemptyset(&s) || sigaddset(&s,EVTHREAD_SIGNAL) || sigaddset(&s,EVTHREAD_TERM)){
-		return -1;
+		for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
+			struct kevent k;
+
+			if(!sigismember(sigs,z)){
+				continue;
+			}
+			EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
+			if(add_evector_kevents(ev,&k,1)){
+				if(flush_evector_changes(eh,ev)){
+					return -1;
+				}
+			}
+		}
+		if(flush_evector_changes(eh,ev)){
+			return -1;
+		}
 	}
 	if(add_signal_to_evhandler(e,&s,rxcommonsignal,NULL)){
 		return -1;
 	}
 	return 0;
+#else
+	return add_commonfds_to_evhandler(e,signalfd_demultiplexer);
+#endif
 }
 
 static int
