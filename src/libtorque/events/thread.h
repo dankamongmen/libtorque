@@ -26,7 +26,7 @@ typedef struct evhandler {
 
 evhandler *create_evhandler(struct evtables *,evqueue *)
 	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull(1)))
+	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((malloc));
 
 int create_efd(void)
