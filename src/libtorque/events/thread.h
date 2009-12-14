@@ -8,11 +8,14 @@ extern "C" {
 struct evtables;
 struct evectors;
 
+#include <pthread.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/sources.h>
 
 typedef struct evqueue {
 	int efd;
+	unsigned refcount;
+	pthread_mutex_t lock;
 } evqueue;
 
 typedef struct evhandler {

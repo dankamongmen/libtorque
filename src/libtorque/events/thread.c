@@ -228,7 +228,14 @@ static int
 destroy_evqueue(evqueue *evq){
 	int ret = 0;
 
-	ret |= close(evq->efd);
+	if(pthread_mutex_lock(&evq->lock)){
+		return -1;
+	}
+	if(--evq->refcount == 0){
+		ret |= close(evq->efd);
+		evq->efd = -1;
+	}
+	ret |= pthread_mutex_unlock(&evq->lock);
 	return ret;
 }
 

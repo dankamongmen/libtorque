@@ -100,7 +100,6 @@ thread(void *void_marshal){
 	tguard *marshal = void_marshal;
 	evhandler *ev = NULL;
 	evqueue evq;
-	int efd;
 
 	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
 		goto earlyerr;
@@ -108,12 +107,17 @@ thread(void *void_marshal){
 	// efd is only live for us through being passed to create_evhandler().
 	// once we've done that, destroy_evhandler() is responsible for
 	// closing it down. thus, no close(efd) in the "earlyerr" handler.
-	if((efd = create_efd()) < 0){
+	if((evq.efd = create_efd()) < 0){
 		goto earlyerr;
 	}
-	evq.efd = efd;
+	if(pthread_mutex_init(&evq.lock,NULL)){
+		close(evq.efd);
+		goto earlyerr;
+	}
+	evq.refcount = 1;
 	if((ev = create_evhandler(&marshal->ctx->eventtables,&evq)) == NULL){
-		close(efd);
+		close(evq.efd);
+		pthread_mutex_destroy(&evq.lock);
 		goto earlyerr;
 	}
 	if(pthread_mutex_lock(&marshal->lock)){
