@@ -141,19 +141,23 @@ destroy_evectors(evectors *e){
 	}
 }
 
+int initialize_common_signals(struct evsource *evs,unsigned count){
+	if(EVTHREAD_SIGNAL >= count || EVTHREAD_TERM >= count){
+		return -1;
+	}
+	setup_evsource(evs,EVTHREAD_SIGNAL,rxsignal,NULL,NULL,NULL);
+	setup_evsource(evs,EVTHREAD_TERM,rxsignal,NULL,NULL,NULL);
+	return 0;
+}
+
 static int
 add_evhandler_baseevents(evhandler *e){
 	sigset_t s;
 
-	if(init_evectors(&e->evec)){
-		return -1;
-	}
 	if(sigemptyset(&s) || sigaddset(&s,EVTHREAD_SIGNAL) || sigaddset(&s,EVTHREAD_TERM)){
-		destroy_evectors(&e->evec);
 		return -1;
 	}
 	if(add_signal_to_evhandler(e,&s,rxsignal,NULL)){
-		destroy_evectors(&e->evec);
 		return -1;
 	}
 	return 0;
@@ -164,7 +168,11 @@ initialize_evhandler(evhandler *e,evtables *evsources,evqueue *evq){
 	memset(e,0,sizeof(*e));
 	e->evsources = evsources;
 	e->evq = evq;
+	if(init_evectors(&e->evec)){
+		return -1;
+	}
 	if(add_evhandler_baseevents(e)){
+		destroy_evectors(&e->evec);
 		return -1;
 	}
 	return 0;

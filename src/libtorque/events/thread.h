@@ -35,6 +35,9 @@ void event_thread(evhandler *)
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((noreturn));
 
+// Used to set up the signal evsource table during initialization
+int initialize_common_signals(struct evsource *,unsigned);
+
 #ifdef __cplusplus
 }
 #endif
