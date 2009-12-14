@@ -111,7 +111,6 @@ thread(void *void_marshal){
 	if(init_evqueue(&evq)){
 		goto earlyerr;
 	}
-	evq.refcount = 1;
 	if((ev = create_evhandler(&marshal->ctx->eventtables,&evq)) == NULL){
 		destroy_evqueue(&evq);
 		goto earlyerr;
