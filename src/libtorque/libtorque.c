@@ -46,7 +46,7 @@ initialize_etables(evtables *e){
 		destroy_evsources(e->fdarray);
 		return -1;
 	}
-	if(initialize_common_signals(e->sigarray,e->sigarraysize)){
+	if(initialize_common_sources(e)){
 		destroy_evsources(e->sigarray);
 		destroy_evsources(e->fdarray);
 		return -1;

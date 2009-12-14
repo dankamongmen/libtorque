@@ -141,12 +141,15 @@ destroy_evectors(evectors *e){
 	}
 }
 
-int initialize_common_signals(struct evsource *evs,unsigned count){
-	if(EVTHREAD_SIGNAL >= count || EVTHREAD_TERM >= count){
+// All event queues (evqueues) will need to register events on the common
+// signals (on Linux, this is done via a common signalfd()). Either way, we
+// don't want to touch the evsources more than once.
+int initialize_common_sources(struct evtables *evt){
+	if(EVTHREAD_SIGNAL >= evt->sigarraysize || EVTHREAD_TERM >= evt->sigarraysize){
 		return -1;
 	}
-	setup_evsource(evs,EVTHREAD_SIGNAL,rxsignal,NULL,NULL,NULL);
-	setup_evsource(evs,EVTHREAD_TERM,rxsignal,NULL,NULL,NULL);
+	setup_evsource(evt->sigarray,EVTHREAD_SIGNAL,rxsignal,NULL,NULL,NULL);
+	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxsignal,NULL,NULL,NULL);
 	return 0;
 }
 
