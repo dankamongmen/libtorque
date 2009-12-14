@@ -89,7 +89,8 @@ MANBIN:=mandb
 LDCONFIG:=ldconfig -n
 else
 ifeq ($(UNAME),FreeBSD)
-DFLAGS+=-DLIBTORQUE_FREEBSD -D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
+DFLAGS+=-DLIBTORQUE_FREEBSD
+MT_DFLAGS:=-D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 MANBIN:=makewhatis
 LDCONFIG:=ldconfig -m
 endif
@@ -201,16 +202,18 @@ WFLAGS+=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 OFLAGS+=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
 	-fvisibility=hidden -fipa-cp -ftree-loop-linear -ftree-loop-im \
 	-ftree-loop-ivcanon -fno-common
-CFLAGS+=-pipe -std=gnu99 -pthread $(DFLAGS) $(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
-CFLAGS+=$(DEBUGFLAGS)
+CFLAGS+=-pipe -std=gnu99 $(DFLAGS)
+MT_CFLAGS:=$(CFLAGS) -pthread $(MT_DFLAGS)
+CFLAGS+=$(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
+MT_CFLAGS+=$(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 LIBFLAGS+=-lpthread
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc
 ARCHDETECTCFLAGS:=$(CFLAGS)
 ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
-SSLSRVCFLAGS:=$(CFLAGS)
+SSLSRVCFLAGS:=$(MT_CFLAGS)
 SSLSRVLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
-TORQUECFLAGS:=$(CFLAGS) -shared
+TORQUECFLAGS:=$(MT_CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 TESTBINCFLAGS:=$(CFLAGS)
 TESTBINLFLAGS:=$(LFLAGS) -Wl,-R$(LIBOUT) -L$(LIBOUT) -ltorque
