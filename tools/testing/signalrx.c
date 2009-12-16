@@ -10,6 +10,12 @@
 #include <libtorque/buffers.h>
 #include <libtorque/libtorque.h>
 
+static int
+signalrx(int sig,struct libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
+	printf("received signal %d %p\n",sig,cbctx);
+	return 0;
+}
+
 static void
 print_version(void){
 	fprintf(stderr,"signalrx from libtorque " LIBTORQUE_VERSIONSTR "\n");
@@ -62,12 +68,21 @@ err:
 
 int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
+	sigset_t ss;
 
 	if(parse_args(argc,argv)){
 		return EXIT_FAILURE;
 	}
 	if((ctx = libtorque_init()) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
+		goto err;
+	}
+	if(sigemptyset(&ss)){
+		fprintf(stderr,"Couldn't initialize sigset\n");
+		goto err;
+	}
+	if(libtorque_addsignal(ctx,&ss,signalrx,NULL)){
+		fprintf(stderr,"Couldn't listen on signals\n");
 		goto err;
 	}
 	if(libtorque_block(ctx)){
