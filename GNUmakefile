@@ -151,7 +151,9 @@ TAGS:=.tags
 
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
-GLOBOBJDEPS:=$(TAGS) $(CINC) $(MAKEFILE_LIST)
+# We don't include TAGS due to too much rebuilding as a result:
+# http://dank.qemfd.net/bugzilla/show_bug.cgi?id=92
+GLOBOBJDEPS:=$(CINC) $(MAKEFILE_LIST)
 
 # Debugging flags. Normally unused, but uncomment the 2nd line to enable.
 DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
@@ -224,11 +226,11 @@ flow:
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
-all: test docs
+all: docs test
 
-docs: $(DOCS)
+docs: $(TAGS) $(DOCS)
 
-test: $(BINS) $(LIBS) $(TESTBINS) testarchdetect
+test: $(TAGS) $(BINS) $(LIBS) $(TESTBINS) testarchdetect
 
 testarchdetect: $(BINOUT)/$(ARCHDETECT)
 	@echo -n "Testing $(<F): "
@@ -246,7 +248,7 @@ $(SSLCERT) $(SSLKEY): $(GLOBOBJDEPS)
 
 VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --trace-children=yes --show-reachable=yes --error-exitcode=1 -v --track-origins=yes
-hardtest: $(BINS) $(LIBS) $(TESTBINS)
+hardtest: $(TAGS) $(BINS) $(LIBS) $(TESTBINS)
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
 
 $(LIBOUT)/$(TORQUESOL): $(LIBOUT)/$(TORQUEREAL)
