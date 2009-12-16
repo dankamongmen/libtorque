@@ -35,6 +35,7 @@ struct libtorque_ctx;
 int pin_thread(unsigned);
 int spawn_thread(struct libtorque_ctx *);
 int reap_threads(struct libtorque_ctx *);
+int block_threads(struct libtorque_ctx *);
 
 #ifdef LIBTORQUE_FREEBSD
 unsigned long pthread_self_getnumeric(void);
