@@ -71,6 +71,14 @@ int pin_thread(unsigned aid){
 }
 
 static int
+block_thread(pthread_t tid,void **joinret){
+	if(pthread_join(tid,joinret) || *joinret != PTHREAD_CANCELED){
+		return -1;
+	}
+	return 0;
+}
+
+static inline int
 reap_thread(pthread_t tid){
 	void *joinret;
 	int ret = 0;
@@ -78,9 +86,7 @@ reap_thread(pthread_t tid){
 	// If a thread has exited but not yet been joined, it's safe to call
 	// pthread_cancel(). I don't think the same applies here; ignore error.
 	pthread_kill(tid,EVTHREAD_TERM);
-	if(pthread_join(tid,&joinret) || joinret != PTHREAD_CANCELED){
-		ret = -1;
-	}
+	ret |= block_thread(tid,&joinret);
 	return ret;
 }
 
