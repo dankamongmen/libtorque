@@ -159,8 +159,7 @@ destroy_evectors(evectors *e){
 
 static inline int
 prep_common_sigset(sigset_t *s){
-	return sigemptyset(s) || sigaddset(s,EVTHREAD_SIGNAL) ||
-			sigaddset(s,EVTHREAD_TERM);
+	return sigemptyset(s) || sigaddset(s,EVTHREAD_TERM);
 }
 
 // All event queues (evqueues) will need to register events on the common
@@ -172,10 +171,9 @@ int initialize_common_sources(struct evtables *evt){
 	if(prep_common_sigset(&s)){
 		return -1;
 	}
-	if(EVTHREAD_SIGNAL >= evt->sigarraysize || EVTHREAD_TERM >= evt->sigarraysize){
+	if(EVTHREAD_TERM >= evt->sigarraysize){
 		return -1;
 	}
-	setup_evsource(evt->sigarray,EVTHREAD_SIGNAL,rxcommonsignal,NULL,NULL,NULL);
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,NULL,NULL);
 #ifdef LIBTORQUE_LINUX
 	if((evt->common_signalfd = signalfd(-1,&s,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){

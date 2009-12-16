@@ -131,8 +131,10 @@ libtorque_ctx *libtorque_init(void){
 			return NULL;
 		}
 	}
-	if(sigemptyset(&add) || sigaddset(&add,EVTHREAD_SIGNAL)
-			|| sigaddset(&add,EVTHREAD_TERM)){
+	if(sigaction(EVTHREAD_TERM,NULL,&oldact)){
+		return NULL;
+	}
+	if(sigemptyset(&add) || sigaddset(&add,EVTHREAD_TERM)){
 		return NULL;
 	}
 	if(pthread_sigmask(SIG_BLOCK,&add,&old)){
@@ -236,8 +238,9 @@ int libtorque_block(libtorque_ctx *ctx){
 	sigset_t ss,os;
 	int ret = 0;
 
-	if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM) ||
-		pthread_sigmask(SIG_BLOCK,&ss,&os)){
+	if(sigemptyset(&ss) ||
+			sigaddset(&ss,EVTHREAD_TERM) ||
+			pthread_sigmask(SIG_BLOCK,&ss,&os)){
 		return -1;
 	}
 	ret |= block_threads(ctx);
