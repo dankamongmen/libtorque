@@ -233,21 +233,23 @@ struct libtorque_ctx *libtorque_getcurctx(void){
 }
 
 int libtorque_block(libtorque_ctx *ctx){
+	sigset_t ss,os;
 	int ret = 0;
 
-	if(ctx){
-		ret |= reap_threads(ctx); // FIXME
-		ret |= free_libtorque_ctx(ctx);
+	if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM) ||
+		pthread_sigmask(SIG_BLOCK,&ss,&os)){
+		return -1;
 	}
+	ret |= block_threads(ctx);
+	ret |= free_libtorque_ctx(ctx);
+	ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	return ret;
 }
 
 int libtorque_stop(libtorque_ctx *ctx){
 	int ret = 0;
 
-	if(ctx){
-		ret |= reap_threads(ctx);
-		ret |= free_libtorque_ctx(ctx);
-	}
+	ret |= reap_threads(ctx);
+	ret |= free_libtorque_ctx(ctx);
 	return ret;
 }
