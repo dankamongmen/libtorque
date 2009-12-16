@@ -72,7 +72,7 @@ int main(int argc,char **argv){
 	}
 	if(libtorque_block(ctx)){
 		fprintf(stderr,"Couldn't block on libtorque\n");
-		goto err;
+		return EXIT_FAILURE;
 	}
 	printf("Successfully cleaned up.\n");
 	return EXIT_SUCCESS;
