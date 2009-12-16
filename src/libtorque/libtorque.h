@@ -47,7 +47,8 @@ struct libtorque_ctx *libtorque_init(void)
 typedef int (*libtorquercb)(int,struct libtorque_cbctx *,void *);
 typedef int (*libtorquewcb)(int,void *);
 
-// Invoke the callback upon receipt of any of the specified signals.
+// Invoke the callback upon receipt of any of the specified signals. The signal
+// set may not contain EVTHREAD_TERM (usually SIGTERM), SIGKILL or SIGSTOP.
 int libtorque_addsignal(struct libtorque_ctx *,const sigset_t *,libtorquercb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))

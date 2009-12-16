@@ -150,6 +150,11 @@ libtorque_ctx *libtorque_init(void){
 
 int libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 			libtorquercb fxn,void *state){
+	// FIXME check for empty signal set via sigisemptyset()/freebsd equiv
+	if(sigismember(sigs,EVTHREAD_TERM) || sigismember(sigs,SIGKILL) ||
+			sigismember(sigs,SIGSTOP)){
+		return -1;
+	}
 	if(add_signal_to_evhandler(ctx->ev,sigs,fxn,state)){
 		return -1;
 	}
