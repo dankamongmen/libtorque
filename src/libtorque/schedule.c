@@ -81,7 +81,7 @@ reap_thread(pthread_t tid){
 	if(pthread_join(tid,&joinret) || joinret != PTHREAD_CANCELED){
 		ret = -1;
 	}
-	return 0;
+	return ret;
 }
 
 typedef struct tguard {
