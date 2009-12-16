@@ -66,9 +66,23 @@ err:
 #undef SET_ARG_ONCE
 }
 
+static const int signals_watched[] = {
+	SIGHUP,
+	SIGPIPE,
+	SIGALRM,
+	SIGUSR1,
+	SIGUSR2,
+	SIGCHLD,
+	SIGPOLL,
+	SIGIO,
+	SIGURG,
+	SIGWINCH,
+};
+
 int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
 	sigset_t ss;
+	unsigned z;
 
 	if(parse_args(argc,argv)){
 		return EXIT_FAILURE;
@@ -80,6 +94,15 @@ int main(int argc,char **argv){
 	if(sigemptyset(&ss)){
 		fprintf(stderr,"Couldn't initialize sigset\n");
 		goto err;
+	}
+	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
+		int s = signals_watched[z];
+
+		if(sigaddset(&ss,s)){
+			fprintf(stderr,"Couldn't add signal %d to set\n",signals_watched[z]);
+			goto err;
+		}
+		printf("Watching signal %d (%s)\n",s,strsignal(s));
 	}
 	if(libtorque_addsignal(ctx,&ss,signalrx,NULL)){
 		fprintf(stderr,"Couldn't listen on signals\n");
