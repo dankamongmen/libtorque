@@ -232,6 +232,16 @@ struct libtorque_ctx *libtorque_getcurctx(void){
 	return get_thread_ctx();
 }
 
+int libtorque_block(libtorque_ctx *ctx){
+	int ret = 0;
+
+	if(ctx){
+		ret |= reap_threads(ctx); // FIXME
+		ret |= free_libtorque_ctx(ctx);
+	}
+	return ret;
+}
+
 int libtorque_stop(libtorque_ctx *ctx){
 	int ret = 0;
 
@@ -239,5 +249,5 @@ int libtorque_stop(libtorque_ctx *ctx){
 		ret |= reap_threads(ctx);
 		ret |= free_libtorque_ctx(ctx);
 	}
-	return 0;
+	return ret;
 }
