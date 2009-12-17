@@ -1,5 +1,6 @@
 #include <string.h>
 #include <unistd.h>
+#include <libtorque/events/evq.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
@@ -34,17 +35,7 @@ int add_evector_kevents(evectors *e,const struct kevent *k,int kcount){
 }
 
 int flush_evector_changes(evhandler *eh,evectors *ev){
-	int ret = 0;
-
-	if(ev->changesqueued){
-#ifdef LIBTORQUE_LINUX
-		ret = Kevent(eh->evq->efd,&ev->changev,ev->changesqueued,NULL,0);
-#else
-		ret = Kevent(eh->evq->efd,ev->changev,ev->changesqueued,NULL,0);
-#endif
-		ev->changesqueued = 0;
-	}
-	return ret;
+	return flush_evqueue_changes(eh->evq,ev);
 }
 
 #ifdef LIBTORQUE_LINUX

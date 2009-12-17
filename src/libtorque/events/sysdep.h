@@ -126,7 +126,7 @@ typedef struct evectors {
 struct evhandler;
 
 int add_evector_kevents(struct evectors *,const struct kevent *,int);
-int flush_evector_changes(struct evhandler *,struct evectors *);
+int flush_evector_changes(struct evhandler *,evectors *);
 
 #ifdef __cplusplus
 }

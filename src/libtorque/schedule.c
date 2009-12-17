@@ -117,7 +117,7 @@ thread(void *void_marshal){
 	// efd is only live for us through being passed to create_evhandler().
 	// once we've done that, destroy_evhandler() is responsible for
 	// closing it down. thus, no close(efd) in the "earlyerr" handler.
-	if(init_evqueue(&evq)){
+	if(init_evqueue(ctx,&evq)){
 		goto earlyerr;
 	}
 	if((ev = create_evhandler(&marshal->ctx->eventtables,&evq)) == NULL){

@@ -184,47 +184,12 @@ int initialize_common_sources(struct evtables *evt){
 	return 0;
 }
 
-static inline int
-add_evhandler_baseevents(evhandler *e){
-#ifdef LIBTORQUE_FREEBSD
-	EVECTORS_AUTO(8,ev,evbase);
-
-		for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
-			struct kevent k;
-
-			if(!sigismember(sigs,z)){
-				continue;
-			}
-			EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
-			if(add_evector_kevents(ev,&k,1)){
-				if(flush_evector_changes(eh,ev)){
-					return -1;
-				}
-			}
-		}
-		if(flush_evector_changes(eh,ev)){
-			return -1;
-		}
-	}
-	if(add_signal_to_evhandler(e,&s,rxcommonsignal,NULL)){
-		return -1;
-	}
-	return 0;
-#else
-	return add_commonfds_to_evhandler(e,signalfd_demultiplexer);
-#endif
-}
-
 static int
 initialize_evhandler(evhandler *e,evtables *evsources,evqueue *evq){
 	memset(e,0,sizeof(*e));
 	e->evsources = evsources;
 	e->evq = evq;
 	if(init_evectors(&e->evec)){
-		return -1;
-	}
-	if(add_evhandler_baseevents(e)){
-		destroy_evectors(&e->evec);
 		return -1;
 	}
 	return 0;
