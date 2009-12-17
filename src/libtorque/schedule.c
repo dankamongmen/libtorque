@@ -83,10 +83,15 @@ block_thread(pthread_t tid){
 static inline int
 reap_thread(pthread_t tid){
 	int ret = 0;
+	sigset_t ss;
 
 	// If a thread has exited but not yet been joined, it's safe to call
 	// pthread_cancel(). I don't think the same applies here; ignore error.
 	pthread_kill(tid,EVTHREAD_TERM);
+	sigemptyset(&ss);
+	sigaddset(&ss,EVTHREAD_TERM);
+	pthread_sigmask(SIG_BLOCK,&ss,NULL);
+	kill(getpid(),EVTHREAD_TERM);
 	ret |= block_thread(tid);
 	return ret;
 }
@@ -108,20 +113,12 @@ thread(void *void_marshal){
 	tguard *marshal = void_marshal;
 	evhandler *ev = NULL;
 	libtorque_ctx *ctx;
-	evqueue evq;
 
 	ctx = marshal->ctx;
 	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
 		goto earlyerr;
 	}
-	// efd is only live for us through being passed to create_evhandler().
-	// once we've done that, destroy_evhandler() is responsible for
-	// closing it down. thus, no close(efd) in the "earlyerr" handler.
-	if(init_evqueue(ctx,&evq)){
-		goto earlyerr;
-	}
-	if((ev = create_evhandler(&ctx->eventtables,&evq)) == NULL){
-		destroy_evqueue(&evq);
+	if((ev = create_evhandler(&ctx->eventtables,&ctx->evq)) == NULL){
 		goto earlyerr;
 	}
 	if(pthread_mutex_lock(&marshal->lock)){

@@ -43,7 +43,12 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 	ecd.op = EPOLL_CTL_ADD;
 	// We automatically wait for EPOLLERR/EPOLLHUP; according to
 	// epoll_ctl(2), "it is not necessary to add set [these] in ->events"
-	ee.events = EPOLLET | EPOLLRDHUP | EPOLLPRI;
+	// We do NOT use edge-triggered polling for this internal handler, for
+	// obscure technical reasons (a thread which bails can't easily empty
+	// the pending signal queue, at least not without reading everything
+	// else, putting it on an event queue, and then swapping the exit back
+	// in from some other queue). So no EPOLLET.
+	ee.events = EPOLLRDHUP | EPOLLPRI;
 	ee.events |= EPOLLIN;
 	if(add_evector_kevents(&ev,&k,1)){
 		return -1;

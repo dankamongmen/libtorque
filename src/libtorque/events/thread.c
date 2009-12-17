@@ -188,6 +188,9 @@ static int
 initialize_evhandler(evhandler *e,evtables *evsources,evqueue *evq){
 	memset(e,0,sizeof(*e));
 	e->evsources = evsources;
+	if(ref_evqueue(evq)){
+		return -1;
+	}
 	e->evq = evq;
 	if(init_evectors(&e->evec)){
 		return -1;
