@@ -161,7 +161,6 @@ int libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 	if(add_signal_to_evhandler(ctx->ev,sigs,fxn,state)){
 		return -1;
 	}
-	ctx->ev = ctx->ev->nextev;
 	return 0;
 }
 
@@ -170,7 +169,6 @@ int libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
 	if(add_timer_to_evhandler(ctx->ev,t,fxn,state)){
 		return -1;
 	}
-	ctx->ev = ctx->ev->nextev;
 	return 0;
 }
 
@@ -186,7 +184,6 @@ int libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
 	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,&cbctx,state)){
 		return -1;
 	}
-	ctx->ev = ctx->ev->nextev;
 	return 0;
 }
 
@@ -208,7 +205,6 @@ int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquercb rx,
 		free_rxbuffer(cbctx.rxbuf);
 		return -1;
 	}
-	ctx->ev = ctx->ev->nextev;
 	return 0;
 }
 
@@ -216,7 +212,6 @@ int libtorque_addpath(libtorque_ctx *ctx,const char *path,libtorquercb rx,void *
 	if(add_fswatch_to_evhandler(ctx->ev,path,rx,state)){
 		return -1;
 	}
-	ctx->ev = ctx->ev->nextev;
 	return 0;
 }
 
