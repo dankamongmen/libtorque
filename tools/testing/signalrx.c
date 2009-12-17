@@ -66,17 +66,20 @@ err:
 #undef SET_ARG_ONCE
 }
 
-static const int signals_watched[] = {
-	SIGHUP,
-	SIGPIPE,
-	SIGALRM,
-	SIGUSR1,
-	SIGUSR2,
-	SIGCHLD,
-	SIGPOLL,
-	SIGIO,
-	SIGURG,
-	SIGWINCH,
+static struct {
+	const int sig;
+	uint64_t rx;
+} signals_watched[] = {
+	{ SIGHUP, 0 },
+	{ SIGPIPE, 0 },
+	{ SIGALRM, 0 },
+	{ SIGUSR1, 0 },
+	{ SIGUSR2, 0 },
+	{ SIGCHLD, 0 },
+	{ SIGPOLL, 0 },
+	{ SIGIO, 0 },
+	{ SIGURG, 0 },
+	{ SIGWINCH, 0 },
 };
 
 int main(int argc,char **argv){
@@ -96,10 +99,10 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
-		int s = signals_watched[z];
+		int s = signals_watched[z].sig;
 
 		if(sigaddset(&ss,s)){
-			fprintf(stderr,"Couldn't add signal %d to set\n",signals_watched[z]);
+			fprintf(stderr,"Couldn't add signal %d to set\n",s);
 			goto err;
 		}
 		printf("Watching signal %d (%s)\n",s,strsignal(s));
