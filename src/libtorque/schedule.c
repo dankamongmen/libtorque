@@ -120,7 +120,7 @@ thread(void *void_marshal){
 	if(init_evqueue(ctx,&evq)){
 		goto earlyerr;
 	}
-	if((ev = create_evhandler(&marshal->ctx->eventtables,&evq)) == NULL){
+	if((ev = create_evhandler(&ctx->eventtables,&evq)) == NULL){
 		destroy_evqueue(&evq);
 		goto earlyerr;
 	}
