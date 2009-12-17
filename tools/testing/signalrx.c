@@ -10,9 +10,34 @@
 #include <libtorque/buffers.h>
 #include <libtorque/libtorque.h>
 
+static struct {
+	pthread_mutex_t lock;
+	const int sig;
+	uint64_t rx;
+} signals_watched[] = {
+	{ PTHREAD_MUTEX_INITIALIZER, SIGHUP, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGPIPE, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGALRM, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGUSR1, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGUSR2, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGCHLD, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGPOLL, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGIO, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGURG, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGWINCH, 0 },
+};
+
 static int
-signalrx(int sig,struct libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
-	printf("received signal %d %p\n",sig,cbctx);
+signalrx(int sig,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
+				void *v __attribute__ ((unused))){
+	unsigned z;
+
+	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
+		if(signals_watched[z].sig == sig){
+			++signals_watched[z].rx;
+			break;
+		}
+	}
 	return 0;
 }
 
@@ -66,22 +91,6 @@ err:
 #undef SET_ARG_ONCE
 }
 
-static struct {
-	const int sig;
-	uint64_t rx;
-} signals_watched[] = {
-	{ SIGHUP, 0 },
-	{ SIGPIPE, 0 },
-	{ SIGALRM, 0 },
-	{ SIGUSR1, 0 },
-	{ SIGUSR2, 0 },
-	{ SIGCHLD, 0 },
-	{ SIGPOLL, 0 },
-	{ SIGIO, 0 },
-	{ SIGURG, 0 },
-	{ SIGWINCH, 0 },
-};
-
 int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
 	sigset_t ss;
@@ -114,6 +123,15 @@ int main(int argc,char **argv){
 	if(libtorque_block(ctx)){
 		fprintf(stderr,"Error blocking on libtorque\n");
 		return EXIT_FAILURE;
+	}
+	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
+		int s = signals_watched[z].sig;
+
+		if(signals_watched[z].rx){
+			printf("Recevied signal %d (%s) %ju time%s\n",
+					s,strsignal(s),signals_watched[z].rx,
+					signals_watched[z].rx == 1 ? "" : "s");
+		}
 	}
 	printf("Successfully cleaned up.\n");
 	return EXIT_SUCCESS;
