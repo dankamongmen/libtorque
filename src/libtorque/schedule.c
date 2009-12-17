@@ -74,7 +74,10 @@ static int
 block_thread(pthread_t tid){
 	void *joinret = PTHREAD_CANCELED;
 
-	if(pthread_join(tid,&joinret) || joinret != PTHREAD_CANCELED){
+	// FIXME various race conditions cause NULL to emerge from
+	// pthread_join(). they're not important, save being logically tidy
+	// (and worth investigating)...for now, toss that check.
+	if(pthread_join(tid,&joinret)/* || joinret != PTHREAD_CANCELED*/){
 		return -1;
 	}
 	return 0;
@@ -82,17 +85,21 @@ block_thread(pthread_t tid){
 
 static inline int
 reap_thread(pthread_t tid){
+	sigset_t ss,os;
 	int ret = 0;
-	sigset_t ss;
 
-	// If a thread has exited but not yet been joined, it's safe to call
-	// pthread_cancel(). I don't think the same applies here; ignore error.
-	pthread_kill(tid,EVTHREAD_TERM);
-	sigemptyset(&ss);
-	sigaddset(&ss,EVTHREAD_TERM);
-	pthread_sigmask(SIG_BLOCK,&ss,NULL);
-	kill(getpid(),EVTHREAD_TERM);
+	if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM)){
+		return -1;
+	}
+	if(pthread_sigmask(SIG_BLOCK,&ss,&os)){
+		return -1;
+	}
+	// This contortion leads to a natural distribution of the signal
+	// (raise() would direct it specifically to ourselves). We were using
+	// pthread_kill() on ->headtid; see block_thread()'s FIXME.
+	ret |= kill(getpid(),EVTHREAD_TERM);
 	ret |= block_thread(tid);
+	ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	return ret;
 }
 
