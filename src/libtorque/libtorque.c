@@ -134,7 +134,7 @@ libtorque_ctx *libtorque_init(void){
 	if(sigaction(EVTHREAD_TERM,NULL,&oldact)){
 		return NULL;
 	}
-	if(sigemptyset(&add) || sigaddset(&add,EVTHREAD_TERM)){
+	if(sigfillset(&add)){
 		return NULL;
 	}
 	if(pthread_sigmask(SIG_BLOCK,&add,&old)){
@@ -153,6 +153,9 @@ int libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 	// FIXME check for empty signal set via sigisemptyset()/freebsd equiv
 	if(sigismember(sigs,EVTHREAD_TERM) || sigismember(sigs,SIGKILL) ||
 			sigismember(sigs,SIGSTOP)){
+		return -1;
+	}
+	if(pthread_sigmask(SIG_BLOCK,sigs,NULL)){
 		return -1;
 	}
 	if(add_signal_to_evhandler(ctx->ev,sigs,fxn,state)){
