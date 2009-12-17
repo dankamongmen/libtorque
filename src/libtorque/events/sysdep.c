@@ -61,7 +61,7 @@ int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)
 		}else if(r >= 0){
 			// FIXME stat short read! return -1?
 		}
-	}while(r >= 0 && errno != EINTR);
+	}while(r >= 0 || errno == EINTR);
 	if(errno != EAGAIN){
 		// FIXME stat on error reading signalfd! return -1?
 	}
