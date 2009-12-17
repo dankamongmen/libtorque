@@ -19,7 +19,7 @@ int destroy_evqueue(evqueue *evq){
 int ref_evqueue(evqueue *e){
 	int ret = 0;
 
-	if(pthread_mutex_init(&e->lock,NULL)){
+	if(pthread_mutex_lock(&e->lock)){
 		return -1;
 	}
 	++e->refcount;
