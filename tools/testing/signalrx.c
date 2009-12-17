@@ -128,7 +128,7 @@ int main(int argc,char **argv){
 		int s = signals_watched[z].sig;
 
 		if(signals_watched[z].rx){
-			printf("Recevied signal %d (%s) %ju time%s\n",
+			printf("Received signal %d (%s) %ju time%s\n",
 					s,strsignal(s),signals_watched[z].rx,
 					signals_watched[z].rx == 1 ? "" : "s");
 		}
