@@ -107,14 +107,12 @@ struct libtorque_ctx *libtorque_getcurctx(void)
 // running; it's in a sigwait() or something, not a pthread_join() (which would
 // succeed immediately). The context, and all of its data, are destroyed.
 int libtorque_block(struct libtorque_ctx *)
-	__attribute__ ((visibility("default")))
-	__attribute__ ((nonnull(1)));
+	__attribute__ ((visibility("default")));
 
 // Signal and reap the running threads, and free the context. No further calls
 // may be made using this context following libtorque_stop().
 int libtorque_stop(struct libtorque_ctx *)
-	__attribute__ ((visibility("default")))
-	__attribute__ ((nonnull(1)));
+	__attribute__ ((visibility("default")));
 
 #ifdef __cplusplus
 }

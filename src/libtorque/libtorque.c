@@ -246,22 +246,26 @@ int libtorque_block(libtorque_ctx *ctx){
 	sigset_t ss,os;
 	int ret = 0;
 
-	if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM)){
-		return -1;
+	if(ctx){
+		if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM)){
+			return -1;
+		}
+		if(pthread_sigmask(SIG_BLOCK,&ss,&os)){
+			return -1;
+		}
+		ret |= block_threads(ctx);
+		ret |= free_libtorque_ctx(ctx);
+		ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	}
-	if(pthread_sigmask(SIG_BLOCK,&ss,&os)){
-		return -1;
-	}
-	ret |= block_threads(ctx);
-	ret |= free_libtorque_ctx(ctx);
-	ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	return ret;
 }
 
 int libtorque_stop(libtorque_ctx *ctx){
 	int ret = 0;
 
-	ret |= reap_threads(ctx);
-	ret |= free_libtorque_ctx(ctx);
+	if(ctx){
+		ret |= reap_threads(ctx);
+		ret |= free_libtorque_ctx(ctx);
+	}
 	return ret;
 }
