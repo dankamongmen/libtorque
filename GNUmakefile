@@ -135,8 +135,8 @@ SSLSRVOBJ:=$(addprefix $(OUT)/,$(SSLSRVSRC:%.c=%.o))
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
-TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx signaltx) # FIXME autodiscover
-BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(SSLSRV))
+TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx signaltx torquessl) # FIXME autodiscover
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
@@ -214,11 +214,9 @@ LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc
 ARCHDETECTCFLAGS:=$(CFLAGS)
 ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
-SSLSRVCFLAGS:=$(MT_CFLAGS)
-SSLSRVLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 TORQUECFLAGS:=$(MT_CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
-TESTBINCFLAGS:=$(CFLAGS)
+TESTBINCFLAGS:=$(MT_CFLAGS)
 TESTBINLFLAGS:=$(LFLAGS) -Wl,-R$(LIBOUT) -L$(LIBOUT) -ltorque
 
 flow:
@@ -273,7 +271,7 @@ $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 
 $(BINOUT)/$(SSLSRV): $(OUT)/tools/testing/$(SSLSRV).o $(LIBS)
 	@mkdir -p $(@D)
-	$(CC) $(SSLSRVCFLAGS) -o $@ $< $(SSLSRVLFLAGS)
+	$(CC) $(TESTBINCFLAGS) -o $@ $< $(TESTBINLFLAGS)
 
 # The .o files generated for $(TESTBINS) get removed post-build due to their
 # status as "intermediate files". The following directive precludes said
