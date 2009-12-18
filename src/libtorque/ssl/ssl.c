@@ -453,8 +453,8 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 	return 0;
 }
 
-int ssl_accept_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate __attribute__ ((unused))){
-	const ssl_cbstate *sc = cbctx->cbstate;
+int ssl_accept_rxfxn(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
+			void *cbstate){
 	struct sockaddr_in sina;
 	socklen_t slen;
 	int sd;
@@ -470,7 +470,7 @@ int ssl_accept_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate __attribute__ (
 		}
 		if(((flags = fcntl(sd,F_GETFL)) < 0) || fcntl(sd,F_SETFL,flags | O_NONBLOCK)){
 			close(sd);
-		}else if(ssl_accept_internal(sd,sc)){
+		}else if(ssl_accept_internal(sd,cbstate)){
 			close(sd);
 		}
 	}while(1);
