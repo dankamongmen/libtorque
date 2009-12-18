@@ -26,9 +26,8 @@ print_version(void){
 
 static void
 usage(const char *argv0){
-	fprintf(stderr,"usage: %s [ options ] target\n",argv0);
+	fprintf(stderr,"usage: %s [ options ] pid\n",argv0);
 	fprintf(stderr,"available options:\n");
-	fprintf(stderr,"\t-p, --pid: target specifies a pid\n");
 	fprintf(stderr,"\t-s, --sig signum: specify signal (default: %d (%s))\n",
 			DEFAULT_SIG,strsignal(DEFAULT_SIG));
 	fprintf(stderr,"\t--version: print version info\n");
@@ -38,17 +37,12 @@ static int
 parse_args(int argc,char **argv,pid_t *pid,int *sig){
 #define SET_ARG_ONCE(opt,arg,val) do{ if(!*(arg)){ *arg = val; }\
 	else{ fprintf(stderr,"Provided '%c' twice\n",(opt)); goto err; }} while(0)
-	int lflag,pidtarget = 0;
+	int lflag;
 	const struct option opts[] = {
 		{	 .name = "version",
 			.has_arg = 0,
 			.flag = &lflag,
 			.val = 'v',
-		},
-		{	 .name = "pid",
-			.has_arg = 0,
-			.flag = &lflag,
-			.val = 'p',
 		},
 		{	 .name = "sig",
 			.has_arg = 1,
@@ -61,21 +55,15 @@ parse_args(int argc,char **argv,pid_t *pid,int *sig){
 	int c;
 
 	*sig = 0;
-	while((c = getopt_long(argc,argv,"ps:",opts,NULL)) >= 0){
+	while((c = getopt_long(argc,argv,"s:",opts,NULL)) >= 0){
 		switch(c){
 		case 's':
 			SET_ARG_ONCE('s',sig,atoi(optarg));
-			break;
-		case 'p':
-			SET_ARG_ONCE('p',&pidtarget,1);
 			break;
 		case 0: // long option
 			switch(lflag){
 				case 's':
 					SET_ARG_ONCE('s',sig,atoi(optarg));
-					break;
-				case 'p':
-					SET_ARG_ONCE('p',&pidtarget,1);
 					break;
 				case 'v':
 					print_version();
@@ -91,11 +79,7 @@ parse_args(int argc,char **argv,pid_t *pid,int *sig){
 	if(argv[optind] == NULL || argv[optind + 1] != NULL){
 		goto err; // require a target and no other params
 	}
-	if(pidtarget){
-		*pid = atoi(argv[optind]); // FIXME error-checking
-	}else{
-		goto err; // FIXME implement
-	}
+	*pid = atoi(argv[optind]); // FIXME error-checking
 	if(*sig == 0){
 		*sig = DEFAULT_SIG;
 	}
