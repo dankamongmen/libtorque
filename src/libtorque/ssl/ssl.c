@@ -335,8 +335,9 @@ ssl_txfxn(int fd,void *cbs){
 static int accept_conttxfxn(int,void *);
 
 static int
-accept_contrxfxn(int fd,struct libtorque_cbctx *cbctx,void *cbstate __attribute__ ((unused))){
-	ssl_cbstate *sc = cbctx->cbstate;
+accept_contrxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
+			void *cbstate){
+	ssl_cbstate *sc = cbstate;
 	int ret;
 
 	if((ret = SSL_accept(sc->ssl)) == 1){
