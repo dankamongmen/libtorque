@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define DEFAULT_SIG SIGTERM
+
 static void
 print_version(void){
 	fprintf(stderr,"signaltx from libtorque " LIBTORQUE_VERSIONSTR "\n");
@@ -18,11 +20,13 @@ usage(const char *argv0){
 	fprintf(stderr,"usage: %s [ options ] target\n",argv0);
 	fprintf(stderr,"available options:\n");
 	fprintf(stderr,"\t-p, --pid: target specifies a pid\n");
+	fprintf(stderr,"\t-s, --sig signum: specify signal (default: %d (%s))\n",
+			DEFAULT_SIG,strsignal(DEFAULT_SIG));
 	fprintf(stderr,"\t--version: print version info\n");
 }
 
 static int
-parse_args(int argc,char **argv,pid_t *pid){
+parse_args(int argc,char **argv,pid_t *pid,int *sig){
 #define SET_ARG_ONCE(opt,arg,val) do{ if(!*(arg)){ *arg = val; }\
 	else{ fprintf(stderr,"Provided '%c' twice\n",(opt)); goto err; }} while(0)
 	int lflag,pidtarget = 0;
@@ -37,18 +41,30 @@ parse_args(int argc,char **argv,pid_t *pid){
 			.flag = &lflag,
 			.val = 'p',
 		},
+		{	 .name = "sig",
+			.has_arg = 1,
+			.flag = &lflag,
+			.val = 's',
+		},
 		{	 .name = NULL, .has_arg = 0, .flag = 0, .val = 0, },
 	};
 	const char *argv0 = *argv;
 	int c;
 
-	while((c = getopt_long(argc,argv,"p",opts,NULL)) >= 0){
+	*sig = 0;
+	while((c = getopt_long(argc,argv,"ps:",opts,NULL)) >= 0){
 		switch(c){
+		case 's':
+			SET_ARG_ONCE('s',sig,atoi(optarg));
+			break;
 		case 'p':
 			SET_ARG_ONCE('p',&pidtarget,1);
 			break;
 		case 0: // long option
 			switch(lflag){
+				case 's':
+					SET_ARG_ONCE('s',sig,atoi(optarg));
+					break;
 				case 'p':
 					SET_ARG_ONCE('p',&pidtarget,1);
 					break;
@@ -71,6 +87,9 @@ parse_args(int argc,char **argv,pid_t *pid){
 	}else{
 		goto err; // FIXME implement
 	}
+	if(*sig == 0){
+		*sig = DEFAULT_SIG;
+	}
 	return 0;
 
 err:
@@ -80,12 +99,13 @@ err:
 }
 
 int main(int argc,char **argv){
-	int sig = SIGUSR1;
 	pid_t pid;
+	int sig;
 
-	if(parse_args(argc,argv,&pid)){
+	if(parse_args(argc,argv,&pid,&sig)){
 		return EXIT_FAILURE;
 	}
+	printf("Using signal %d (%s)...\n",sig,strsignal(sig));
 	for( ; ; ){
 		if(kill(pid,sig)){
 			fprintf(stderr,"Error sending signal %d\n",sig);
