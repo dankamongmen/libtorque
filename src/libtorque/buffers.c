@@ -25,10 +25,10 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 		if((r = read(fd,rxb->buffer + rxb->bufate,rxb->buftot - rxb->bufoff)) > 0){
 			rxb->bufoff += r;
 		}else if(r == 0){
-			if(callback(rxb,fd,cbctx,cbstate) == 0){
-				close(fd);
+			if(callback(rxb,fd,cbctx,cbstate)){
+				break;
 			}
-			return 0;
+			return 0; // FIXME
 		}else if(errno == EAGAIN){
 			if(callback(rxb,fd,cbctx,cbstate)){
 				break;
