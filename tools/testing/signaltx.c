@@ -66,7 +66,11 @@ parse_args(int argc,char **argv,pid_t *pid){
 	if(argv[optind] == NULL || argv[optind + 1] != NULL){
 		goto err; // require a target and no other params
 	}
-	*pid = -1;
+	if(pidtarget){
+		*pid = atoi(argv[optind]); // FIXME error-checking
+	}else{
+		goto err; // FIXME implement
+	}
 	return 0;
 
 err:
@@ -76,10 +80,17 @@ err:
 }
 
 int main(int argc,char **argv){
+	int sig = SIGUSR1;
 	pid_t pid;
 
 	if(parse_args(argc,argv,&pid)){
 		return EXIT_FAILURE;
+	}
+	for( ; ; ){
+		if(kill(pid,sig)){
+			fprintf(stderr,"Error sending signal %d\n",sig);
+			return EXIT_FAILURE;
+		}
 	}
 	return EXIT_SUCCESS;
 }
