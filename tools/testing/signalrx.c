@@ -79,6 +79,7 @@ parse_args(int argc,char **argv){
 				default:
 					goto err;
 			}
+			break;
 		default:
 			goto err;
 		}
