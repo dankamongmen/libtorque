@@ -153,7 +153,7 @@ SSL_CTX *libtorque_ssl_ctx(const char *certfile,const char *keyfile,
 		return NULL;
 	}
 	// Create a pseudorandom SessionID (and thus verify RNG functionality).
-	if(RAND_pseudo_bytes(sessionid,sizeof(sessionid))){
+	if(RAND_pseudo_bytes(sessionid,sizeof(sessionid)) < 0){
 		SSL_CTX_free(ret);
 		return NULL;
 	}
