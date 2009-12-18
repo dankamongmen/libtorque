@@ -25,7 +25,9 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	}
 	fprintf(stdout,"[%4d] Read %zu bytes\n",fd,len);
 	if(write(fd,buf,len) < (int)len){
-		return -1; // FIXME
+		fprintf(stderr,"[%4d] Error %d (%s) writing %zu bytes\n",fd,
+				errno,strerror(errno),len);
+		return -1;
 	}
 	rxbuffer_advance(cbctx->rxbuf,len);
 	return 0;
@@ -52,8 +54,11 @@ conn_handler(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 				close(sd);
 			}
 		}
-	}while(errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK);
-	fprintf(stdout,"Returning from accept() callback errno %d\n",errno);
+	}while(errno == EINTR);
+	if(errno != EAGAIN && errno != EWOULDBLOCK){
+		fprintf(stdout,"Accept() callback errno %d (%s)\n",
+				errno,strerror(errno));
+	}
 	return 0;
 }
 
