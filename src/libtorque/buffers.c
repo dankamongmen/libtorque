@@ -6,10 +6,8 @@
 static inline int
 callback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
 	if(rxb->bufoff - rxb->bufate){
-		printf("cb: %ju\n",(uintmax_t)rxb->bufoff - rxb->bufate);
 		return ((const libtorquercb)cbctx->cbstate)(fd,cbctx,cbstate);
 	}
-	printf("nocb\n");
 	return 0;
 }
 
@@ -17,10 +15,10 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 	libtorque_rxbuf *rxb = cbctx->rxbuf;
 	int r;
 
-	do{
+	for( ; ; ){
 		if(rxb->buftot - rxb->bufoff == 0){
 			if(callback(rxb,fd,cbctx,cbstate)){
-				return -1;
+				break;
 			}
 			// FIXME if no space was cleared, grow that fucker
 		}
@@ -32,10 +30,14 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			}
 			return 0;
 		}else if(errno == EAGAIN){
-			return callback(rxb,fd,cbctx,cbstate);
+			if(callback(rxb,fd,cbctx,cbstate)){
+				break;
+			}
+			return 0;
+		}else if(errno != EINTR){
+			break;
 		}
-	}while(r > 0 || errno == EINTR);
-	printf("error (%s) on %d\n",strerror(errno),fd);
+	}
 	close(fd);
 	return -1;
 }
