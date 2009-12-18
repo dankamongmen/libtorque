@@ -36,12 +36,14 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 static int
 conn_handler(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 				void *v __attribute__ ((unused))){
-	struct sockaddr_in sina;
-	socklen_t slen;
-	int sd;
 
 	fprintf(stdout,"Got a connection on %d\n",fd);
 	do{
+		struct sockaddr_in sina;
+		socklen_t slen;
+		int sd;
+
+		slen = sizeof(sina);
 		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) >= 0){
 			int flags;
 
