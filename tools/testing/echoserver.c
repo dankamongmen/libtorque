@@ -23,9 +23,9 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 		fprintf(stdout,"[%4d] closed\n",fd);
 		return -1;
 	}
-	fprintf(stdout,"[%4d] Read %zu bytes\n",fd,len);
+	fprintf(stdout,"[%4d] Read %zub\n",fd,len);
 	if(write(fd,buf,len) < (int)len){
-		fprintf(stderr,"[%4d] Error %d (%s) writing %zu bytes\n",fd,
+		fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,
 				errno,strerror(errno),len);
 		return -1;
 	}
