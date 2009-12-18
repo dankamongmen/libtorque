@@ -5,10 +5,19 @@
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <pthread.h>
 
 #define DEFAULT_SIG SIGTERM
+
+static uintmax_t sent;
+static volatile int stopsending;
+
+static void
+rxtermsig(int s){
+	stopsending = s;
+}
 
 static void
 print_version(void){
@@ -99,18 +108,27 @@ err:
 }
 
 int main(int argc,char **argv){
+	struct sigaction sa;
 	pid_t pid;
 	int sig;
 
 	if(parse_args(argc,argv,&pid,&sig)){
 		return EXIT_FAILURE;
 	}
+	memset(&sa,0,sizeof(sa));
+	sa.sa_handler = rxtermsig;
+	if(sigaction(SIGINT,&sa,NULL) || sigaction(SIGTERM,&sa,NULL)){
+		fprintf(stderr,"Couldn't install signal handlers\n");
+		return EXIT_FAILURE;
+	}
 	printf("Using signal %d (%s)...\n",sig,strsignal(sig));
-	for( ; ; ){
+	while(!stopsending){
 		if(kill(pid,sig)){
 			fprintf(stderr,"Error sending signal %d\n",sig);
 			return EXIT_FAILURE;
 		}
+		++sent;
 	}
+	printf("%s. Sent %ju signals.\n",strsignal(stopsending),sent);
 	return EXIT_SUCCESS;
 }
