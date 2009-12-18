@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <limits.h>
 #include <getopt.h>
 #include <string.h>
 #include <signal.h>
@@ -37,7 +38,7 @@ static int
 parse_args(int argc,char **argv,pid_t *pid,int *sig){
 #define SET_ARG_ONCE(opt,arg,val) do{ if(!*(arg)){ *arg = val; }\
 	else{ fprintf(stderr,"Provided '%c' twice\n",(opt)); goto err; }} while(0)
-	int lflag;
+	int lflag,c;
 	const struct option opts[] = {
 		{	 .name = "version",
 			.has_arg = 0,
@@ -52,7 +53,8 @@ parse_args(int argc,char **argv,pid_t *pid,int *sig){
 		{	 .name = NULL, .has_arg = 0, .flag = 0, .val = 0, },
 	};
 	const char *argv0 = *argv;
-	int c;
+	char *pidstr;
+	long r;
 
 	*sig = 0;
 	while((c = getopt_long(argc,argv,"s:",opts,NULL)) >= 0){
@@ -79,7 +81,13 @@ parse_args(int argc,char **argv,pid_t *pid,int *sig){
 	if(argv[optind] == NULL || argv[optind + 1] != NULL){
 		goto err; // require a target and no other params
 	}
-	*pid = atoi(argv[optind]); // FIXME error-checking
+	r = strtol(argv[optind],&pidstr,10);
+	if(r <= 0 || (r == LONG_MAX && errno == ERANGE) ||
+			argv[optind][0] == '\0' || *pidstr != '\0'){
+		fprintf(stderr,"Couldn't use PID: %s\n",argv[optind]);
+		goto err;
+	}
+	*pid = r;
 	if(*sig == 0){
 		*sig = DEFAULT_SIG;
 	}
