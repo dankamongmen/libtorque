@@ -111,6 +111,9 @@ int main(int argc,char **argv){
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		int s = signals_watched[z].sig;
 
+		if(sigismember(&ss,s)){ // some are duplicates
+			continue;
+		}
 		if(sigaddset(&ss,s)){
 			fprintf(stderr,"Couldn't add signal %d to set\n",s);
 			goto err;
