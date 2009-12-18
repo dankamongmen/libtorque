@@ -271,9 +271,9 @@ $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(ARCHDETECTCFLAGS) -o $@ $(ARCHDETECTOBJ) $(ARCHDETECTLFLAGS)
 
-$(BINOUT)/$(SSLSRV): $(SSLSRVOBJ) $(LIBS)
+$(BINOUT)/$(SSLSRV): $(OUT)/tools/testing/$(SSLSRV).o $(LIBS)
 	@mkdir -p $(@D)
-	$(CC) $(SSLSRVCFLAGS) -o $@ $(SSLSRVOBJ) $(SSLSRVLFLAGS)
+	$(CC) $(SSLSRVCFLAGS) -o $@ $< $(SSLSRVLFLAGS)
 
 # The .o files generated for $(TESTBINS) get removed post-build due to their
 # status as "intermediate files". The following directive precludes said
@@ -282,7 +282,7 @@ $(BINOUT)/$(SSLSRV): $(SSLSRVOBJ) $(LIBS)
 
 $(BINOUT)/%: $(OUT)/tools/testing/%.o $(LIBS)
 	@mkdir -p $(@D)
-	$(CC) $(TESTBINCFLAGS) -o $@ $^ $(TESTBINLFLAGS)
+	$(CC) $(TESTBINCFLAGS) -o $@ $< $(TESTBINLFLAGS)
 
 $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
