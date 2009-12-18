@@ -24,7 +24,7 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 		return -1;
 	}
 	fprintf(stdout,"[%4d] Read %zub\n",fd,len);
-	if(write(fd,buf,len) < (int)len){
+	if(write(fd,buf,len) < (int)len){ // FIXME handle EAGAIN, partial tx
 		fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,
 				errno,strerror(errno),len);
 		return -1;

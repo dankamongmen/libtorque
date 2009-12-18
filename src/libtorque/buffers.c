@@ -25,7 +25,7 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 				break;
 			}
 		}
-		if((r = read(fd,rxb->buffer + rxb->bufate,rxb->buftot - rxb->bufoff)) > 0){
+		if((r = read(fd,rxb->buffer + rxb->bufoff,rxb->buftot - rxb->bufoff)) > 0){
 			rxb->bufoff += r;
 		}else if(r == 0){
 			if(callback(rxb,fd,cbctx,cbstate)){
