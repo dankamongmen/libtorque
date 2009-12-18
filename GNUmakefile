@@ -135,7 +135,7 @@ SSLSRVOBJ:=$(addprefix $(OUT)/,$(SSLSRVSRC:%.c=%.o))
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
-TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx) # FIXME autodiscover
+TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx signaltx) # FIXME autodiscover
 BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(SSLSRV))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
