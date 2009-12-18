@@ -124,11 +124,15 @@ int main(int argc,char **argv){
 	printf("Using signal %d (%s)...\n",sig,strsignal(sig));
 	while(!stopsending){
 		if(kill(pid,sig)){
-			fprintf(stderr,"Error sending signal %d\n",sig);
-			return EXIT_FAILURE;
+			fprintf(stderr,"Error sending signal %d (%s) (#%ju)\n",
+					sig,strerror(errno),sent + 1);
+			goto done;
 		}
 		++sent;
 	}
-	printf("%s. Sent %ju signals.\n",strsignal(stopsending),sent);
+	printf("%s. ",strsignal(stopsending));
+
+done:
+	printf("Sent %ju signal%s.\n",sent,sent == 1 ? "" : "s");
 	return EXIT_SUCCESS;
 }
