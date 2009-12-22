@@ -18,7 +18,7 @@ rxbuffer_advance(libtorque_rxbuf *rxb,size_t s){
 	// want to repack. predicate: else if(rxb->bufoff == rxb->buftot){ }
 }
 
-#define RXBUFSIZE (16 * 1024)
+#define RXBUFSIZE (16 * 1024) // FIXME embarrassing
 
 static inline int initialize_rxbuffer(libtorque_rxbuf *)
 	__attribute__ ((warn_unused_result));
