@@ -11,7 +11,7 @@ extern "C" {
 // The simplest receive buffer.
 static inline void
 rxbuffer_advance(libtorque_rxbuf *rxb,size_t s){
-	if((rxb->bufate += s) + rxb->bufoff == rxb->buftot){
+	if((rxb->bufate += s) == rxb->buftot){
 		rxb->bufoff = rxb->bufate = 0;
 	}
 	// FIXME if we're at the end, and have freed *some* space, we might
