@@ -23,22 +23,25 @@ libtorque_ctx *get_thread_ctx(void){
 
 static void
 handle_event(evhandler *eh,const kevententry *e){
-	int ret = 0;
-
 #ifdef LIBTORQUE_LINUX
 	if(e->events & EPOLLIN){
 #else
 	if(e->filter == EVFILT_READ){
 #endif
-		ret |= handle_evsource_read(eh->evsources->fdarray,KEVENTENTRY_FD(e));
+		handle_evsource_read(eh->evsources->fdarray,KEVENTENTRY_FD(e));
 	}
 #ifdef LIBTORQUE_LINUX
 	if(e->events & EPOLLOUT){
 #else
 	if(e->filter == EVFILT_WRITE){
 #endif
-		ret |= handle_evsource_write(eh->evsources->fdarray,KEVENTENTRY_FD(e));
+		handle_evsource_write(eh->evsources->fdarray,KEVENTENTRY_FD(e));
 	}
+#ifdef LIBTORQUE_FREEBSD
+	if(e->filter == EVFILT_SIGNAL){
+		handle_evsource_read(eh->evsources->sigarray,KEVENTENTRY_SIG(e));
+        }
+#endif
 }
 
 static int

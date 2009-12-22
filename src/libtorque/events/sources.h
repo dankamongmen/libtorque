@@ -80,11 +80,9 @@ set_evsource_tx(evsource *evs,int n,libtorquewcb tx){
 }
 
 static inline int handle_evsource_read(evsource *,int)
-	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
 static inline int handle_evsource_write(evsource *,int)
-	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
 static inline int
