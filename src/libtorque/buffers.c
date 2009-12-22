@@ -31,7 +31,7 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			if(callback(rxb,fd,cbctx,cbstate)){
 				break;
 			}
-			return 0; // FIXME
+			return 0; // FIXME must close, *unless* TX indicated
 		}else if(errno == EAGAIN){
 			if(callback(rxb,fd,cbctx,cbstate)){
 				break;
