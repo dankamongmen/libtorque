@@ -95,6 +95,7 @@ err:
 
 int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
+	int ret = EXIT_FAILURE;
 	sigset_t ss;
 	unsigned z;
 
@@ -136,10 +137,14 @@ int main(int argc,char **argv){
 			printf("Received signal %d (%s) %ju time%s\n",
 					s,strsignal(s),signals_watched[z].rx,
 					signals_watched[z].rx == 1 ? "" : "s");
+			ret = EXIT_SUCCESS;
 		}
 	}
+	if(ret != EXIT_SUCCESS){
+		fprintf(stderr,"Recevied no signals.\n");
+	}
 	printf("Successfully cleaned up.\n");
-	return EXIT_SUCCESS;
+	return ret;
 
 err:
 	if(libtorque_stop(ctx)){
