@@ -28,6 +28,12 @@ static struct {
 };
 
 static void
+rxsignal(struct ev_loop *loop __attribute__ ((unused)),
+		ev_signal *w __attribute__ ((unused)),
+		int revents __attribute__ ((unused))){
+}
+
+static void
 print_version(void){
 	fprintf(stderr,"libev-signalrx from libtorque " LIBTORQUE_VERSIONSTR "\n");
 }
@@ -97,6 +103,7 @@ int main(int argc,char **argv){
 	}
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		int s = signals_watched[z].sig;
+		ev_signal evs;
 
 		if(sigismember(&ss,s)){ // some are duplicates
 			continue;
@@ -105,13 +112,11 @@ int main(int argc,char **argv){
 			fprintf(stderr,"Couldn't add signal %d to set\n",s);
 			goto err;
 		}
+		ev_signal_init(&evs,NULL,s);
+		ev_signal_start(loop,&evs);
 		printf("Watching signal %d (%s)\n",s,strsignal(s));
 	}
-	/*if(libtorque_addsignal(ctx,&ss,signalrx,NULL)){
-		fprintf(stderr,"Couldn't listen on signals\n");
-		goto err;
-	}
-	if(libtorque_block(ctx)){
+	/* if(libtorque_block(ctx)){
 		fprintf(stderr,"Error blocking on libtorque\n");
 		return EXIT_FAILURE;
 	}*/
