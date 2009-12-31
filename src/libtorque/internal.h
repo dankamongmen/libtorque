@@ -3,12 +3,15 @@
 
 // Typedefs internal to libtorque. This file should not be installed, nor
 // #include'd by applications (save those built as part of the libtorque
-// distribution).
+// distribution). Anything seen by userspace must be prefixed with libtorque_.
+// These ought only be opaque types, so the actual typedefs are free of this
+// requirement (although I've usually used the same identifier).
 
 #include <stdio.h>
 #include <stdint.h>
 #include <libtorque/schedule.h>
 
+struct evsource;
 struct evhandler;
 
 // See the comment in hardware/topology.h. For simply walking the topology, the
@@ -100,8 +103,8 @@ typedef struct libtorque_cbctx {
 
 typedef struct evqueue {
 	int efd;
-	unsigned refcount;
-	pthread_mutex_t lock;
+	unsigned refcount;		// refcount and lock are only touched
+	pthread_mutex_t lock;		// at initialization / shutdown
 } evqueue;
 
 // Whenever a field is added to this structure, make sure it's
