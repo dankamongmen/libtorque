@@ -218,7 +218,6 @@ ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 TORQUECFLAGS:=$(MT_CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 TESTBINCFLAGS:=$(MT_CFLAGS)
-EVTESTBINCFLAGS:=$(MT_CFLAGS)
 TESTBINLFLAGS:=$(LFLAGS) -Wl,-R$(LIBOUT) -L$(LIBOUT) -ltorque
 EVTESTBINLFLAGS:=$(LFLAGS) -lev
 
@@ -283,7 +282,7 @@ $(BINOUT)/$(SSLSRV): $(OUT)/tools/testing/$(SSLSRV).o $(LIBS)
 
 $(BINOUT)/libev-%: $(OUT)/tools/libev/%.o
 	@mkdir -p $(@D)
-	$(CC) $(EVTESTBINCFLAGS) -o $@ $< $(EVTESTBINLFLAGS)
+	$(CC) $(TESTBINCFLAGS) -o $@ $< $(EVTESTBINLFLAGS)
 
 $(BINOUT)/%: $(OUT)/tools/testing/%.o $(LIBS)
 	@mkdir -p $(@D)
