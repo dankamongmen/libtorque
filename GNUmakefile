@@ -136,6 +136,7 @@ TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
 TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx signaltx torquessl) # FIXME autodiscover
+TESTBINS+=$(addprefix $(BINOUT)/libev-,signalrx)
 BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
@@ -217,7 +218,9 @@ ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 TORQUECFLAGS:=$(MT_CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 TESTBINCFLAGS:=$(MT_CFLAGS)
+EVTESTBINCFLAGS:=$(MT_CFLAGS)
 TESTBINLFLAGS:=$(LFLAGS) -Wl,-R$(LIBOUT) -L$(LIBOUT) -ltorque
+EVTESTBINLFLAGS:=$(LFLAGS) -lev
 
 flow:
 	cflow $(IFLAGS) $(DFLAGS) $(TORQUESRC) 2>/dev/null
@@ -277,6 +280,10 @@ $(BINOUT)/$(SSLSRV): $(OUT)/tools/testing/$(SSLSRV).o $(LIBS)
 # status as "intermediate files". The following directive precludes said
 # operation, should it be necessary or desirable:
 #.SECONDARY: $(addsuffix .o,$(addprefix $(OUT)/tools/testing/,$(TESTBINS)))
+
+$(BINOUT)/libev-%: $(OUT)/tools/libev/%.o
+	@mkdir -p $(@D)
+	$(CC) $(EVTESTBINCFLAGS) -o $@ $< $(EVTESTBINLFLAGS)
 
 $(BINOUT)/%: $(OUT)/tools/testing/%.o $(LIBS)
 	@mkdir -p $(@D)
