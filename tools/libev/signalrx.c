@@ -21,6 +21,7 @@ static struct {
 	{ PTHREAD_MUTEX_INITIALIZER, SIGUSR1, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGUSR2, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGCHLD, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGTERM, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGPOLL, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGIO, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGURG, 0 },
@@ -31,6 +32,18 @@ static void
 rxsignal(struct ev_loop *loop __attribute__ ((unused)),
 		ev_signal *w __attribute__ ((unused)),
 		int revents __attribute__ ((unused))){
+	int sig = 0; // FIXME extract from *w
+	unsigned z;
+
+	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
+		if(signals_watched[z].sig == sig){
+			pthread_mutex_lock(&signals_watched[z].lock);
+				++signals_watched[z].rx;
+			pthread_mutex_unlock(&signals_watched[z].lock);
+			break;
+		}
+	}
+	// FIXME on SIGTERM, do a controlled exit (if possible)
 }
 
 static void
@@ -116,10 +129,7 @@ int main(int argc,char **argv){
 		ev_signal_start(loop,&evs);
 		printf("Watching signal %d (%s)\n",s,strsignal(s));
 	}
-	/* if(libtorque_block(ctx)){
-		fprintf(stderr,"Error blocking on libtorque\n");
-		return EXIT_FAILURE;
-	}*/
+	ev_loop(loop,0);
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		int s = signals_watched[z].sig;
 
