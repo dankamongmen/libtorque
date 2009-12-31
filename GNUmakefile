@@ -288,6 +288,18 @@ $(BINOUT)/%: $(OUT)/tools/testing/%.o $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(TESTBINCFLAGS) -o $@ $< $(TESTBINLFLAGS)
 
+######################################################################
+# SPECIAL CASE AREA BEGINS
+#
+# libev doesn't work well with all our warning flags
+$(OUT)/tools/libev/signalrx.o: tools/libev/signalrx.c $(GLOBOBJDEPS)
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -fno-strict-aliasing -c $< -o $@
+#
+# SPECIAL CASE AREA ENDS
+######################################################################
+
+# Generic rules
 $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
