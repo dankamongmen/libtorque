@@ -1,3 +1,4 @@
+#include <ev.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -6,9 +7,8 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <pthread.h>
-#include <libtorque/buffers.h>
-#include <libtorque/libtorque.h>
 
 static struct {
 	pthread_mutex_t lock;
@@ -27,23 +27,9 @@ static struct {
 	{ PTHREAD_MUTEX_INITIALIZER, SIGWINCH, 0 },
 };
 
-static int
-signalrx(int sig,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
-				void *v __attribute__ ((unused))){
-	unsigned z;
-
-	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
-		if(signals_watched[z].sig == sig){
-			++signals_watched[z].rx;
-			break;
-		}
-	}
-	return 0;
-}
-
 static void
 print_version(void){
-	fprintf(stderr,"signalrx from libtorque " LIBTORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"libev-signalrx from libtorque " LIBTORQUE_VERSIONSTR "\n");
 }
 
 static void
@@ -93,15 +79,16 @@ err:
 }
 
 int main(int argc,char **argv){
-	struct libtorque_ctx *ctx = NULL;
+	struct ev_loop *loop = NULL;
+	int ret = EXIT_FAILURE;
 	sigset_t ss;
 	unsigned z;
 
 	if(parse_args(argc,argv)){
 		return EXIT_FAILURE;
 	}
-	if((ctx = libtorque_init()) == NULL){
-		fprintf(stderr,"Couldn't initialize libtorque\n");
+	if((loop = ev_default_loop(0)) == NULL){
+		fprintf(stderr,"Couldn't initialize libev\n");
 		goto err;
 	}
 	if(sigemptyset(&ss)){
@@ -120,14 +107,14 @@ int main(int argc,char **argv){
 		}
 		printf("Watching signal %d (%s)\n",s,strsignal(s));
 	}
-	if(libtorque_addsignal(ctx,&ss,signalrx,NULL)){
+	/*if(libtorque_addsignal(ctx,&ss,signalrx,NULL)){
 		fprintf(stderr,"Couldn't listen on signals\n");
 		goto err;
 	}
 	if(libtorque_block(ctx)){
 		fprintf(stderr,"Error blocking on libtorque\n");
 		return EXIT_FAILURE;
-	}
+	}*/
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		int s = signals_watched[z].sig;
 
@@ -135,15 +122,19 @@ int main(int argc,char **argv){
 			printf("Received signal %d (%s) %ju time%s\n",
 					s,strsignal(s),signals_watched[z].rx,
 					signals_watched[z].rx == 1 ? "" : "s");
+			ret = EXIT_SUCCESS;
 		}
 	}
+	if(ret != EXIT_SUCCESS){
+		fprintf(stderr,"Received no signals.\n");
+	}
 	printf("Successfully cleaned up.\n");
-	return EXIT_SUCCESS;
+	return ret;
 
 err:
-	if(libtorque_stop(ctx)){
-		fprintf(stderr,"Couldn't shutdown libtorque\n");
-		return EXIT_FAILURE;
-	}
+	printf("Shutting down libev...");
+	fflush(stdout);
+	ev_default_destroy();
+	printf("done.\n");
 	return EXIT_FAILURE;
 }

@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <pthread.h>
 #include <libtorque/buffers.h>
 #include <libtorque/libtorque.h>
