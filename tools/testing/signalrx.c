@@ -130,7 +130,7 @@ int main(int argc,char **argv){
 	}
 	if(libtorque_block(ctx)){
 		fprintf(stderr,"Error blocking on libtorque\n");
-		return EXIT_FAILURE;
+		goto err;
 	}
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		int s = signals_watched[z].sig;
