@@ -35,7 +35,9 @@ signalrx(int sig,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
 
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		if(signals_watched[z].sig == sig){
-			++signals_watched[z].rx;
+			pthread_mutex_lock(&signals_watched[z].lock);
+				++signals_watched[z].rx;
+			pthread_mutex_unlock(&signals_watched[z].lock);
 			break;
 		}
 	}
