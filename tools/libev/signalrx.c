@@ -112,7 +112,7 @@ int main(int argc,char **argv){
 			fprintf(stderr,"Couldn't add signal %d to set\n",s);
 			goto err;
 		}
-		ev_signal_init(&evs,NULL,s);
+		ev_signal_init(&evs,rxsignal,s);
 		ev_signal_start(loop,&evs);
 		printf("Watching signal %d (%s)\n",s,strsignal(s));
 	}
