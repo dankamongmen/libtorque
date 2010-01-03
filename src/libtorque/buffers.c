@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <libtorque/buffers.h>
 #include <libtorque/libtorque.h>
+#include <libtorque/events/thread.h>
 
 static inline int
 callback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
@@ -31,9 +32,19 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			if(callback(rxb,fd,cbctx,cbstate)){
 				break;
 			}
-			return 0; // FIXME must close, *unless* TX indicated
-		}else if(errno == EAGAIN){
+			break; // FIXME must close, *unless* TX indicated
+		}else if(errno == EAGAIN || errno == EWOULDBLOCK){
+			struct epoll_event ee;
+			evhandler *evh;
+
 			if(callback(rxb,fd,cbctx,cbstate)){
+				break;
+			}
+			evh = get_thread_evh();
+			memset(&ee,0,sizeof(ee));
+			ee.events = EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT;
+			ee.data.fd = fd;
+			if(epoll_ctl(evh->evq->efd,EPOLL_CTL_MOD,fd,&ee)){
 				break;
 			}
 			return 0;
