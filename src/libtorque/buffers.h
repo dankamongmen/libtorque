@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 #include <libtorque/internal.h>
 
 // The simplest receive buffer.
@@ -13,9 +14,14 @@ static inline void
 rxbuffer_advance(libtorque_rxbuf *rxb,size_t s){
 	if((rxb->bufate += s) == rxb->buftot){
 		rxb->bufoff = rxb->bufate = 0;
+	}else if(rxb->bufoff == rxb->buftot){
+		memmove(rxb->buffer,rxb->buffer + rxb->bufate,
+				rxb->bufoff - rxb->bufate);
+		rxb->bufoff -= rxb->bufate;
+		rxb->bufate = 0;
 	}
 	// FIXME if we're at the end, and have freed *some* space, we might
-	// want to repack. predicate: else if(rxb->bufoff == rxb->buftot){ }
+	// want to repack. predicate:
 }
 
 #define RXBUFSIZE (16 * 1024) // FIXME embarrassing
