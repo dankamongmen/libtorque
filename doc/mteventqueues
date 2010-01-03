@@ -139,10 +139,14 @@ level-triggered semantics.
 Modifications and (running) retrievals are serialized by the kernel for
 each event queue. As the number of threads per event queue rises, the
 expected volume of waiting also increases. A complex feedback system is
-likely to emerge if contention ever becomes non-negligible.
+likely to emerge if modification wait time ever becomes non-negligible.
+This does not apply to retrieval wait time; if events are being handled more
+quickly than they take to retrieve, we are bounded by retrieval time (by
+the pigeonhole principle: in the large, a thread will always be
+actively retrieving though we will sometimes empty the work queue).
 
 -----------------------------------------------------------------------------
-5. Non-solutions
+5. Possible methodologies
 -----------------------------------------------------------------------------
 Single-threaded retrieval of events into a userspace queue shared among
 multiple threads doesn't solve any correctness problems, or meaningfully
