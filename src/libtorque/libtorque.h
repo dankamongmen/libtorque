@@ -61,6 +61,9 @@ int libtorque_addtimer(struct libtorque_ctx *,const struct itimerspec *,libtorqu
 	__attribute__ ((nonnull(1,2,3)));
 
 // Watch for events on the specified file descriptor, and invoke the callbacks.
+// Employ libtorque's read buffering. A buffered read callback ought return -1
+// on error, 1 if the TX callback ought be enabled (that is, an attempt to
+// write generated an EAGAIN), and 0 otherwise.
 int libtorque_addfd(struct libtorque_ctx *,int,libtorquercb,libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
