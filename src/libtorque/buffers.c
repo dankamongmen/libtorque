@@ -13,14 +13,14 @@ callback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
 }
 
 static int
-restorefd(int fd){
+restorefd(int fd,int eflags){
 	struct epoll_event ee;
 	evhandler *evh;
 
+	// eflags should only be 0 or EPOLLOUT
 	evh = get_thread_evh();
 	memset(&ee,0,sizeof(ee));
-	// FIXME do we want EPOLLOUT? sometimes, yes...
-	ee.events = EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT;
+	ee.events = EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT | eflags;
 	ee.data.fd = fd;
 	if(epoll_ctl(evh->evq->efd,EPOLL_CTL_MOD,fd,&ee)){
 		return -1;
@@ -34,9 +34,13 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 
 	for( ; ; ){
 		if(rxb->buftot - rxb->bufoff == 0){
-			if(callback(rxb,fd,cbctx,cbstate)){
+			int cb;
+
+			if((cb = callback(rxb,fd,cbctx,cbstate)) < 0){
 				break;
 			}
+			// FIXME need we do anything if cb > 1? won't we get a
+			// repeat below?
 			if(rxb->buftot - rxb->bufoff == 0){
 				// FIXME no space cleared; grow that fucker
 				break;
@@ -45,15 +49,23 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 		if((r = read(fd,rxb->buffer + rxb->bufoff,rxb->buftot - rxb->bufoff)) > 0){
 			rxb->bufoff += r;
 		}else if(r == 0){
-			if(callback(rxb,fd,cbctx,cbstate)){
+			int cb;
+
+			// must close, *unless* TX indicated
+			if((cb = callback(rxb,fd,cbctx,cbstate)) <= 0){
 				break;
 			}
-			break; // FIXME must close, *unless* TX indicated
+			if(restorefd(fd,EPOLLOUT)){
+				break;
+			}
+			return 0;
 		}else if(errno == EAGAIN || errno == EWOULDBLOCK){
-			if(callback(rxb,fd,cbctx,cbstate)){
+			int cb;
+
+			if((cb = callback(rxb,fd,cbctx,cbstate)) < 0){
 				break;
 			}
-			if(restorefd(fd)){
+			if(restorefd(fd,cb ? EPOLLOUT : 0)){
 				break;
 			}
 			return 0;
