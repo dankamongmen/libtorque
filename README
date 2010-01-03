@@ -30,6 +30,7 @@ Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
   8. misc
  III. Building libtorque
  IV. Design issues
+  1. design docs
  V. Writing libtorque applications
   1. overview
   2. common mistakes
@@ -242,6 +243,13 @@ changing build parameters, as noted above), or (re)moving source files.
   If no more than one thread can wait for an event, and either one-shot
   handling or edge-triggering is used, a majority of locking and possible
   contention can be excised from the core.
+
+--design docs---------------------------------------------------------------
+
+Various design documents can be found in the doc/ subdirectory. Included among
+them are:
+
+ doc/mteventqueues - "Event Queues and Threads"
 
 ----------------------------------------------------------------libtorque-----
 -=+ V. Writing libtorque applications +=-
