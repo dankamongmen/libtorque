@@ -31,8 +31,8 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 		r = write(fd,buf + w,len);
 		if(r < 0){
 			if(errno == EAGAIN || errno == EWOULDBLOCK){
-				printf("wrote %zu/%zu\n",w,len);
 				if(w){
+					printf("wrote %zu/%zu\n",w,len);
 					rxbuffer_advance(cbctx->rxbuf,w);
 				}
 				return 1;

@@ -19,9 +19,7 @@ rxbuffer_advance(libtorque_rxbuf *rxb,size_t s){
 				rxb->bufoff - rxb->bufate);
 		rxb->bufoff -= rxb->bufate;
 		rxb->bufate = 0;
-	}
-	// FIXME if we're at the end, and have freed *some* space, we might
-	// want to repack. predicate:
+	} // FIXME very slow, doesn't reclaim memory, sucky in general
 }
 
 #define RXBUFSIZE (16 * 1024) // FIXME embarrassing
