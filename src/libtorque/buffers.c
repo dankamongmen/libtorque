@@ -12,6 +12,22 @@ callback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
 	return 0;
 }
 
+static int
+restorefd(int fd){
+	struct epoll_event ee;
+	evhandler *evh;
+
+	evh = get_thread_evh();
+	memset(&ee,0,sizeof(ee));
+	// FIXME do we want EPOLLOUT? sometimes, yes...
+	ee.events = EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT;
+	ee.data.fd = fd;
+	if(epoll_ctl(evh->evq->efd,EPOLL_CTL_MOD,fd,&ee)){
+		return -1;
+	}
+	return 0;
+}
+
 int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 	libtorque_rxbuf *rxb = cbctx->rxbuf;
 	int r;
@@ -34,17 +50,10 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			}
 			break; // FIXME must close, *unless* TX indicated
 		}else if(errno == EAGAIN || errno == EWOULDBLOCK){
-			struct epoll_event ee;
-			evhandler *evh;
-
 			if(callback(rxb,fd,cbctx,cbstate)){
 				break;
 			}
-			evh = get_thread_evh();
-			memset(&ee,0,sizeof(ee));
-			ee.events = EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT;
-			ee.data.fd = fd;
-			if(epoll_ctl(evh->evq->efd,EPOLL_CTL_MOD,fd,&ee)){
+			if(restorefd(fd)){
 				break;
 			}
 			return 0;
