@@ -55,3 +55,12 @@ ep_send_events_proc() iterates over a list of struct epitem objects:
 if EPOLLET is in use (and thus we needn't add events back to the ready list).
 See the comment in ep_send_events_proc() about locking out epoll_ctl() callers,
 which are directed to "ovflist".
+
+sys_epoll_ctl() validates input, and:
+
+ - acquires "mtx"
+ - searches for the fd using ep_find()
+ -- EPOLL_CTL_ADD with a present fd generates EEXIST
+ -- EPOLL_CTL_DEL and EPOLL_CTL_MOD with a non-present fd generates ENOENT
+ - call the appropriate one of ep_insert(), ep_remove(), ep_modify()
+ - releases "mtx"
