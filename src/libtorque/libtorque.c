@@ -181,7 +181,7 @@ int libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
 	if(fd < 0){
 		return -1;
 	}
-	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,&cbctx,state)){
+	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,&cbctx,state,0)){
 		return -1;
 	}
 	return 0;
@@ -201,7 +201,7 @@ int libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquercb rx,
 	if((cbctx.rxbuf = create_rxbuffer()) == NULL){
 		return -1;
 	}
-	if(add_fd_to_evhandler(ctx->ev,fd,buffered_rxfxn,tx,&cbctx,state)){
+	if(add_fd_to_evhandler(ctx->ev,fd,buffered_rxfxn,tx,&cbctx,state,EPOLLONESHOT)){
 		free_rxbuffer(cbctx.rxbuf);
 		return -1;
 	}
