@@ -11,6 +11,7 @@ details might change without warning.
 2. Details of the FreeBSD kqueue(7) implementation
 3. Functional semantics
 4. Performance semantics
+5. Non-solutions
 
 -----------------------------------------------------------------------------
 1. Details of the Linux epoll(7) implementation (taken from 2.6.32.2):
@@ -135,6 +136,17 @@ perform explicit disabling calls from time to time).
 Edge-triggered semantics allow a more efficient internal implementation than
 level-triggered semantics.
 
-A modification cannot run while ready events are being filtered and copied;
-it blocks against the retrieval (it can run while a retrieval operation is
-sleeping).
+Modifications and (running) retrievals are serialized by the kernel for
+each event queue. As the number of threads per event queue rises, the
+expected volume of waiting also increases. A complex feedback system is
+likely to emerge if contention ever becomes non-negligible.
+
+-----------------------------------------------------------------------------
+5. Non-solutions
+-----------------------------------------------------------------------------
+Single-threaded retrieval of events into a userspace queue shared among
+multiple threads doesn't solve any correctness problems, or meaningfully
+reduce locking (unless, possibly, when threads are retrieving less events at
+one time than is optimal based on load). The actual work of retrieval (as
+opposed to sleeping) is still serialized by the kernel, and must be
+performed.
