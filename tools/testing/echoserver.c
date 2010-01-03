@@ -16,7 +16,7 @@
 static int
 echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	const char *buf;
-	size_t len;
+	size_t len,w;
 
 	buf = rxbuffer_valid(cbctx->rxbuf,&len);
 	if(len == 0){
@@ -24,10 +24,19 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 		return -1;
 	}
 	fprintf(stdout,"[%4d] Read %zub\n",fd,len);
-	if(write(fd,buf,len) < (int)len){ // FIXME handle EAGAIN, partial tx
-		fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,
-				errno,strerror(errno),len);
-		return -1;
+	w = 0;
+	while(w < len){
+		ssize_t r;
+
+		r = write(fd,buf,len);
+		if(r < 0){
+			if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR){
+				fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,
+						errno,strerror(errno),len);
+				return -1;
+			}
+		}
+		w += r;
 	}
 	rxbuffer_advance(cbctx->rxbuf,len);
 	return 0;
