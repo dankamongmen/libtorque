@@ -28,16 +28,24 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	while(w < len){
 		ssize_t r;
 
-		r = write(fd,buf,len);
+		r = write(fd,buf + w,len);
 		if(r < 0){
-			if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR){
+			if(errno == EAGAIN || errno == EWOULDBLOCK){
+				printf("wrote %zu/%zu\n",w,len);
+				if(w){
+					rxbuffer_advance(cbctx->rxbuf,w);
+				}
+				return 1;
+			}else if(errno != EINTR){
 				fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,
 						errno,strerror(errno),len);
 				return -1;
 			}
+		}else{
+			w += r;
 		}
-		w += r;
 	}
+	printf("wrote %zu/%zu\n",w,len);
 	rxbuffer_advance(cbctx->rxbuf,len);
 	return 0;
 }

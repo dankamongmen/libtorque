@@ -102,7 +102,7 @@ handle_evsource_read(evsource *evs,int n){
 
 static inline int
 handle_evsource_write(evsource *evs,int n){
-	if(evs[n].rxfxn){
+	if(evs[n].txfxn){
 		return evs[n].txfxn(n,evs[n].cbstate);
 	}
 	return -1;

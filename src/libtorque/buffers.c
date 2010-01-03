@@ -23,8 +23,23 @@ restorefd(int fd,int eflags){
 	ee.events = EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT | eflags;
 	ee.data.fd = fd;
 	if(epoll_ctl(evh->evq->efd,EPOLL_CTL_MOD,fd,&ee)){
+		printf("error (%s)\n",strerror(errno));
 		return -1;
 	}
+	return 0;
+}
+
+static int
+growrxbuf(libtorque_rxbuf *rxb){
+	typeof(*rxb->buffer) *tmp;
+	size_t news;
+
+	news = rxb->buftot + RXBUFSIZE; // FIXME blehhhh
+	if((tmp = realloc(rxb->buffer,news)) == NULL){
+		return -1;
+	}
+	rxb->buffer = tmp;
+	rxb->buftot = news;
 	return 0;
 }
 
@@ -36,23 +51,27 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 		if(rxb->buftot - rxb->bufoff == 0){
 			int cb;
 
+			// FIXME need we do anything if cb > 1? won't we get a
+			// repeat later?
 			if((cb = callback(rxb,fd,cbctx,cbstate)) < 0){
+				printf("callback: %d\n",cb);
 				break;
 			}
-			// FIXME need we do anything if cb > 1? won't we get a
-			// repeat below?
 			if(rxb->buftot - rxb->bufoff == 0){
-				// FIXME no space cleared; grow that fucker
-				break;
+				if(growrxbuf(rxb)){
+					break;
+				}
 			}
 		}
 		if((r = read(fd,rxb->buffer + rxb->bufoff,rxb->buftot - rxb->bufoff)) > 0){
 			rxb->bufoff += r;
+			printf("toplevel read of %d\n",r);
 		}else if(r == 0){
 			int cb;
 
 			// must close, *unless* TX indicated
 			if((cb = callback(rxb,fd,cbctx,cbstate)) <= 0){
+				printf("callback: %d\n",cb);
 				break;
 			}
 			if(restorefd(fd,EPOLLOUT)){
@@ -63,6 +82,7 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			int cb;
 
 			if((cb = callback(rxb,fd,cbctx,cbstate)) < 0){
+				printf("callback: %d\n",cb);
 				break;
 			}
 			if(restorefd(fd,cb ? EPOLLOUT : 0)){
@@ -70,9 +90,11 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			}
 			return 0;
 		}else if(errno != EINTR){
+			printf("error (%s)\n",strerror(errno));
 			break;
 		}
 	}
+	printf("closing it up!\n");
 	close(fd);
 	return -1;
 }
