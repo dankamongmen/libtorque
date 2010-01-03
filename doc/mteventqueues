@@ -11,7 +11,7 @@ details might change without warning.
 2. Details of the FreeBSD kqueue(7) implementation
 3. Functional semantics
 4. Performance semantics
-5. Non-solutions
+5. Deductions
 
 -----------------------------------------------------------------------------
 1. Details of the Linux epoll(7) implementation (taken from 2.6.32.2):
@@ -146,7 +146,7 @@ the pigeonhole principle: in the large, a thread will always be
 actively retrieving though we will sometimes empty the work queue).
 
 -----------------------------------------------------------------------------
-5. Possible methodologies
+5. Deductions
 -----------------------------------------------------------------------------
 Single-threaded retrieval of events into a userspace queue shared among
 multiple threads doesn't solve any correctness problems, or meaningfully
@@ -154,3 +154,10 @@ reduce locking (unless, possibly, when threads are retrieving less events at
 one time than is optimal based on load). The actual work of retrieval (as
 opposed to sleeping) is still serialized by the kernel, and must be
 performed.
+
+Exclusive event queues per thread are the simplest solution, eliminating
+all contention and even synchronization concerns at the event engine level.
+This might not scale (it's doubtful that anyone's seriously used thousands
+of event queues in a single app), and more importantly it leads to a lack of
+balance; threads will only be as balanced as can be predicted during event
+source distribution.
