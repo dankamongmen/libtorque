@@ -60,8 +60,8 @@ parse_args(int argc,char **argv,pid_t *pid,int *sig){
 	while((c = getopt_long(argc,argv,"s:",opts,NULL)) >= 0){
 		switch(c){
 		case 's':
-			SET_ARG_ONCE('s',sig,atoi(optarg));
-			break;
+			lflag = c;
+			// intentional fall-through
 		case 0: // long option
 			switch(lflag){
 				case 's':
