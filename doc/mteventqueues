@@ -7,8 +7,14 @@ documentation, mailing lists, reading source and extensive experimentation.
 Little, however, makes up published, official API, and thus some of these
 details might change without warning.
 
-------------------
+1. Details of the Linux epoll(7) implementation
+2. Details of the FreeBSD kqueue(7) implementation
+3. Functional semantics
+4. Performance semantics
 
+-----------------------------------------------------------------------------
+1. Details of the Linux epoll(7) implementation (taken from 2.6.32.2):
+-----------------------------------------------------------------------------
 A struct eventpoll contains, among other things:
 
  - a spinlock_t, "lock"
@@ -64,3 +70,71 @@ sys_epoll_ctl() validates input, and:
  -- EPOLL_CTL_DEL and EPOLL_CTL_MOD with a non-present fd generates ENOENT
  - call the appropriate one of ep_insert(), ep_remove(), ep_modify()
  - releases "mtx"
+
+-----------------------------------------------------------------------------
+2. Details of the FreeBSD kqueue(7) implementation:
+-----------------------------------------------------------------------------
+
+ FIXME
+
+-----------------------------------------------------------------------------
+3. Functional semantics
+-----------------------------------------------------------------------------
+Multiple threads can safely call into event retrieval -- the event queue will
+not be corrupted.
+
+Events are retrieved greedily. A thread will grab as many as it indicates
+room for.
+
+Multiple threads can safely modify an event queue, event if threads are
+retrieving from it -- the event queue will not be corrupted, and threads
+sleeping in retrieval will be woken up for new ready events.
+
+Level-triggered events cannot be safely processed by multiple threads
+without some kind of extra locking, except in circumstances so rare
+(and likely trivial) that they're barely worth accounting for:
+
+ - LT event 1 becomes ready
+ - Thread A retrieves LT event 1 instance 1
+ - Thread B retrieves LT event 1 instance 2
+ - Thread A enters LT event 1 handler
+ - Thread B enters LT event 1 handler
+ - either contention or race follows
+
+Edge-triggered, auto-renewed events cannot be safely processed by multiple
+threads without some kind of extra locking, except when file descriptor
+availability suffices to synchronize the event handling. An example of this
+would be a callback which simply loops on accept(2) until EAGAIN/EWOULDBLOCK,
+possibly performing some MT-safe processing on each new file descriptor (adding
+the new fd to the event queue would be fine, since we've already shown event
+queue operations to be MT-safe. Otherwise, for instance if reading data from
+the fd into an associated buffer:
+
+ - ET event 1 becomes ready
+ - Thread A retrieves ET event 1 instance 1
+ - Thread B sleeps
+ - Thread A enters ET event 1 handler, read(2)ing all available data
+ - ET event 1 is automatically rearmed
+ - Thread B wakes up, retrieves ET event 1 instance 2
+ - Thread B enters ET event 1 handler, read(2)ing all available data
+ - ET event 1 is automatically rearmed
+ - Thread A enters ET event 1 critical section
+ - Thread B enters ET event 1 critical section
+ - either contention or race follows
+
+Edge-triggered, one-shot events can be safely processed by multiple threads
+so long as they're rearmed only at the end of the handler. They require
+more event queue modifications than other solutions (assuming that we always
+handle as much data as is provided in any callback -- the edge-triggering
+requirement. Callbacks which depend on level-triggered semantics might
+perform explicit disabling calls from time to time).
+
+-----------------------------------------------------------------------------
+4. Performance semantics
+-----------------------------------------------------------------------------
+Edge-triggered semantics allow a more efficient internal implementation than
+level-triggered semantics.
+
+A modification cannot run while ready events are being filtered and copied;
+it blocks against the retrieval (it can run while a retrieval operation is
+sleeping).
