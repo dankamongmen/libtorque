@@ -12,6 +12,9 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn,
 	struct epoll_event ee;
 	struct kevent k;
 
+	if(eflags & ~(EPOLLONESHOT)){ // enforce allowed eflags
+		return -1;
+	}
 	memset(&ee.data,0,sizeof(ee.data));
 	k.events = &ee;
 	ee.data.fd = fd;
@@ -32,6 +35,7 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn,
 #elif defined(LIBTORQUE_FREEBSD)
 	struct kevent k[2];
 
+	// FIXME enforce EPOLLONESHOT equivalent
 	if(rfxn){
 		EV_SET(&k[0],fd,EVFILT_READ,EV_ADD | EV_CLEAR | eflags,0,0,NULL);
 	}
