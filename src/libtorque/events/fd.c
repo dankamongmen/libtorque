@@ -5,7 +5,8 @@
 #include <libtorque/events/sources.h>
 
 static inline int
-add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn){
+add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn,
+					int eflags){
 #ifdef LIBTORQUE_LINUX
 	struct epoll_ctl_data ecd;
 	struct epoll_event ee;
@@ -18,7 +19,7 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn){
 	ecd.op = EPOLL_CTL_ADD;
 	// We automatically wait for EPOLLERR/EPOLLHUP; according to
 	// epoll_ctl(2), "it is not necessary to add set [these] in ->events"
-	ee.events = EPOLLET | EPOLLRDHUP | EPOLLPRI;
+	ee.events = EPOLLET | EPOLLRDHUP | EPOLLPRI | eflags;
 	if(rfxn){
 		ee.events |= EPOLLIN;
 	}
@@ -32,10 +33,10 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn){
 	struct kevent k[2];
 
 	if(rfxn){
-		EV_SET(&k[0],fd,EVFILT_READ,EV_ADD | EV_CLEAR,0,0,NULL);
+		EV_SET(&k[0],fd,EVFILT_READ,EV_ADD | EV_CLEAR | eflags,0,0,NULL);
 	}
 	if(tfxn){
-		EV_SET(&k[1],fd,EVFILT_WRITE,EV_ADD | EV_CLEAR,0,0,NULL);
+		EV_SET(&k[1],fd,EVFILT_WRITE,EV_ADD | EV_CLEAR | eflags,0,0,NULL);
 	}
 	if(add_evector_kevents(ev,k,!!tfxn + !!rfxn)){
 		return -1;
@@ -47,13 +48,14 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn){
 }
 
 int add_fd_to_evhandler(evhandler *eh,int fd,libtorquercb rfxn,
-			libtorquewcb tfxn,libtorque_cbctx *cbctx,void *cbstate){
+			libtorquewcb tfxn,libtorque_cbctx *cbctx,
+			void *cbstate,int eflags){
 	EVECTOR_AUTOS(1,ev,evbase);
 
 	if((unsigned)fd >= eh->evsources->fdarraysize){
 		return -1;
 	}
-	if(add_fd_event(&ev,fd,rfxn,tfxn)){
+	if(add_fd_event(&ev,fd,rfxn,tfxn,eflags)){
 		return -1;
 	}
 	setup_evsource(eh->evsources->fdarray,fd,rfxn,tfxn,cbctx,cbstate);
