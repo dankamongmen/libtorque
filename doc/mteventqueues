@@ -1,0 +1,57 @@
+Event Queues and Threads
+
+This document primarily described Linux's epoll(7) I/O event notification
+facility as of the 2.6 kernel series. It is believed to largely apply also to
+FreeBSD's kqueue(7) mechanism. The information within has been extracted from
+documentation, mailing lists, reading source and extensive experimentation.
+Little, however, makes up published, official API, and thus some of these
+details might change without warning.
+
+------------------
+
+A struct eventpoll contains, among other things:
+
+ - a spinlock_t, "lock"
+ - a struct mutex, "mtx"
+ - two wait_queue_head_t's, "wq" and "poll_wait"
+
+sys_epoll_wait() validates input and calls ep_poll() (fs/eventpoll.c). Its
+core loop:
+
+ - acquires "lock"
+ - if there are no events ready or signals pending:
+ -- release "lock", sleep on "wq"
+ --- ep_poll_callback() is in charge of waking up "wq"
+ --- a timeout is also used (LONG_MAX if we passed timeout < 0)
+ -- reacquire "lock", loop to event/signal check
+ - release "lock"
+ - call ep_send_events()->ep_scan_ready_list() (see below)
+ - if we have events ready, pending signals, or the timeout has expired, return
+ - otherwise, loop
+
+ep_send_events()->ep_scan_ready_list() is largely linear code:
+
+ - acquires "mtx"
+ - acquires "lock"
+ - steals the ready list "rdllist" to "txlist"
+ - releases "lock"
+ - calls ep_send_events_proc() with "txlist"
+ - acquires "lock"
+ - appends "ovflist" to "rdllist", resets "ovflist"
+ - appends "txlist" to "rdllist"
+ - if "rdllist" is non-empty, wake up "wq"
+ - release "lock"
+ - release "mtx" 
+ - if "rdllist" is non-empty, wake up "poll_wait"
+
+ep_send_events_proc() iterates over a list of struct epitem objects:
+
+ - if the revent mask matches that requested:
+ -- copy the event
+ -- if EPOLLONESHOT is set, events &= (EPOLLONESHOT|EPOLLET)
+ -- else if EPOLLET is *not* set, add it back to the ready list
+
+"mtx" is held across ep_scan_ready_list() and thus ep_send_events_proc(), even
+if EPOLLET is in use (and thus we needn't add events back to the ready list).
+See the comment in ep_send_events_proc() about locking out epoll_ctl() callers,
+which are directed to "ovflist".
