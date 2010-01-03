@@ -39,7 +39,7 @@ int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
 		if((fd = signalfd(-1,sigs,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			return -1;
 		}
-		if(add_fd_to_evhandler(eh,fd,signalfd_demultiplexer,NULL,NULL,eh)){
+		if(add_fd_to_evhandler(eh,fd,signalfd_demultiplexer,NULL,NULL,eh,0)){
 			close(fd);
 			return -1;
 		}
