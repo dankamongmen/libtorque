@@ -20,7 +20,7 @@ typedef struct evsourcsb {
 } evsourcesb;
 
 typedef struct evsource {
-	evsourcesb sboard;	// sourceboard (unless we use EPOLLONESHOT)
+	evsourcesb sboard;	// source scoreboard (or use EPOLLONESHOT)
 	libtorquercb rxfxn;	// read-type event callback function
 	libtorquewcb txfxn;	// write-type event callback function
 	libtorque_cbctx cbctx;	// libtorque internal per-source state
