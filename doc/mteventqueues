@@ -145,6 +145,10 @@ quickly than they take to retrieve, we are bounded by retrieval time (by
 the pigeonhole principle: in the large, a thread will always be
 actively retrieving though we will sometimes empty the work queue).
 
+System calls are, as ever, to be avoided when prudent. Using larger event
+receipt buffers minimizes system calls into the event queueing framework,
+but can lead to a poor short-term distribution of work and poor parallelism.
+
 -----------------------------------------------------------------------------
 5. Deductions
 -----------------------------------------------------------------------------
@@ -161,3 +165,19 @@ This might not scale (it's doubtful that anyone's seriously used thousands
 of event queues in a single app), and more importantly it leads to a lack of
 balance; threads will only be as balanced as can be predicted during event
 source distribution.
+
+It is of course feasible to serve many threads using a scheme where only
+one actually receives events for a given event queue at any time (ie, we
+don't rely on epoll_wait() being safe for multiple callers), dumping them
+into a common userspace buffer managed via mutexes and condition variables.
+We'd not be exploiting the kernel locking to provide our own synchronization
+anymore, but only a contention-free mutex acquisition and release have been
+"added". Furthermore, this removes the event queue system call from each
+thread; they now only need perform userspace locking (with, of course, a
+system call to waitqueues should the lock be contended, but we presumed
+that this was rare. What we want to avoid is a queue *modification*,
+generated during the event loop, blocking against a retrieval operation
+(preferably without adding a batching step ala the kqueue() API, since this
+can add latency. Remember, retrievals contending means either that load is
+negligible, or that we're not retrieving nearly enough events at a time. Using
+TCP-like windows would solve that problem for multiple event threads).
