@@ -96,7 +96,10 @@ int init_epoll_sigset(void (*rcb)(int)){
 
 static void
 signal_demultiplexer(int s){
-	handle_evsource_read(get_thread_evh()->evsources->sigarray,s);
+	evhandler *ev = get_thread_evh();
+
+	handle_evsource_read(ev->evsources->sigarray,s);
+	++ev->stats.events;
 }
 
 // A bit of a misnomer; we actually *delete* the specified signals from the
