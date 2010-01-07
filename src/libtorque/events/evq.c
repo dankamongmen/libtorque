@@ -37,10 +37,7 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 	struct kevent k;
 
 	memset(&ee.data,0,sizeof(ee.data));
-	k.events = &ee;
 	ee.data.fd = fd;
-	k.ctldata = &ecd;
-	ecd.op = EPOLL_CTL_ADD;
 	// We automatically wait for EPOLLERR/EPOLLHUP; according to
 	// epoll_ctl(2), "it is not necessary to add set [these] in ->events"
 	// We do NOT use edge-triggered polling for this internal handler, for
@@ -48,7 +45,10 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 	// the pending signal queue, at least not without reading everything
 	// else, putting it on an event queue, and then swapping the exit back
 	// in from some other queue). So no EPOLLET.
-	ee.events |= EPOLLIN;
+	ee.events = EPOLLIN;
+	k.events = &ee;
+	k.ctldata = &ecd;
+	ecd.op = EPOLL_CTL_ADD;
 	if(add_evector_kevents(&ev,&k,1)){
 		return -1;
 	}
