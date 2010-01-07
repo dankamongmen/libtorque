@@ -38,10 +38,12 @@ struct kevent { // each element an array, each array the same number of members
 // pass (t ? (t->tv_sec * 1000 + t->tv_nsec / 1000000) : -1) to epoll_wait().
 // signalfd was introduced to glibc in 2.8
 #if __GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 8
-#define LIBTORQUE_LINUX_SIGNALFD
-#include <sys/signalfd.h>
 #define LIBTORQUE_LINUX_TIMERFD
 #include <sys/timerfd.h>
+#define LIBTORQUE_LINUX_SIGNALFD
+#include <sys/signalfd.h>
+struct libtorque_cbctx;
+
 int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
 #endif
 static inline int
@@ -71,8 +73,6 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 	}
 	return ret;
 }
-
-struct libtorque_cbctx;
 
 #elif defined(LIBTORQUE_FREEBSD)
 #include <stdint.h>
