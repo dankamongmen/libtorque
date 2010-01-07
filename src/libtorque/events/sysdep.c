@@ -90,7 +90,7 @@ int add_epoll_sigset(const sigset_t *s,unsigned maxsignal){
 	if(pthread_mutex_lock(&epoll_sigset_lock)){
 		return -1;
 	}
-	for(z = 0 ; z < maxsignal ; ++z){
+	for(z = 1 ; z < maxsignal ; ++z){
 		if(sigismember(s,z)){
 			if(sigdelset(&epoll_sigset_base,z)){
 				ret = -1;
