@@ -40,6 +40,9 @@ struct kevent { // each element an array, each array the same number of members
 #if __GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 8
 #define LIBTORQUE_LINUX_SIGNALFD
 #include <sys/signalfd.h>
+#define LIBTORQUE_LINUX_TIMERFD
+#include <sys/timerfd.h>
+int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
 #endif
 static inline int
 Kevent(int epfd,struct kevent *changelist,int nchanges,
@@ -71,7 +74,6 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 
 struct libtorque_cbctx;
 
-int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
 #elif defined(LIBTORQUE_FREEBSD)
 #include <stdint.h>
 #include <sys/types.h>
