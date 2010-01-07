@@ -76,14 +76,14 @@ int init_epoll_sigset(void (*rcb)(int)){
 	   though, this is actually the more natural semantics, and there's an
 	   argument that they're the correct ones (if they didn't explicitly
 	   have the signal blocked by the time we're called, who knows what all
-	   else got done?). it's not a huge deal, merely a complex one.
-	if(sigfillset(&epoll_sigset_base)){
+	   else got done?). it's not a huge deal, merely a complex one. also,
+	   note that we're coming in with a fully-masked set due to
+	   libtorque_init_masked()'s call chain. to actually get at the calling
+	   process's entry signal mask, we'd need pass it down.
+	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
 		return -1;
 	}*/
-	if(pthread_sigmask(SIG_SETMASK,NULL,&epoll_sigset_base)){
-		return -1;
-	}
-	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
+	if(sigemptyset(&epoll_sigset_base)){
 		return -1;
 	}
 	memset(&act,0,sizeof(act));
