@@ -48,6 +48,7 @@ int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
 #else
 extern const sigset_t *epoll_sigset;
 
+int init_epoll_sigset(void);
 int add_epoll_sigset(const sigset_t *,unsigned);
 #endif
 static inline int

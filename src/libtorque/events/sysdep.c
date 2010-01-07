@@ -59,19 +59,37 @@ int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)
 	return 0;
 }
 #elif defined(LIBTORQUE_LINUX)
+// FIXME ack, these need to be per-context, not global!
 static sigset_t epoll_sigset_base;
 const sigset_t *epoll_sigset = &epoll_sigset_base;
+static pthread_mutex_t epoll_sigset_lock = PTHREAD_MUTEX_INITIALIZER;
+
+int init_epoll_sigset(void){
+	if(sigfillset(&epoll_sigset_base)){
+		return -1;
+	}
+	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
+		return -1;
+	}
+	return 0;
+}
 
 int add_epoll_sigset(const sigset_t *s,unsigned maxsignal){
+	int ret = 0;
 	unsigned z;
 
+	if(pthread_mutex_lock(&epoll_sigset_lock)){
+		return -1;
+	}
 	for(z = 0 ; z < maxsignal ; ++z){
 		if(sigismember(s,z)){
 			if(sigdelset(&epoll_sigset_base,z)){
-				return -1;
+				ret = -1;
+				break;
 			}
 		}
 	}
-	return 0;
+	pthread_mutex_unlock(&epoll_sigset_lock);
+	return ret;
 }
 #endif

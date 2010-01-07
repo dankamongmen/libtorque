@@ -185,6 +185,10 @@ int initialize_common_sources(struct evtables *evt){
 		return -1;
 	}
 	setup_evsource(evt->fdarray,evt->common_signalfd,signalfd_demultiplexer,NULL,NULL,NULL);
+#elif defined(LIBTORQUE_LINUX)
+	if(init_epoll_sigset()){
+		return -1;
+	}
 #endif
 	return 0;
 }
