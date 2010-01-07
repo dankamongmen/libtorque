@@ -46,7 +46,7 @@ struct libtorque_cbctx;
 
 int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
 #else
-extern sigset_t epoll_sigset;
+extern const sigset_t epoll_sigset;
 #endif
 static inline int
 Kevent(int epfd,struct kevent *changelist,int nchanges,
