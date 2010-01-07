@@ -96,7 +96,6 @@ int init_epoll_sigset(void (*rcb)(int)){
 
 static void
 signal_demultiplexer(int s){
-	printf("signal\n");
 	handle_evsource_read(get_thread_evh()->evsources->sigarray,s);
 }
 
