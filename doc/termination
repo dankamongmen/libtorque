@@ -7,10 +7,16 @@ semantics no matter when termination is initiated, flexibility, interoperation
 with debuggers and other arbitrary tools, and not allowing termination to slow
 down the usual case of event handling.
 
-Details of the POSIX signal/threads model are available at
+Relevant details of the POSIX signal/threads model are available at
 http://dank.qemfd.net/dankwiki/index.php/Pthreads#Pthreads_signal_model
 
-I. POSIX cancellation unused
+1. POSIX cancellation unused
+2. API and semantics
+3. Implementation and details
+
+-----------------------------------------------------------------------------
+1. POSIX cancellation unused
+-----------------------------------------------------------------------------
 
 POSIX provides both "thread cancellation" and signal handling. libtorque makes
 no use of thread cancellation: threads are created with cancellation disabled,
@@ -28,3 +34,43 @@ rely on other threads to keep our termination-initiating signal masked, since
 process-directed signals might not otherwise be delivered to libtorque threads.
 We can check upon libtorque context initialization that this is the case, but
 the calling program (or one of its libraries) might change this later.
+
+-----------------------------------------------------------------------------
+2. API and semantics
+-----------------------------------------------------------------------------
+
+libtorque threads are created with a full signal mask (all signals save SIGKILL
+and SIGSTOP, which cannot be caught or blocked). This mask is never changed,
+so process-directed signals will not be directed to libtorque threads unless
+registered for callbacks.
+
+Delivery of SIGTERM to any libtorque thread will initiate shutdown of that
+context's threads, whether the signal originated outside the process, in
+another thread, or in a libtorque callback. The shutdown will be orderly, in
+the sense that threads will not exit in the middle of handling an event.
+Sending further SIGTERMs will neither accelerate nor hamper the shutdown
+procedure, and is not recommended.
+
+It is imperative that other threads keep SIGTERM and any signals registered
+for callbacks masked, else externally-generated signals might not be delivered
+to libtorque.
+
+Two functions are provided to block on destruction of a libtorque context,
+including orderly cleanup of all threads. libtorque_block() blocks the calling
+thread until all threads in the context have terminated. libtorque_stop() does
+the same, but initiates the shutdown process itself. Server programs ought:
+
+ - mask SIGTERM
+ - call libtorque_init()
+ - register some events with the context
+ - call libtorque_block()
+ - perform teardown (no callbacks will occur)
+
+This provides a simple implementation of the UNIX server idiom: the process
+will run until receiving SIGTERM or generating a fatal exception, with the
+former case leading to an orderly shutdown. libtorque_stop() is intended for
+easily adapting legacy code, and implementation of non-server programs.
+
+-----------------------------------------------------------------------------
+3. Implementation and details
+-----------------------------------------------------------------------------
