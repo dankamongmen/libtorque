@@ -30,7 +30,7 @@
 int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
 			libtorquercb rfxn,void *cbstate){
 	unsigned z;
-#ifdef LIBTORQUE_LINUX
+#ifdef LIBTORQUE_LINUX_SIGNALFD
 	{
 		// FIXME we could restrict this all to a single signalfd, since
 		// it takes a sigset_t...less potential parallelism, though
@@ -44,6 +44,8 @@ int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
 			return -1;
 		}
 	}
+#elif defined(LIBTORQUE_LINUX_PWAIT)
+#error "implement pwait-based signal add!"
 #elif defined(LIBTORQUE_FREEBSD)
 	{
 		EVECTORS_AUTO(8,ev,evbase);
