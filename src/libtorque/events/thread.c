@@ -49,7 +49,7 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 				void *cbstate __attribute__ ((unused))){
 	if(sig == EVTHREAD_TERM){
 		void *ret = PTHREAD_CANCELED;
-		evhandler *e = tsd_evhandler;
+		evhandler *e = get_thread_evh();
 		int r;
 
 		// FIXME this is kind of lame. I'd like to emulate
@@ -65,7 +65,6 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 		e->stats.involctxsw = ru.ru_nivcsw;
 #endif
 		e->stats.utimeus = e->stats.stimeus = 0;
-		--e->stats.events;
 		// There's no POSIX thread cancellation going on here, nor are
 		// we terminating due to signal; we're catching the signal and
 		// exiting from this thread only. The trigger signal might be
@@ -96,13 +95,13 @@ void event_thread(libtorque_ctx *ctx,evhandler *e){
 		if(events <= 0){
 			continue;
 		}
-		e->stats.events += events;
 		do{
 #ifdef LIBTORQUE_LINUX
-		handle_event(e,&PTR_TO_EVENTV(&e->evec)->events[--events]);
+			handle_event(e,&PTR_TO_EVENTV(&e->evec)->events[--events]);
 #else
-		handle_event(e,&PTR_TO_EVENTV(&e->evec)[--events]);
+			handle_event(e,&PTR_TO_EVENTV(&e->evec)[--events]);
 #endif
+			++e->stats.events;
 		}while(events);
 		++e->stats.rounds;
 	}
