@@ -136,7 +136,9 @@ TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 SRC:=$(CSRC)
 TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx signaltx torquessl) # FIXME autodiscover
+ifndef LIBTORQUE_WITHOUT_EV
 TESTBINS+=$(addprefix $(BINOUT)/libev-,signalrx)
+endif
 BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
