@@ -22,7 +22,7 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn,
 	ecd.op = EPOLL_CTL_ADD;
 	// We automatically wait for EPOLLERR/EPOLLHUP; according to
 	// epoll_ctl(2), "it is not necessary to add set [these] in ->events"
-	ee.events = EPOLLET | EPOLLRDHUP | EPOLLPRI | eflags;
+	ee.events = EPOLLET | EPOLLPRI | eflags;
 	if(rfxn){
 		ee.events |= EPOLLIN;
 	}
