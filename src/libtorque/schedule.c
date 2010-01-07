@@ -94,10 +94,7 @@ reap_thread(pthread_t tid){
 	if(pthread_sigmask(SIG_BLOCK,&ss,&os)){
 		return -1;
 	}
-	// This contortion leads to a natural distribution of the signal
-	// (raise() would direct it specifically to ourselves). We were using
-	// pthread_kill() on ->headtid; see block_thread()'s FIXME.
-	ret |= kill(getpid(),EVTHREAD_TERM);
+	ret |= pthread_kill(tid,EVTHREAD_TERM);
 	ret |= block_thread(tid);
 	ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	return ret;
