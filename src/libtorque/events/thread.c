@@ -211,8 +211,7 @@ int create_efd(void){
 #ifdef EPOLL_CLOEXEC
 #define SAFE_EPOLL_CLOEXEC EPOLL_CLOEXEC
 #else // otherwise, it wants a size hint in terms of fd's
-#include <linux/limits.h>
-#define SAFE_EPOLL_CLOEXEC NR_OPEN
+#define SAFE_EPOLL_CLOEXEC sysconf(_SC_OPEN_MAX)
 #endif
 	if((fd = epoll_create(SAFE_EPOLL_CLOEXEC)) < 0){
 		return -1;
