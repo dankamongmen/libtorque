@@ -20,7 +20,9 @@ restorefd(int fd,int eflags){
 	// eflags should only be 0 or EPOLLOUT
 	evh = get_thread_evh();
 	memset(&ee,0,sizeof(ee));
-	ee.events = EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT | eflags;
+	// EPOLLRDHUP isn't available prior to kernel 2.6.17 and GNU libc 2.6.
+	// We shouldn't need it, though.
+	ee.events = EPOLLIN | EPOLLET | EPOLLONESHOT | eflags;
 	ee.data.fd = fd;
 	if(epoll_ctl(evh->evq->efd,EPOLL_CTL_MOD,fd,&ee)){
 		return -1;
