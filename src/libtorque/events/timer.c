@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <sys/timerfd.h>
 #include <libtorque/events/fd.h>
 #include <libtorque/events/timer.h>
 #include <libtorque/events/sysdep.h>
@@ -28,7 +27,7 @@
 //      these signals are silently ignored if specified in mask.
 int add_timer_to_evhandler(evhandler *eh,const struct itimerspec *t,
 			libtorquercb rfxn,void *cbstate){
-#ifdef LIBTORQUE_LINUX
+#ifdef LIBTORQUE_LINUX_TIMERFD
 	int fd;
 
 	if((fd = timerfd_create(CLOCK_MONOTONIC,TFD_NONBLOCK | TFD_CLOEXEC)) < 0){
@@ -42,8 +41,11 @@ int add_timer_to_evhandler(evhandler *eh,const struct itimerspec *t,
 		close(fd);
 		return -1;
 	}
+#elif defined(LIBTORQUE_LINUX)
+#error "Need Linux 2.6.25 / GNU libc 2.8 for timerfd"
 #elif defined(LIBTORQUE_FREEBSD)
-// FIXME #else
+#error "Need to implement FreeBSD timerfd"
+#else
 #error "No timer event implementation on this OS"
 #endif
 	return 0;
