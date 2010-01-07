@@ -130,6 +130,9 @@ handle as much data as is provided in any callback -- the edge-triggering
 requirement. Callbacks which depend on level-triggered semantics might
 perform explicit disabling calls from time to time).
 
+The choice of queue-sharing schemes affects the mechanics of library cleanup
+and termination. See the document doc/termination for more details.
+
 -----------------------------------------------------------------------------
 4. Performance semantics
 -----------------------------------------------------------------------------
