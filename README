@@ -71,9 +71,9 @@ everything from the Pentium Pro onwards). Further hardware support is intended.
 
 --operating system requirements-----------------------------------------------
 
-libtorque has been tested on Linux (version 2.6.31), and FreeBSD (version 7.1).
-It might work on earlier versions of Linux. Support for other operating
-systems, and earlier versions, is intended.
+libtorque has been tested on Linux (versions 2.6.19 through 2.6.32), and 
+FreeBSD (version 7.1). It might work on earlier versions of Linux. Support for
+other operating systems, and earlier versions, is intended.
 
 --compiler requirements-------------------------------------------------------
 
@@ -88,8 +88,8 @@ options are removed from WFLAGS. The results have not been extensively tested.
 --libc/pthreads requirements--------------------------------------------------
 
 On Linux, the GNU C Library is required, using the NPTL threading
-implementation. Version 2.9 has been tested. NPTL is the default on 2.6 kernels
-since GNU libc 2.3.2.
+implementation (NPTL is the default on 2.6 kernels since GNU libc 2.3.2).
+Versions 2.5 through 2.10 have been tested.
 
 On FreeBSD, only the libthr threading implementation is explicitly supported or
 recommended (this is the default in FreeBSD 7). If rebuilding world, ensure
@@ -286,9 +286,9 @@ directories. That having been said:
       N libtorque contexts in a process lead to N threads per processor,
       assuming the process's cpuset doesn't change between initializations)
    - SIGPIPE is ignored if it was previously handled via the default action
-   - SIGTERM and SIGURG will be intercepted by (some instance of) libtorque
-      subject to operating system-specific rules. See kqueue(7) or signalfd(2)
-      (this also applies to any signals registered via libtorque_addsignal())
+   - SIGTERM and will be intercepted by (some instance of) libtorque subject to
+      operating system-specific rules. See kqueue(7) or signalfd(2) (this also
+      applies to any signals registered via libtorque_addsignal())
    - allocation of moderate amounts of memory and a handful of file descriptors
 
  - Add event sources to the libtorque context via libtorque_add*(). Fundamental
