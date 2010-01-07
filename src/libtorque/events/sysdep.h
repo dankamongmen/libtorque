@@ -45,11 +45,16 @@ struct kevent { // each element an array, each array the same number of members
 struct libtorque_cbctx;
 
 int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
+#else
+extern sigset_t epoll_sigset;
 #endif
 static inline int
 Kevent(int epfd,struct kevent *changelist,int nchanges,
 		struct kevent *eventlist,int nevents){
 	int n,ret = 0;
+#if !defined(LIBTORQUE_LINUX_SIGNALFD) && !defined(LIBTORQUE_LINUX_PWAIT)
+	sigset_t tmp;
+#endif
 
 	for(n = 0 ; n < nchanges ; ++n){
 		if(epoll_ctl(epfd,changelist->ctldata[n].op,
@@ -66,11 +71,23 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 	if(nevents == 0){
 		return 0;
 	}
+#ifdef LIBTORQUE_LINUX_PWAIT
+	while((ret = epoll_pwait(epfd,eventlist->events,nevents,-1,&epoll_sigset)) < 0){
+#else
+#if !defined(LIBTORQUE_LINUX_SIGNALFD)
+	if(pthread_sigmask(SIG_SETMASK,&epoll_sigset,&tmp)){
+		return -1;
+	}
+#endif
 	while((ret = epoll_wait(epfd,eventlist->events,nevents,-1)) < 0){
+#endif
 		if(errno != EINTR){ // loop on EINTR
 			break;
 		}
 	}
+#if !defined(LIBTORQUE_LINUX_SIGNALFD) && !defined(LIBTORQUE_LINUX_PWAIT)
+	pthread_sigmask(SIG_SETMASK,&tmp,NULL);
+#endif
 	return ret;
 }
 

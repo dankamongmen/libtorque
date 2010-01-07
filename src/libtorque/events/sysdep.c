@@ -58,4 +58,6 @@ int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)
 	}
 	return 0;
 }
+#elif defined(LIBTORQUE_LINUX)
+sigset_t epoll_sigset;
 #endif
