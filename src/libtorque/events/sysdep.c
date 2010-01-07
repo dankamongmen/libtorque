@@ -67,7 +67,20 @@ static pthread_mutex_t epoll_sigset_lock = PTHREAD_MUTEX_INITIALIZER;
 int init_epoll_sigset(void (*rcb)(int)){
 	struct sigaction act;
 
+	/* FIXME we'd like to use sigfillset(), so that we're blocking any
+	   signal not explicitly registered with us (mod TERM/KILL/STOP).
+	   unfortunately, that doesn't affect a currently-blocked epoll_wait(),
+	   and thus if only signals are activated as event sources, they'll
+	   never actually get called. we could use an internal wakeup signal
+	   (or add some state to the SIGTERM handler, rxcommonsignal())...
+	   though, this is actually the more natural semantics, and there's an
+	   argument that they're the correct ones (if they didn't explicitly
+	   have the signal blocked by the time we're called, who knows what all
+	   else got done?). it's not a huge deal, merely a complex one.
 	if(sigfillset(&epoll_sigset_base)){
+		return -1;
+	}*/
+	if(pthread_sigmask(SIG_SETMASK,NULL,&epoll_sigset_base)){
 		return -1;
 	}
 	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
@@ -81,21 +94,32 @@ int init_epoll_sigset(void (*rcb)(int)){
 	return 0;
 }
 
+static void
+signal_demultiplexer(int s){
+	printf("signal\n");
+	handle_evsource_read(get_thread_evh()->evsources->sigarray,s);
+}
+
 // A bit of a misnomer; we actually *delete* the specified signals from the
 // epoll_sigset mask, not add them.
 int add_epoll_sigset(const sigset_t *s,unsigned maxsignal){
+	struct sigaction act;
 	int ret = 0;
 	unsigned z;
 
+	memset(&act,0,sizeof(act));
+	act.sa_handler = signal_demultiplexer;
 	if(pthread_mutex_lock(&epoll_sigset_lock)){
 		return -1;
 	}
 	for(z = 1 ; z < maxsignal ; ++z){
-		if(sigismember(s,z)){
-			if(sigdelset(&epoll_sigset_base,z)){
-				ret = -1;
-				break;
-			}
+		if(!sigismember(s,z)){
+			continue;
+		}
+		if(sigaction(z,&act,NULL)){
+			ret = -1;
+		}else if(sigdelset(&epoll_sigset_base,z)){
+			ret = -1;
 		}
 	}
 	pthread_mutex_unlock(&epoll_sigset_lock);
