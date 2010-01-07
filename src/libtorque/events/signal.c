@@ -44,7 +44,7 @@ int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
 			return -1;
 		}
 	}
-#elif defined(LIBTORQUE_LINUX_PWAIT)
+#elif defined(LIBTORQUE_LINUX)
 #error "implement pwait-based signal add!"
 #elif defined(LIBTORQUE_FREEBSD)
 	{

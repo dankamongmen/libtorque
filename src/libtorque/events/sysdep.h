@@ -40,11 +40,6 @@ struct kevent { // each element an array, each array the same number of members
 #if __GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 8
 #define LIBTORQUE_LINUX_SIGNALFD
 #include <sys/signalfd.h>
-#elif __GLIBC__ == 2 && __GLIBC_MINOR__ > 5
-extern sigset_t epoll_sigmask;
-#define LIBTORQUE_LINUX_PWAIT
-#else
-#error "This version of GNU libc is too old."
 #endif
 static inline int
 Kevent(int epfd,struct kevent *changelist,int nchanges,
