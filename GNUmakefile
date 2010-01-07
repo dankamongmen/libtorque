@@ -354,8 +354,8 @@ endif
 	@mkdir -p $(DOCPREFIX)/man1 $(DOCPREFIX)/man3
 	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
 	@$(INSTALL) -m 0644 $(MAN3OBJ) $(DOCPREFIX)/man3
-	@echo "Running $(LDCONFIG)..." && $(LDCONFIG) $(PREFIX)/lib
-	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
+	@echo "Running $(LDCONFIG) $(PREFIX)/lib..." && $(LDCONFIG) $(PREFIX)/lib
+	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
 
 deinstall:
 	@rm -fv $(addprefix $(DOCPREFIX)/man3/,$(notdir $(MAN3OBJ)))
@@ -365,5 +365,5 @@ deinstall:
 	@rm -fv $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
 	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS) $(TORQUESOL)))
-	@echo "Running $(LDCONFIG)..." && $(LDCONFIG) $(PREFIX)/lib
-	@echo "Running $(MANBIN)..." && $(MANBIN) $(DOCPREFIX)
+	@echo "Running $(LDCONFIG) $(PREFIX)/lib..." && $(LDCONFIG) $(PREFIX)/lib
+	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
