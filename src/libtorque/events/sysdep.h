@@ -46,7 +46,9 @@ struct libtorque_cbctx;
 
 int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
 #else
-extern const sigset_t epoll_sigset;
+extern const sigset_t *epoll_sigset;
+
+int add_epoll_sigset(const sigset_t *,unsigned);
 #endif
 static inline int
 Kevent(int epfd,struct kevent *changelist,int nchanges,
@@ -72,10 +74,10 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 		return 0;
 	}
 #ifdef LIBTORQUE_LINUX_PWAIT
-	while((ret = epoll_pwait(epfd,eventlist->events,nevents,-1,&epoll_sigset)) < 0){
+	while((ret = epoll_pwait(epfd,eventlist->events,nevents,-1,epoll_sigset)) < 0){
 #else
 #if !defined(LIBTORQUE_LINUX_SIGNALFD)
-	if(pthread_sigmask(SIG_SETMASK,&epoll_sigset,&tmp)){
+	if(pthread_sigmask(SIG_SETMASK,epoll_sigset,&tmp)){
 		return -1;
 	}
 #endif

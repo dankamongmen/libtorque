@@ -45,7 +45,9 @@ int add_signal_to_evhandler(evhandler *eh,const sigset_t *sigs,
 		}
 	}
 #elif defined(LIBTORQUE_LINUX)
-#error "implement pwait-based signal add!"
+	if(add_epoll_sigset(sigs,eh->evsources->sigarraysize)){
+		return -1;
+	}
 #elif defined(LIBTORQUE_FREEBSD)
 	{
 		EVECTORS_AUTO(8,ev,evbase);

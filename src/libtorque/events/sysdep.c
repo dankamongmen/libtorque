@@ -59,5 +59,19 @@ int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)
 	return 0;
 }
 #elif defined(LIBTORQUE_LINUX)
-sigset_t epoll_sigset;
+static sigset_t epoll_sigset_base;
+const sigset_t *epoll_sigset = &epoll_sigset_base;
+
+int add_epoll_sigset(const sigset_t *s,unsigned maxsignal){
+	unsigned z;
+
+	for(z = 0 ; z < maxsignal ; ++z){
+		if(sigismember(s,z)){
+			if(sigdelset(&epoll_sigset_base,z)){
+				return -1;
+			}
+		}
+	}
+	return 0;
+}
 #endif

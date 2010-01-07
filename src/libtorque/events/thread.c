@@ -180,7 +180,7 @@ int initialize_common_sources(struct evtables *evt){
 		return -1;
 	}
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,NULL,NULL);
-#ifdef LIBTORQUE_LINUX
+#ifdef LIBTORQUE_LINUX_SIGNALFD
 	if((evt->common_signalfd = signalfd(-1,&s,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 		return -1;
 	}

@@ -42,7 +42,11 @@ int add_timer_to_evhandler(evhandler *eh,const struct itimerspec *t,
 		return -1;
 	}
 #elif defined(LIBTORQUE_LINUX)
-#error "Need Linux 2.6.25 / GNU libc 2.8 for timerfd"
+//#error "Need Linux 2.6.25 / GNU libc 2.8 for timerfd"
+	if(!eh || !t || !rfxn || !cbstate){
+		return -1;
+	}
+	return -1; // FIXME working around compile
 #elif defined(LIBTORQUE_FREEBSD)
 #error "Need to implement FreeBSD timerfd"
 #else
