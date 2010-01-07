@@ -38,7 +38,7 @@ int flush_evector_changes(evhandler *eh,evectors *ev){
 	return flush_evqueue_changes(eh->evq,ev);
 }
 
-#ifdef LIBTORQUE_LINUX
+#ifdef LIBTORQUE_LINUX_SIGNALFD
 int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 			void *cbstate __attribute__ ((unused))){
 	struct signalfd_siginfo si;
