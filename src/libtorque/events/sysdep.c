@@ -5,6 +5,10 @@
 #include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
 
+#ifdef LIBTORQUE_LINUX_PWAIT
+sigset_t epoll_sigmask; // FIXME
+#endif
+
 // We do not enforce, but do expect and require:
 //  - EV_ADD/EPOLL_CTL_ADD to be used as the control operation
 //  - EPOLLET/EV_CLEAR to be used in the flags

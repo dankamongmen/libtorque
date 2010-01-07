@@ -19,7 +19,6 @@ extern "C" {
 // See kevent(7) on FreeBSD.
 #ifdef LIBTORQUE_LINUX
 #include <sys/epoll.h>
-#include <sys/signalfd.h>
 
 #define PTR_TO_EVENTV(ev) (&(ev)->eventv)
 #define PTR_TO_CHANGEV(ev) (&(ev)->changev)
@@ -37,6 +36,16 @@ struct kevent { // each element an array, each array the same number of members
 // specified differently between the two, so we just disable them entirely
 // (since we're never using them anyway). If they need be restored, just
 // pass (t ? (t->tv_sec * 1000 + t->tv_nsec / 1000000) : -1) to epoll_wait().
+// signalfd was introduced to glibc in 2.8
+#if __GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 8
+#define LIBTORQUE_LINUX_SIGNALFD
+#include <sys/signalfd.h>
+#elif __GLIBC__ == 2 && __GLIBC_MINOR__ > 5
+extern sigset_t epoll_sigmask;
+#define LIBTORQUE_LINUX_PWAIT
+#else
+#error "This version of GNU libc is too old."
+#endif
 static inline int
 Kevent(int epfd,struct kevent *changelist,int nchanges,
 		struct kevent *eventlist,int nevents){
