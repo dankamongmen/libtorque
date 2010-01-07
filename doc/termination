@@ -1,0 +1,65 @@
+Termination
+
+Libtorque's interaction with signals, use of multiple threads, and portability
+requirements makes termination a somewhat complex affair. Goals include
+honoring traditional UNIX idioms, clean handling of external signals, robust
+semantics no matter when termination is initiated, flexibility, interoperation
+with debuggers and other arbitrary tools, and not allowing termination to slow
+down the usual case of event handling.
+
+I. The POSIX threads / signals model
+
+POSIX threads specify that all threads within a process share a PID, and that
+each has its own, distinct thread id. PIDs have the integer type pid_t, and
+only positive PIDs can define actual processes. TIDs have the opaque type
+pthread_t; they cannot be ordered, but can be compared for equality.
+
+Other processes can direct signals only to a PID, not the thread IDs within
+another process (TIDs of a given process have no meaning outside that process).
+Within the process, signals can be directed to particular TIDs. Use of raise(s)
+in a threaded program is equivalent to pthread_kill(pthread_self(),s). Use of
+kill(p,s) in a multithreaded program having PID p is a special case, see below.
+
+Signal dispositions (handlers) are per-process. Signal masks are per-thread,
+and inherited upon thread creation (sigprocmask() is undefined in threaded
+programs; pthread_sigmask() must be used). Alternate signal stacks descriptors
+are per-thread, and inherited upon thread creation.
+
+Both the process as a whole and threads within that process have distinct sets
+of pending signals (signals which were blocked at the time of delivery).
+The former is composed of those process-directed signals which could not be
+dispatched to a single thread. The latter are made up of thread-directed
+signals which were being blocked by the specified thread.
+
+A process-directed signal will be delivered to only one particular thread. For
+a single-threaded process, the demultiplexing is trivial and immediate; in this
+case, the process's and (single) thread's pending signals are the same.
+Otherwise, if threads are blocking on the signal in sigwait(), one of them is
+arbitrarily chosen. Otherwise, if threads are not blocking the signal, one of
+them is arbitrarily chosen. The signal otherwise remains pending across the
+process until it can be directed to a thread.
+
+Synchronous signals, and those directed to a TID using pthread_kill() within
+the process, can be handled only by the specified thread. If the signal is
+masked by that thread, it will be marked pending.
+
+POSIX cancellations are dispatched the same way as a thread-directed signal.
+
+II. POSIX cancellation unused
+
+POSIX provides both "thread cancellation" and signal handling. libtorque makes
+no use of thread cancellation: threads are created with cancellation disabled,
+and never enable it. Orderly termination within libtorque makes use of signals.
+
+Justification: we must handle signals as part of our API. It is unsafe to
+handle signals (or, for that matter, terminate) while performing arbitrary
+event processing, thus we must mask and unmask in a controlled fashion. This
+takes time and adds complication. Since we're already doing it for signals,
+let's not do it a second time for cancellation.
+
+Downsides: we rely on other threads within the process not to mark signals we
+use internally as ignored, since signal handlers are per-process. We further
+rely on other threads to keep our termination-initiating signal masked, since
+process-directed signals might not otherwise be delivered to libtorque threads.
+We can check upon libtorque context initialization that this is the case, but
+the calling program (or one of its libraries) might change this later.
