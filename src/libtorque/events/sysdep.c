@@ -64,16 +64,25 @@ static sigset_t epoll_sigset_base;
 const sigset_t *epoll_sigset = &epoll_sigset_base;
 static pthread_mutex_t epoll_sigset_lock = PTHREAD_MUTEX_INITIALIZER;
 
-int init_epoll_sigset(void){
+int init_epoll_sigset(void (*rcb)(int)){
+	struct sigaction act;
+
 	if(sigfillset(&epoll_sigset_base)){
 		return -1;
 	}
 	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
 		return -1;
 	}
+	memset(&act,0,sizeof(act));
+	act.sa_handler = rcb;
+	if(sigaction(EVTHREAD_TERM,&act,NULL)){
+		return -1;
+	}
 	return 0;
 }
 
+// A bit of a misnomer; we actually *delete* the specified signals from the
+// epoll_sigset mask, not add them.
 int add_epoll_sigset(const sigset_t *s,unsigned maxsignal){
 	int ret = 0;
 	unsigned z;

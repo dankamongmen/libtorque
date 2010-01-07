@@ -167,6 +167,13 @@ prep_common_sigset(sigset_t *s){
 	return sigemptyset(s) || sigaddset(s,EVTHREAD_TERM);
 }
 
+#if defined(LIBTORQUE_LINUX) && !defined(LIBTORQUE_LINUX_SIGNALFD)
+static void
+rxcommonsignal_pwaitwrapper(int s){
+	rxcommonsignal(s,NULL,NULL);
+}
+#endif
+
 // All event queues (evqueues) will need to register events on the common
 // signals (on Linux, this is done via a common signalfd()). Either way, we
 // don't want to touch the evsources more than once.
@@ -186,7 +193,7 @@ int initialize_common_sources(struct evtables *evt){
 	}
 	setup_evsource(evt->fdarray,evt->common_signalfd,signalfd_demultiplexer,NULL,NULL,NULL);
 #elif defined(LIBTORQUE_LINUX)
-	if(init_epoll_sigset()){
+	if(init_epoll_sigset(rxcommonsignal_pwaitwrapper)){
 		return -1;
 	}
 #endif
