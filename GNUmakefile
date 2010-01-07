@@ -86,7 +86,7 @@ ifeq ($(UNAME),Linux)
 DFLAGS+=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 LFLAGS+=-Wl,--warn-shared-textrel
 MANBIN:=mandb
-LDCONFIG:=ldconfig -n
+LDCONFIG:=ldconfig
 else
 ifeq ($(UNAME),FreeBSD)
 DFLAGS+=-DLIBTORQUE_FREEBSD
