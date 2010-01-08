@@ -140,6 +140,7 @@ int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
 	SSL_CTX *sslctx = NULL;
 	struct sockaddr_in sin;
+	libtorque_err err;
 	sigset_t termset;
 	int sig,sd = -1;
 
@@ -157,7 +158,7 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't set signal mask\n");
 		return EXIT_FAILURE;
 	}
-	if((ctx = libtorque_init()) == NULL){
+	if((ctx = libtorque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}
@@ -183,8 +184,9 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	printf("Got signal %d (%s), closing down...\n",sig,strsignal(sig));
-	if(libtorque_stop(ctx)){
-		fprintf(stderr,"Couldn't shutdown libtorque\n");
+	if( (err = libtorque_stop(ctx)) ){
+		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
+				libtorque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	if(libtorque_stop_ssl()){
@@ -195,8 +197,9 @@ int main(int argc,char **argv){
 	return EXIT_SUCCESS;
 
 err:
-	if(libtorque_stop(ctx)){
-		fprintf(stderr,"Couldn't shutdown libtorque\n");
+	if( (err = libtorque_stop(ctx)) ){
+		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
+				libtorque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	if(libtorque_stop_ssl()){
