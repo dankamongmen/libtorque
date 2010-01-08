@@ -63,9 +63,10 @@
 	</refnamediv>
 	<refsynopsisdiv>
 		<funcsynopsis>
+			<funcsynopsisinfo>#include &lt;libtorque.h&gt;</funcsynopsisinfo>
 			<funcprototype>
 			<funcdef>struct libtorque_ctx *<function>libtorque_init</function></funcdef>
-			<paramdef>void</paramdef>
+			<paramdef>libtorque_err *<parameter>e</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>
 		<funcsynopsis>
@@ -128,14 +129,20 @@
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>int <function>libtorque_block</function></funcdef>
+			<funcdef>libtorque_err <function>libtorque_block</function></funcdef>
 			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>int <function>libtorque_stop</function></funcdef>
+			<funcdef>libtorque_err <function>libtorque_stop</function></funcdef>
 			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
+			</funcprototype>
+		</funcsynopsis>
+		<funcsynopsis>
+			<funcprototype>
+			<funcdef>const char *<function>libtorque_errstr</function></funcdef>
+			<paramdef>libtorque_err <parameter>e</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>
 	</refsynopsisdiv>
