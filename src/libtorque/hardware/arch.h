@@ -18,7 +18,7 @@ libtorque_cpu_getdesc(const struct libtorque_ctx *,unsigned)
 	__attribute__ ((visibility("default")));
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int detect_architecture(struct libtorque_ctx *,libtorque_err *);
+libtorque_err detect_architecture(struct libtorque_ctx *);
 void free_architecture(struct libtorque_ctx *);
 
 #ifdef __cplusplus

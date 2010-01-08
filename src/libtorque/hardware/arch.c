@@ -160,16 +160,18 @@ detect_cpucount(cpu_set_t *mask){
 
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
-static int
+static libtorque_err
 detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 	struct top_map *topmap = NULL;
 	unsigned z,aid,cpucount;
+	libtorque_err ret;
 	cpu_set_t mask;
 
 	*cputc = 0;
 	*types = NULL;
 	// we're basically doing this in the main loop. purge! FIXME
 	if((cpucount = detect_cpucount(&mask)) <= 0){
+		ret = LIBTORQUE_ERR_AFFINITY;
 		goto err;
 	}
 	// Might be quite large; we don't want it allocated on the stack
@@ -227,23 +229,24 @@ err:
 	free(*types);
 	*types = NULL;
 	free(topmap);
-	return -1;
+	return ret;
 }
 
-int detect_architecture(libtorque_ctx *ctx,libtorque_err *e){
+libtorque_err detect_architecture(libtorque_ctx *ctx){
+	libtorque_err ret;
+
 	if(detect_memories(ctx)){
-		*e = LIBTORQUE_ERR_MEMDETECT;
+		ret = LIBTORQUE_ERR_MEMDETECT;
 		goto err;
 	}
-	if(detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)){
-		*e = LIBTORQUE_ERR_CPUDETECT;
+	if( (ret = detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)) ){
 		goto err;
 	}
 	return 0;
 
 err:
 	free_architecture(ctx);
-	return -1;
+	return ret;
 }
 
 void free_architecture(libtorque_ctx *ctx){

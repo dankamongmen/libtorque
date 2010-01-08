@@ -18,6 +18,7 @@ typedef enum {
 	LIBTORQUE_ERR_INIT,	// general initialzation failure (FIXME break these down)
 	LIBTORQUE_ERR_CPUDETECT,// error detecting available processor units
 	LIBTORQUE_ERR_MEMDETECT,// error detecting available memories
+	LIBTORQUE_ERR_AFFINITY, // error in the affinity subsystem
 
 	LIBTORQUE_ERR_MAX	// sentinel value, should never be seen
 } libtorque_err;
