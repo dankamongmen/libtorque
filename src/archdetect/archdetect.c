@@ -391,6 +391,7 @@ int main(int argc,char **argv){
 	const libtorque_topt *t;
 	int ret = EXIT_FAILURE;
 	const char *a0 = *argv;
+	libtorque_err err;
 
 	if(setlocale(LC_ALL,"") == NULL){
 		fprintf(stderr,"Couldn't set locale\n");
@@ -401,8 +402,9 @@ int main(int argc,char **argv){
 		usage(a0);
 		goto done;
 	}
-	if((ctx = libtorque_init()) == NULL){
-		fprintf(stderr,"Couldn't initialize libtorque\n");
+	if((ctx = libtorque_init(&err)) == NULL){
+		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
+				libtorque_errstr(err));
 		goto done;
 	}
 	if((t = libtorque_get_topology(ctx)) == NULL){
@@ -429,8 +431,9 @@ int main(int argc,char **argv){
 	ret = EXIT_SUCCESS;
 
 done:
-	if(libtorque_stop(ctx)){
-		fprintf(stderr,"Couldn't destroy libtorque\n");
+	if( (err = libtorque_stop(ctx)) ){
+		fprintf(stderr,"Couldn't destroy libtorque (%s)\n",
+				libtorque_errstr(err));
 		ret = EXIT_FAILURE;
 	}
 	return ret;
