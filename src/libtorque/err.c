@@ -8,6 +8,7 @@ static const char * const errstrs[LIBTORQUE_ERR_MAX + 1] = {
 	"Processor detection failure",		// LIBTORQUE_ERR_CPUDETECT
 	"Memory detection failure",		// LIBTORQUE_ERR_MEMDETECT
 	"Affinity subsystem failure",		// LIBTORQUE_ERR_AFFINITY
+	"Insufficient system resources",	// LIBTORQUE_ERR_RESOURCE
 
 	"Invalid error identifier"		// LIBTORQUE_ERR_MAX
 };

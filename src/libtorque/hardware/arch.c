@@ -44,15 +44,15 @@ free_cpudetails(libtorque_cput *details){
 //  - CPUCTL ioctl(2)s (freebsd only, with cpuctl device, x86 only)
 //  - /proc/cpuinfo (linux only)
 //  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
-static int
+static libtorque_err
 detect_cpudetails(unsigned id,libtorque_cput *details,
 			unsigned *thread,unsigned *core,unsigned *pkg){
 	if(pin_thread(id)){
-		return -1;
+		return LIBTORQUE_ERR_AFFINITY;
 	}
 	if(x86cpuid(details,thread,core,pkg)){
 		free_cpudetails(details);
-		return -1;
+		return LIBTORQUE_ERR_CPUDETECT;
 	}
 	return 0;
 }
@@ -176,6 +176,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 	}
 	// Might be quite large; we don't want it allocated on the stack
 	if((topmap = malloc(cpucount * sizeof(*topmap))) == NULL){
+		ret = LIBTORQUE_ERR_RESOURCE;
 		goto err;
 	}
 	memset(topmap,0,cpucount * sizeof(*topmap));
@@ -190,9 +191,10 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 			++aid;
 		}
 		if(aid == CPU_SETSIZE){
+			ret = LIBTORQUE_ERR_AFFINITY;
 			goto err;
 		}
-		if(detect_cpudetails(aid,&cpudetails,&thread,&core,&pkg)){
+		if( (ret = detect_cpudetails(aid,&cpudetails,&thread,&core,&pkg)) ){
 			goto err;
 		}
 		if( (cputype = match_cputype(*cputc,*types,&cpudetails)) ){
@@ -202,18 +204,22 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 			cpudetails.elements = 1;
 			if((cputype = add_cputype(cputc,types,&cpudetails)) == NULL){
 				free_cpudetails(&cpudetails);
+				ret = LIBTORQUE_ERR_RESOURCE;
 				goto err;
 			}
 		}
 		if(topologize(ctx,topmap,aid,thread,core,pkg,(unsigned)(cputype - *types))){
+			ret = LIBTORQUE_ERR_INIT;
 			goto err;
 		}
 		if(spawn_thread(ctx)){
+			ret = LIBTORQUE_ERR_RESOURCE;
 			goto err;
 		}
 		++aid;
 	}
 	if(unpin_thread(&mask)){
+		ret = LIBTORQUE_ERR_AFFINITY;
 		goto err;
 	}
 	free(topmap);
