@@ -11,6 +11,15 @@ struct itimerspec;
 struct libtorque_ctx;
 struct libtorque_cbctx;
 
+// Errors can be converted to a string via libtorque_errstr().
+typedef enum {
+	LIBTORQUE_ERR_NONE = 0,
+	LIBTORQUE_ERR_ASSERT,	// principal precondition/expectation failure
+	LIBTORQUE_ERR_INIT,	// general initialzation failure (FIXME break these down)
+
+	LIBTORQUE_ERR_MAX	// sentinel value, should never be seen
+} libtorque_err;
+
 // Create a new libtorque context on the current cpuset. The best performance
 // on the widest set of loads and requirements is achieved by using one
 // libtorque instance on as many uncontested processing elements as possible,
@@ -32,7 +41,7 @@ struct libtorque_cbctx;
 // had running them all with as large a cpuset as possible (ie, overlapping
 // cpusets are no problem, and usually desirable). Again, make sure you really
 // want to be using multiple instances.
-struct libtorque_ctx *libtorque_init(void)
+struct libtorque_ctx *libtorque_init(libtorque_err *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
@@ -115,6 +124,10 @@ int libtorque_block(struct libtorque_ctx *)
 // Signal and reap the running threads, and free the context. No further calls
 // may be made using this context following libtorque_stop().
 int libtorque_stop(struct libtorque_ctx *)
+	__attribute__ ((visibility("default")));
+
+// Translate the libtorque error code into a human-readable string.
+const char *libtorque_errstr(libtorque_err)
 	__attribute__ ((visibility("default")));
 
 #ifdef __cplusplus

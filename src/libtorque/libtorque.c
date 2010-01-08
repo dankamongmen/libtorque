@@ -102,47 +102,52 @@ free_libtorque_ctx(libtorque_ctx *ctx){
 }
 
 static libtorque_ctx *
-libtorque_init_sigmasked(void){
+libtorque_init_sigmasked(libtorque_err *e){
 	libtorque_ctx *ctx;
 
 	if((ctx = create_libtorque_ctx()) == NULL){
+		*e = LIBTORQUE_ERR_INIT;
 		return NULL;
 	}
 	if(detect_architecture(ctx)){
 		free_libtorque_ctx(ctx);
+		*e = LIBTORQUE_ERR_INIT;
 		return NULL;
 	}
 	return ctx;
 }
 
-libtorque_ctx *libtorque_init(void){
+libtorque_ctx *libtorque_init(libtorque_err *e){
 	struct sigaction oldact;
 	libtorque_ctx *ret;
 	sigset_t old,add;
 
+	*e = LIBTORQUE_ERR_NONE;
 	// If SIGPIPE isn't being handled or at least ignored, start ignoring
 	// it (don't blow away a preexisting handler, though).
 	if(sigaction(SIGPIPE,NULL,&oldact)){
+		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
 	}
 	if(oldact.sa_handler == SIG_DFL){
 		oldact.sa_handler = SIG_IGN;
 		if(sigaction(SIGPIPE,&oldact,NULL)){
+			*e = LIBTORQUE_ERR_ASSERT;
 			return NULL;
 		}
 	}
 	if(sigaction(EVTHREAD_TERM,NULL,&oldact)){
+		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
 	}
-	if(sigfillset(&add)){
+	if(sigfillset(&add) || pthread_sigmask(SIG_BLOCK,&add,&old)){
+		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
 	}
-	if(pthread_sigmask(SIG_BLOCK,&add,&old)){
-		return NULL;
-	}
-	ret = libtorque_init_sigmasked();
+	ret = libtorque_init_sigmasked(e);
 	if(pthread_sigmask(SIG_SETMASK,&old,NULL)){
 		libtorque_stop(ret);
+		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
 	}
 	return ret;
