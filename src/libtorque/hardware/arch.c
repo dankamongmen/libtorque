@@ -230,11 +230,13 @@ err:
 	return -1;
 }
 
-int detect_architecture(libtorque_ctx *ctx){
+int detect_architecture(libtorque_ctx *ctx,libtorque_err *e){
 	if(detect_memories(ctx)){
+		*e = LIBTORQUE_ERR_MEMDETECT;
 		goto err;
 	}
 	if(detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)){
+		*e = LIBTORQUE_ERR_CPUDETECT;
 		goto err;
 	}
 	return 0;

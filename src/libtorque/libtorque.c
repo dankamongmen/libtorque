@@ -109,9 +109,8 @@ libtorque_init_sigmasked(libtorque_err *e){
 		*e = LIBTORQUE_ERR_INIT;
 		return NULL;
 	}
-	if(detect_architecture(ctx)){
+	if(detect_architecture(ctx,e)){
 		free_libtorque_ctx(ctx);
-		*e = LIBTORQUE_ERR_INIT;
 		return NULL;
 	}
 	return ctx;

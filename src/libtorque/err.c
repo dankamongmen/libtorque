@@ -5,7 +5,10 @@ static const char * const errstrs[LIBTORQUE_ERR_MAX + 1] = {
 	"Unknown error",			// LIBTORQUE_ERR_NONE
 	"Assertion failure",			// LIBTORQUE_ERR_ASSERT
 	"General initialization failure",	// LIBTORQUE_ERR_INIT
-	"Invalid error identifier",		// LIBTORQUE_ERR_MAX
+	"Processor detection failure",		// LIBTORQUE_ERR_CPUDETECT
+	"Memory detection failure",		// LIBTORQUE_ERR_MEMDETECT
+
+	"Invalid error identifier"		// LIBTORQUE_ERR_MAX
 };
 
 const char *libtorque_errstr(libtorque_err e){
