@@ -64,7 +64,6 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 		e->stats.volctxsw = ru.ru_nvcsw;
 		e->stats.involctxsw = ru.ru_nivcsw;
 #endif
-		e->stats.utimeus = e->stats.stimeus = 0;
 		// There's no POSIX thread cancellation going on here, nor are
 		// we terminating due to signal; we're catching the signal and
 		// exiting from this thread only. The trigger signal might be
