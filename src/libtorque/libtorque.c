@@ -225,13 +225,22 @@ libtorque_err libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 	struct ssl_cbstate *cbs;
 
 	if((cbs = create_ssl_cbstate(ctx,sslctx,state,rx,tx)) == NULL){
-		return -1;
+		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	if(libtorque_addfd_unbuffered(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){
 		free_ssl_cbstate(cbs);
-		return -1;
+		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	return 0;
+}
+#else
+libtorque_err libtorque_addssl(libtorque_ctx *ctx __attribute__ ((unused)),
+				int fd __attribute__ ((unused)),
+				SSL_CTX *sslctx __attribute__ ((unused)),
+				libtorquercb rx __attribute__ ((unused)),
+				libtorquewcb tx __attribute__ ((unused)),
+				void *state __attribute__ ((unused))){
+	return LIBTORQUE_ERR_UNAVAIL;
 }
 #endif
 
