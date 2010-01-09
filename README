@@ -35,9 +35,10 @@ Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
   1. overview
   2. common mistakes
  VI. FAQ
-  1. general use
-  2. file descriptors
-  3. signals
+  1. building
+  2. general use
+  3. file descriptors
+  4. signals
 
 ----------------------------------------------------------------libtorque-----
 -=+ I. History and licensing +=-
@@ -150,6 +151,9 @@ Exuberant Ctags are required to build the tagfile. Install:
 ----------------------------------------------------------------libtorque-----
 -=+ III. Building libtorque +=-
 ----------------------------------------------------------------libtorque-----
+
+The file GNUmakefile.local is sourced by GNUmakefile, but not used by the
+pristine distribution. Local build variables can be stored in this file.
 
 Environment variables can affect the build by overriding defaults:
 
@@ -374,6 +378,12 @@ directories. That having been said:
 ----------------------------------------------------------------libtorque-----
 -=+ VI. FAQ +=-
 ----------------------------------------------------------------libtorque-----
+
+--building------------------------------------------------------------------
+
+Q: I get errors about NUMA-related functionality.
+A: See the NUMA requirements in section II.6. If you can't provide the
+   required minimum support, build with LIBTORQUE_WITHOUT_NUMA.
 
 --general use---------------------------------------------------------------
 
