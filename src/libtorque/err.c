@@ -4,11 +4,14 @@
 static const char * const errstrs[LIBTORQUE_ERR_MAX + 1] = {
 	"Unknown error",			// LIBTORQUE_ERR_NONE
 	"Assertion failure",			// LIBTORQUE_ERR_ASSERT
-	"General initialization failure",	// LIBTORQUE_ERR_INIT
+	"Undifferentiated init failure",	// LIBTORQUE_ERR_INIT
+	"Undifferentiated shutdown failure",	// LIBTORQUE_ERR_SHUTDOWN
 	"Processor detection failure",		// LIBTORQUE_ERR_CPUDETECT
 	"Memory detection failure",		// LIBTORQUE_ERR_MEMDETECT
 	"Affinity subsystem failure",		// LIBTORQUE_ERR_AFFINITY
 	"Insufficient system resources",	// LIBTORQUE_ERR_RESOURCE
+	"Invalid parameter",			// LIBTORQUE_ERR_INVAL
+	"Functionality unavailable on platform",// LIBTORQUE_ERR_UNAVAIL
 
 	"Invalid error identifier"		// LIBTORQUE_ERR_MAX
 };
