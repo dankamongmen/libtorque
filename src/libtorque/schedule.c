@@ -218,3 +218,7 @@ int block_threads(libtorque_ctx *ctx){
 	}
 	return ret;
 }
+
+int get_thread_aid(void){
+	return sched_getcpu();
+}
