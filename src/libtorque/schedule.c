@@ -256,7 +256,9 @@ int block_threads(libtorque_ctx *ctx){
 // instance on Linux with glibc 2.6, see below). It can also suffer an
 // exception in that case, should the affinity mask not be a single CPU.
 int get_thread_aid(void){
-#if defined(LIBTORQUE_LINUX) && (__GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 6)
+	// sched_getcpu() is unsafe on ubuntu 8.04's glibc 2.7 + 2.6.9; it
+	// coredumps on entry, jumping to an invalid address. best avoided.
+#if defined(LIBTORQUE_LINUX) && (__GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 7)
 	return sched_getcpu();
 #else
 	cpu_set_t mask;
