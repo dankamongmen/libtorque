@@ -106,14 +106,17 @@ libtorque_err libtorque_addpath(struct libtorque_ctx *,const char *,
 
 #ifndef LIBTORQUE_WITHOUT_SSL
 #include <openssl/ssl.h>
+#else
+typedef void SSL_CTX;
+#endif
 // The SSL_CTX should be set up with the desired authentication parameters etc
-// already (utility functions are provided to do this).
+// already (utility functions are provided to do this). If libtorque was not
+// compiled with SSL support, returns LIBTORQUE_ERR_UNAVAIL.
 libtorque_err libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,
 				libtorquercb,libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));
-#endif
 
 // Performs a thread-local lookup of the current ctx. This must not be cached
 // beyond the lifetime of the callback instance!
