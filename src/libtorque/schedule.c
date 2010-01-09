@@ -63,7 +63,7 @@ int pin_thread(unsigned aid){
 	if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
 				sizeof(mask),&mask)){
 #else
-	if(pthread_setaffinity_np(pthread_self(),sizeof(mask),&mask)){
+	if(sched_setaffinity(0,sizeof(mask),&mask)){
 #endif
 		return -1;
 	}
@@ -219,6 +219,29 @@ int block_threads(libtorque_ctx *ctx){
 	return ret;
 }
 
+// This function can be very slow unless we have a getcpu() system call (for
+// instance on Linux with glibc 2.6, see below). It can also suffer an
+// exception in that case, should the affinity mask not be a single CPU.
 int get_thread_aid(void){
+#if defined(LIBTORQUE_LINUX) && (__GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 6)
 	return sched_getcpu();
+#else
+	cpu_set_t mask;
+	int z;
+
+#ifdef LIBTORQUE_FREEBSD
+	if(cpuset_getaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
+				sizeof(mask),&mask)){
+#else
+	if(sched_getaffinity(0,sizeof(mask),&mask)){
+#endif
+		return -1;
+	}
+	for(z = 0 ; z < CPU_SETSIZE ; ++z){
+		if(CPU_ISSET(z,&mask)){
+			return z;
+		}
+	}
+	return -1;
+#endif
 }
