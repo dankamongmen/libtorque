@@ -50,20 +50,9 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 	if(sig == EVTHREAD_TERM){
 		void *ret = PTHREAD_CANCELED;
 		evhandler *e = get_thread_evh();
+		struct rusage ru;
 		int r;
 
-		// FIXME this is kind of lame. I'd like to emulate
-		// RUSAGE_THREAD when it's unavailable, and either way the test
-		// ought be based on whether RUSAGE_THREAD is *expected*, not
-		// *defined* (Linux 2.6.26+) for future-proofing.
-#ifdef RUSAGE_THREAD
-		struct rusage ru;
-		getrusage(RUSAGE_THREAD,&ru);
-		e->stats.utimeus = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
-		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
-		e->stats.volctxsw = ru.ru_nvcsw;
-		e->stats.involctxsw = ru.ru_nivcsw;
-#endif
 		// There's no POSIX thread cancellation going on here, nor are
 		// we terminating due to signal; we're catching the signal and
 		// exiting from this thread only. The trigger signal might be
@@ -74,6 +63,19 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 		if((r = pthread_join(e->nexttid,&ret)) && r != EDEADLK){
 			ret = NULL;
 		}
+		// FIXME this is kind of lame. I'd like to emulate
+		// RUSAGE_THREAD when it's unavailable, and either way the test
+		// ought be based on whether RUSAGE_THREAD is *expected*, not
+		// *defined* (Linux 2.6.26+) for future-proofing.
+#ifdef RUSAGE_THREAD
+		getrusage(RUSAGE_THREAD,&ru);
+#else
+		getrusage(RUSAGE_SELF,&ru);
+#endif
+		e->stats.utimeus = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
+		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
+		e->stats.volctxsw = ru.ru_nvcsw;
+		e->stats.involctxsw = ru.ru_nivcsw;
 		if(destroy_evhandler(e)){
 			ret = NULL;
 		}
