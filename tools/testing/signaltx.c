@@ -12,7 +12,6 @@
 
 #define DEFAULT_SIG SIGTERM
 
-static uintmax_t sent;
 static volatile int stopsending;
 
 static void
@@ -29,23 +28,29 @@ static void
 usage(const char *argv0){
 	fprintf(stderr,"usage: %s [ options ] pid\n",argv0);
 	fprintf(stderr,"available options:\n");
+	fprintf(stderr,"\t-c, --count count: number of signals (default: 0 (continuous))\n");
 	fprintf(stderr,"\t-s, --sig signum: specify signal (default: %d (%s))\n",
 			DEFAULT_SIG,strsignal(DEFAULT_SIG));
 	fprintf(stderr,"\t--version: print version info\n");
 }
 
 static int
-parse_args(int argc,char **argv,pid_t *pid,int *sig){
+parse_args(int argc,char **argv,pid_t *pid,int *sig,uintmax_t *count){
 #define SET_ARG_ONCE(opt,arg,val) do{ if(!*(arg)){ *arg = val; }\
 	else{ fprintf(stderr,"Provided '%c' twice\n",(opt)); goto err; }} while(0)
 	int lflag,c;
 	const struct option opts[] = {
-		{	 .name = "version",
+		{	.name = "version",
 			.has_arg = 0,
 			.flag = &lflag,
 			.val = 'v',
 		},
-		{	 .name = "sig",
+		{	.name = "count",
+			.has_arg = 1,
+			.flag = &lflag,
+			.val = 'c',
+		},
+		{	.name = "sig",
 			.has_arg = 1,
 			.flag = &lflag,
 			.val = 's',
@@ -57,13 +62,17 @@ parse_args(int argc,char **argv,pid_t *pid,int *sig){
 	long r;
 
 	*sig = 0;
-	while((c = getopt_long(argc,argv,"s:",opts,NULL)) >= 0){
+	*count = 0;
+	while((c = getopt_long(argc,argv,"c:s:",opts,NULL)) >= 0){
 		switch(c){
-		case 's':
+		case 'c': case 's':
 			lflag = c;
 			// intentional fall-through
 		case 0: // long option
 			switch(lflag){
+				case 'c':
+					SET_ARG_ONCE('c',count,atoi(optarg));
+					break;
 				case 's':
 					SET_ARG_ONCE('s',sig,atoi(optarg));
 					break;
@@ -100,11 +109,12 @@ err:
 }
 
 int main(int argc,char **argv){
+	uintmax_t count,sent;
 	struct sigaction sa;
 	pid_t pid;
 	int sig;
 
-	if(parse_args(argc,argv,&pid,&sig)){
+	if(parse_args(argc,argv,&pid,&sig,&count)){
 		return EXIT_FAILURE;
 	}
 	memset(&sa,0,sizeof(sa));
@@ -113,16 +123,23 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't install signal handlers\n");
 		return EXIT_FAILURE;
 	}
-	printf("Using signal %d (%s)...\n",sig,strsignal(sig));
+	printf("Using signal %d (%s)...",sig,strsignal(sig));
+	fflush(stdout);
+	sent = 0;
 	while(!stopsending){
 		if(kill(pid,sig)){
 			fprintf(stderr,"Error sending signal %d (%s) (#%ju)\n",
 					sig,strerror(errno),sent + 1);
 			goto done;
 		}
-		++sent;
+		if(++sent == count){
+			printf("done.\n");
+			break;
+		}
 	}
-	printf("%s. ",strsignal(stopsending));
+	if(stopsending){
+		printf("got %s.\n",strsignal(stopsending));
+	}
 
 done:
 	printf("Sent %ju signal%s.\n",sent,sent == 1 ? "" : "s");
