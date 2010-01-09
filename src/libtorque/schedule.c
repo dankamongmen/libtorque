@@ -2,6 +2,7 @@
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
+#include <bits/local_lim.h> // FIXME eglibc broke PTHREAD_STACK_MIN :/
 #include <libtorque/internal.h>
 #include <libtorque/events/evq.h>
 #include <libtorque/events/thread.h>
