@@ -258,7 +258,7 @@ evhandler *create_evhandler(evtables *evsources,evqueue *evq){
 }
 
 static void print_evstats(const evthreadstats *stats){
-	printf("<tstats>");
+	printf("<tstats aid=\"%d\">",get_thread_aid());
 #define PRINTSTAT(s,field) \
  do { if((s)->field){ printf("<" #field ">%ju</" #field ">",(s)->field); } }while(0)
 #define STATDEF(field) PRINTSTAT(stats,field);
