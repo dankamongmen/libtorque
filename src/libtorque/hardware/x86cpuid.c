@@ -1083,12 +1083,13 @@ id_intel_caches(uint32_t maxlevel,const struct feature_flags *ff __attribute__ (
 
 static inline int
 amd_dtlb_presentp(uint32_t reg){
-	return !!(reg >> 28u);
+	// Must have non-zero associativity and entry count
+	return (reg & 0xf0000000) && (reg & 0x0fff0000);
 }
 
 static inline int
 amd_itlb_presentp(uint32_t reg){
-	return !!((reg >> 12u) & 0xfu);
+	return (reg & 0x0000f000) && (reg & 0x00000fff);
 }
 
 static inline int
@@ -1122,6 +1123,8 @@ scale_amd_l23tlb(unsigned dents,unsigned psize){
 	}else if(psize == 2u * 1024 * 1024){
 		return dents;
 	}else if(psize == 1u * 1024 * 1024 * 1024){
+		return dents;
+	}else if(psize == 4u * 1024){
 		return dents;
 	}
 	return 0;
