@@ -120,7 +120,8 @@ typedef struct tguard {
 	} status;
 } tguard;
 
-// Ought be restricted to a single processor on entry! // FIXME verify?
+// On entry, cancellation ought be disabled, and execution restricted to a
+// single processor via hard affinity settings (FIXME: verify?).
 static void *
 thread(void *void_marshal){
 	tguard *marshal = void_marshal;
@@ -167,40 +168,55 @@ earlyerr:
 }
 
 static inline
-int setup_thread_stack(stack_t *s){
-	// FIXME
+int setup_thread_stack(stack_t *s,pthread_attr_t *attr){
+	// FIXME might want a larger stack? definitely take caches into account
 	s->ss_size = PTHREAD_STACK_MIN >= SIGSTKSZ ?
 		PTHREAD_STACK_MIN : SIGSTKSZ;
-	s->ss_sp = NULL;
+	if((s->ss_sp = malloc(s->ss_size)) == NULL){
+		return -1;
+	}
+	if(pthread_attr_setstack(attr,s->ss_sp,s->ss_size)){
+		free(s->ss_sp);
+		return -1;
+	}
 	return 0;
 }
 
 // Must be pinned to the desired CPU upon entry! // FIXME verify?
 int spawn_thread(libtorque_ctx *ctx){
+	pthread_attr_t attr;
 	tguard tidguard = {
 		.ctx = ctx,
 	};
 	pthread_t tid;
 	int ret = 0;
 
-	if(setup_thread_stack(&tidguard.stack)){
+	if(pthread_attr_init(&attr)){
+		return -1;
+	}
+	if(setup_thread_stack(&tidguard.stack,&attr)){
+		pthread_attr_destroy(&attr);
 		return -1;
 	}
 	if(pthread_mutex_init(&tidguard.lock,NULL)){
 		free(tidguard.stack.ss_sp);
+		pthread_attr_destroy(&attr);
 		return -1;
 	}
 	if(pthread_cond_init(&tidguard.cond,NULL)){
 		pthread_mutex_destroy(&tidguard.lock);
 		free(tidguard.stack.ss_sp);
+		pthread_attr_destroy(&attr);
 		return -1;
 	}
-	if(pthread_create(&tid,NULL,thread,&tidguard)){ // FIXME set up stack
+	if(pthread_create(&tid,&attr,thread,&tidguard)){
 		pthread_mutex_destroy(&tidguard.lock);
 		pthread_cond_destroy(&tidguard.cond);
 		free(tidguard.stack.ss_sp);
+		pthread_attr_destroy(&attr);
 		return -1;
 	}
+	ret |= pthread_attr_destroy(&attr);
 	ret |= pthread_mutex_lock(&tidguard.lock);
 	while(tidguard.status == THREAD_UNLAUNCHED){
 		ret |= pthread_cond_wait(&tidguard.cond,&tidguard.lock);
