@@ -5,3 +5,5 @@ STATDEF(utimeus)	// microseconds of user time
 STATDEF(stimeus)	// microseconds of system time
 STATDEF(volctxsw)	// voluntary context switches
 STATDEF(involctxsw)	// involuntary context switches
+PTRDEF(stackptr)	// stack base pointer
+STATDEF(stacksize)	// stack size in bytes

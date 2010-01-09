@@ -201,8 +201,11 @@ int initialize_common_sources(struct evtables *evt){
 }
 
 static int
-initialize_evhandler(evhandler *e,evtables *evsources,evqueue *evq){
+initialize_evhandler(evhandler *e,evtables *evsources,evqueue *evq,
+				const stack_t *stack){
 	memset(e,0,sizeof(*e));
+	e->stats.stackptr = stack->ss_sp;
+	e->stats.stacksize = stack->ss_size;
 	e->evsources = evsources;
 	if(ref_evqueue(evq)){
 		return -1;
@@ -247,11 +250,12 @@ int create_efd(void){
 	return fd;
 }
 
-evhandler *create_evhandler(evtables *evsources,evqueue *evq){
+evhandler *create_evhandler(evtables *evsources,evqueue *evq,
+					const stack_t *stack){
 	evhandler *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_evhandler(ret,evsources,evq) == 0){
+		if(initialize_evhandler(ret,evsources,evq,stack) == 0){
 			return ret;
 		}
 		free(ret);
@@ -260,14 +264,16 @@ evhandler *create_evhandler(evtables *evsources,evqueue *evq){
 }
 
 static void print_evstats(const evthreadstats *stats){
-	printf("<tstats aid=\"%d\">",get_thread_aid());
-#define PRINTSTAT(s,field) \
- do { if((s)->field){ printf("<" #field ">%ju</" #field ">",(s)->field); } }while(0)
-#define STATDEF(field) PRINTSTAT(stats,field);
+	printf("<thread aid=\"%d\">",get_thread_aid());
+#define PRINTSTAT(s,field,format) \
+ do { if((s)->field){ printf("<" #field ">%" format "</" #field ">",(s)->field); } }while(0)
+#define STATDEF(field) PRINTSTAT(stats,field,"ju");
+#define PTRDEF(field) PRINTSTAT(stats,field,"p");
 #include <libtorque/events/x-stats.h>
+#undef PTRDEF
 #undef STATDEF
 #undef PRINTSTAT
-	printf("</tstats>\n");
+	printf("</thread>\n");
 }
 
 int destroy_evhandler(evhandler *e){

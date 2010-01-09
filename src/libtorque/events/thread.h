@@ -21,7 +21,7 @@ typedef struct evhandler {
 	evthreadstats stats;		// one for each thread
 } evhandler;
 
-evhandler *create_evhandler(struct evtables *,evqueue *)
+evhandler *create_evhandler(struct evtables *,evqueue *,const stack_t *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((malloc));

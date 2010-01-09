@@ -112,6 +112,7 @@ typedef struct tguard {
 	libtorque_ctx *ctx;
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
+	stack_t stack;
 	enum {
 		THREAD_UNLAUNCHED = 0,
 		THREAD_PREFAIL,
@@ -130,7 +131,7 @@ thread(void *void_marshal){
 	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
 		goto earlyerr;
 	}
-	if((ev = create_evhandler(&ctx->eventtables,&ctx->evq)) == NULL){
+	if((ev = create_evhandler(&ctx->eventtables,&ctx->evq,&marshal->stack)) == NULL){
 		goto earlyerr;
 	}
 	if(pthread_mutex_lock(&marshal->lock)){
@@ -165,6 +166,15 @@ earlyerr:
 	return NULL;
 }
 
+static inline
+int setup_thread_stack(stack_t *s){
+	// FIXME
+	s->ss_size = PTHREAD_STACK_MIN >= SIGSTKSZ ?
+		PTHREAD_STACK_MIN : SIGSTKSZ;
+	s->ss_sp = NULL;
+	return 0;
+}
+
 // Must be pinned to the desired CPU upon entry! // FIXME verify?
 int spawn_thread(libtorque_ctx *ctx){
 	tguard tidguard = {
@@ -173,16 +183,22 @@ int spawn_thread(libtorque_ctx *ctx){
 	pthread_t tid;
 	int ret = 0;
 
+	if(setup_thread_stack(&tidguard.stack)){
+		return -1;
+	}
 	if(pthread_mutex_init(&tidguard.lock,NULL)){
+		free(tidguard.stack.ss_sp);
 		return -1;
 	}
 	if(pthread_cond_init(&tidguard.cond,NULL)){
 		pthread_mutex_destroy(&tidguard.lock);
+		free(tidguard.stack.ss_sp);
 		return -1;
 	}
-	if(pthread_create(&tid,NULL,thread,&tidguard)){
+	if(pthread_create(&tid,NULL,thread,&tidguard)){ // FIXME set up stack
 		pthread_mutex_destroy(&tidguard.lock);
 		pthread_cond_destroy(&tidguard.cond);
+		free(tidguard.stack.ss_sp);
 		return -1;
 	}
 	ret |= pthread_mutex_lock(&tidguard.lock);
