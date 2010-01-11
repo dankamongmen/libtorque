@@ -97,10 +97,9 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 		ret = epoll_wait(epfd,eventlist->events,nevents,-1);
 #if defined(LIBTORQUE_LINUX_SIGNALFD)
 	}while(ret < 0 || errno == EINTR);
-#endif
-#endif
-#if !defined(LIBTORQUE_LINUX_SIGNALFD) && !defined(LIBTORQUE_LINUX_PWAIT)
+#else
 	pthread_sigmask(SIG_SETMASK,&tmp,NULL);
+#endif
 #endif
 	return ret;
 }
