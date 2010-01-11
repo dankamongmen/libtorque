@@ -331,10 +331,10 @@ $(TAGS): $(SRC) $(CINC) $(MAKEFILE_LIST)
 	$(TAGBIN) -f $@ $^
 
 clean:
-	@rm -rfv $(OUT)
+	rm -rf $(OUT)
 
 mrproper: clean
-	@rm -rfv $(TAGS)
+	rm -rf $(TAGS)
 
 install: test unsafe-install
 
@@ -358,12 +358,12 @@ endif
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
 
 deinstall:
-	@rm -fv $(addprefix $(DOCPREFIX)/man3/,$(notdir $(MAN3OBJ)))
-	@rm -fv $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
-	@rm -rfv $(PREFIX)/include/lib$(TORQUE)
-	@rm -fv $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
-	@rm -fv $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
-	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
-	@rm -fv $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS) $(TORQUESOL)))
+	rm -f $(addprefix $(DOCPREFIX)/man3/,$(notdir $(MAN3OBJ)))
+	rm -f $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
+	rm -rf $(PREFIX)/include/lib$(TORQUE)
+	rm -f $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
+	rm -f $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
+	rm -f $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
+	rm -f $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS) $(TORQUESOL)))
 	@echo "Running $(LDCONFIG) $(PREFIX)/lib..." && $(LDCONFIG) $(PREFIX)/lib
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
