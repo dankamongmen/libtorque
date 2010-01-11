@@ -36,6 +36,9 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 	struct epoll_event ee;
 	struct kevent k;
 
+	if(fd < 0){
+		return -1;
+	}
 	memset(&ee.data,0,sizeof(ee.data));
 	ee.data.fd = fd;
 	// We automatically wait for EPOLLERR/EPOLLHUP; according to
@@ -85,8 +88,13 @@ add_evqueue_baseevents(const libtorque_ctx *ctx,evqueue *e){
 		return -1;
 	}
 	return 0;
-#else
+#elif defined(LIBTORQUE_LINUX_SIGNALFD)
 	return add_commonfds_to_evhandler(ctx->eventtables.common_signalfd,e);
+#elif defined(LIBTORQUE_LINUX)
+	if(!ctx || !e){ // FIXME just to silence -Wunused warnings, blargh
+		return -1;
+	}
+	return 0;
 #endif
 }
 
