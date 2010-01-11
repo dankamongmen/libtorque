@@ -71,8 +71,8 @@ static void
 signal_demultiplexer(int s){
 	evhandler *ev = get_thread_evh();
 
-	handle_evsource_read(ev->evsources->sigarray,s);
 	++ev->stats.events;
+	handle_evsource_read(ev->evsources->sigarray,s);
 }
 
 int init_epoll_sigset(void){

@@ -99,9 +99,11 @@ check_for_termination(void){
 	}
 }
 
-static void
-rxcommonsignal_handler(int s){
-	sem_rxcommonsignal = s;
+static int
+rxcommonsignal_handler(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
+				void *cbstate __attribute__ ((unused))){
+	sem_rxcommonsignal = sig;
+	return 0;
 }
 #else
 #define check_for_termination(...)
