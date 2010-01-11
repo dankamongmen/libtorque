@@ -55,12 +55,31 @@ int init_epoll_sigset(void);
 int add_epoll_sigset(const sigset_t *,unsigned);
 #endif
 static inline int
+kevent_retrieve(int epfd,struct kevent *eventlist,int nevents){
+	int ret;
+
+#if defined(LIBTORQUE_LINUX_SIGNALFD)
+	do{
+#else
+	sigset_t tmp;
+
+	if(pthread_sigmask(SIG_SETMASK,epoll_sigset,&tmp)){
+		return -1;
+	}
+#endif
+		ret = epoll_wait(epfd,eventlist->events,nevents,-1);
+#if defined(LIBTORQUE_LINUX_SIGNALFD)
+	}while(ret < 0 || errno == EINTR);
+#else
+	pthread_sigmask(SIG_SETMASK,&tmp,NULL);
+#endif
+	return ret;
+}
+
+static inline int
 Kevent(int epfd,struct kevent *changelist,int nchanges,
 		struct kevent *eventlist,int nevents){
 	int n,ret = 0;
-#if !defined(LIBTORQUE_LINUX_SIGNALFD) && !defined(LIBTORQUE_LINUX_PWAIT)
-	sigset_t tmp;
-#endif
 
 	for(n = 0 ; n < nchanges ; ++n){
 		if(epoll_ctl(epfd,changelist->ctldata[n].op,
@@ -85,22 +104,14 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 	// checking for termination). Furthermore, we can't do most processing
 	// inside an actual signal handler, so we must do it outside.
 #ifdef LIBTORQUE_LINUX_PWAIT
+	// The kernel might not provide epoll_pwait() despite glibc having
+	// support for it. In that case, fall back to epoll_wait(). We will
+	// waste the overhead calling into glibc each time, but this ought be a
+	// sufficiently rare case that it doesn't matter...FIXME
 	ret = epoll_pwait(epfd,eventlist->events,nevents,-1,epoll_sigset);
-#else
-#if defined(LIBTORQUE_LINUX_SIGNALFD)
-	do{
-#else
-	if(pthread_sigmask(SIG_SETMASK,epoll_sigset,&tmp)){
-		return -1;
-	}
+	if(ret < 0 && errno == ENOSYS)
 #endif
-		ret = epoll_wait(epfd,eventlist->events,nevents,-1);
-#if defined(LIBTORQUE_LINUX_SIGNALFD)
-	}while(ret < 0 || errno == EINTR);
-#else
-	pthread_sigmask(SIG_SETMASK,&tmp,NULL);
-#endif
-#endif
+		ret = kevent_retrieve(epfd,eventlist,nevents);
 	return ret;
 }
 
