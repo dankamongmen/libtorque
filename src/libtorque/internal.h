@@ -82,7 +82,7 @@ typedef struct libtorque_cput {
 typedef struct evtables {
 	struct evsource *fdarray,*sigarray;
 	unsigned sigarraysize,fdarraysize;
-#ifdef LIBTORQUE_LINUX
+#ifdef LIBTORQUE_LINUX_SIGNALFD
 	int common_signalfd;
 #endif
 } evtables;
