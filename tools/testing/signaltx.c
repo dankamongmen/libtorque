@@ -128,7 +128,7 @@ int main(int argc,char **argv){
 	sent = 0;
 	while(!stopsending){
 		if(kill(pid,sig)){
-			fprintf(stderr,"Error sending signal %d (%s) (#%ju)\n",
+			fprintf(stderr,"\nError sending signal %d (%s) (#%ju)\n",
 					sig,strerror(errno),sent + 1);
 			goto done;
 		}
