@@ -47,7 +47,10 @@ int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)
 
 	do{
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
-			ret |= handle_evsource_read(get_thread_evh()->evsources->sigarray,si.ssi_signo);
+			evhandler *e = get_thread_evh();
+
+			++e->stats.events;
+			ret |= handle_evsource_read(e->evsources->sigarray,si.ssi_signo);
 			// FIXME do... what, exactly with ret?
 		}else if(r >= 0){
 			// FIXME stat short read! return -1?
@@ -64,7 +67,15 @@ static sigset_t epoll_sigset_base;
 const sigset_t *epoll_sigset = &epoll_sigset_base;
 static pthread_mutex_t epoll_sigset_lock = PTHREAD_MUTEX_INITIALIZER;
 
-int init_epoll_sigset(void (*rcb)(int)){
+static void
+signal_demultiplexer(int s){
+	evhandler *ev = get_thread_evh();
+
+	handle_evsource_read(ev->evsources->sigarray,s);
+	++ev->stats.events;
+}
+
+int init_epoll_sigset(void){
 	struct sigaction act;
 
 	/* FIXME we'd like to use sigfillset(), so that we're blocking any
@@ -87,20 +98,12 @@ int init_epoll_sigset(void (*rcb)(int)){
 		return -1;
 	}
 	memset(&act,0,sizeof(act));
-	act.sa_handler = rcb;
+	act.sa_handler = signal_demultiplexer;
 	sigfillset(&act.sa_mask);
 	if(sigaction(EVTHREAD_TERM,&act,NULL)){
 		return -1;
 	}
 	return 0;
-}
-
-static void
-signal_demultiplexer(int s){
-	evhandler *ev = get_thread_evh();
-
-	handle_evsource_read(ev->evsources->sigarray,s);
-	++ev->stats.events;
 }
 
 // A bit of a misnomer; we actually *delete* the specified signals from the

@@ -116,6 +116,7 @@ void event_thread(libtorque_ctx *ctx,evhandler *e){
 		check_for_termination();
 		events = Kevent(e->evq->efd,PTR_TO_CHANGEV(&e->evec),e->evec.changesqueued,
 					PTR_TO_EVENTV(&e->evec),e->evec.vsizes);
+		++e->stats.rounds;
 		if(events < 0){
 			if(errno != EINTR){
 				++e->stats.pollerr;
@@ -130,7 +131,6 @@ void event_thread(libtorque_ctx *ctx,evhandler *e){
 #endif
 			++e->stats.events;
 		}
-		++e->stats.rounds;
 	}
 }
 
@@ -205,16 +205,19 @@ int initialize_common_sources(struct evtables *evt){
 	if(EVTHREAD_TERM >= evt->sigarraysize){
 		return -1;
 	}
-	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,NULL,NULL);
 #ifdef LIBTORQUE_LINUX_SIGNALFD
 	if((evt->common_signalfd = signalfd(-1,&s,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 		return -1;
 	}
 	setup_evsource(evt->fdarray,evt->common_signalfd,signalfd_demultiplexer,NULL,NULL,NULL);
+	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,NULL,NULL);
 #elif defined(LIBTORQUE_LINUX)
-	if(init_epoll_sigset(rxcommonsignal_handler)){
+	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal_handler,NULL,NULL,NULL);
+	if(init_epoll_sigset()){
 		return -1;
 	}
+#else
+	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,NULL,NULL);
 #endif
 	return 0;
 }
