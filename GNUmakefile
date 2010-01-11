@@ -320,11 +320,11 @@ $(OUT)/%.i: %.c $(GLOBOBJDEPS)
 #DOC2MANXSL?=--nonet
 $(OUT)/%.3: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
-	$(XSLTPROC) -o $@ $(DOC2MANXSL) $<
+	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
 
 $(OUT)/%.1: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
-	$(XSLTPROC) -o $@ $(DOC2MANXSL) $<
+	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
 
 $(TAGS): $(SRC) $(CINC) $(MAKEFILE_LIST)
 	@mkdir -p $(@D)
