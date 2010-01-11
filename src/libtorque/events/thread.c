@@ -74,8 +74,8 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 #endif
 		e->stats.utimeus = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
 		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
-		e->stats.volctxsw = ru.ru_nvcsw;
-		e->stats.involctxsw = ru.ru_nivcsw;
+		e->stats.vctxsw = ru.ru_nvcsw;
+		e->stats.ictxsw = ru.ru_nivcsw;
 		if(destroy_evhandler(e)){
 			ret = NULL;
 		}
