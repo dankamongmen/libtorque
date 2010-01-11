@@ -97,7 +97,7 @@ err:
 
 int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
-	int ret = EXIT_FAILURE;
+	uintmax_t totalsigs;
 	libtorque_err err;
 	sigset_t ss;
 	unsigned z;
@@ -130,11 +130,12 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't listen on signals\n");
 		goto err;
 	}
-	if( (ret = libtorque_block(ctx))){
+	if( (err = libtorque_block(ctx)) ){
 		fprintf(stderr,"Error blocking on libtorque (%s)\n",
 				libtorque_errstr(err));
 		goto err;
 	}
+	totalsigs = 0;
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		int s = signals_watched[z].sig;
 
@@ -142,14 +143,15 @@ int main(int argc,char **argv){
 			printf("Received signal %d (%s) %ju time%s\n",
 					s,strsignal(s),signals_watched[z].rx,
 					signals_watched[z].rx == 1 ? "" : "s");
-			ret = EXIT_SUCCESS;
+			totalsigs += signals_watched[z].rx;
 		}
 	}
-	if(ret != EXIT_SUCCESS){
-		fprintf(stderr,"Recevied no signals.\n");
+	if(!totalsigs){
+		fprintf(stderr,"Received no signals.\n");
+		return EXIT_FAILURE;
 	}
 	printf("Successfully cleaned up.\n");
-	return ret;
+	return EXIT_SUCCESS;
 
 err:
 	if( (err = libtorque_stop(ctx)) ){
