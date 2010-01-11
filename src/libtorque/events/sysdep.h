@@ -96,7 +96,7 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 #endif
 		ret = epoll_wait(epfd,eventlist->events,nevents,-1);
 #if defined(LIBTORQUE_LINUX_SIGNALFD)
-	}while(ret >= 0 || errno == EINTR);
+	}while(ret < 0 || errno == EINTR);
 #endif
 #endif
 #if !defined(LIBTORQUE_LINUX_SIGNALFD) && !defined(LIBTORQUE_LINUX_PWAIT)
