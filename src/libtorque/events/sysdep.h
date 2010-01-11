@@ -46,9 +46,9 @@ struct libtorque_cbctx;
 
 int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
 #else
-/*#if __GLIBC__ == 2 && __GLIBC_MINOR__ > 5
+#if __GLIBC__ == 2 && __GLIBC_MINOR__ > 5
 #define LIBTORQUE_LINUX_PWAIT
-#endif*/
+#endif
 extern const sigset_t *epoll_sigset;
 
 int init_epoll_sigset(void);
