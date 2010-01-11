@@ -13,6 +13,8 @@ extern "C" {
 #include <sys/param.h>
 #include <sys/cpuset.h>
 typedef cpuset_t cpu_set_t;
+#else
+#error "Need cpu_set_t definition for this platform" // solaris is psetid_t(?)
 #endif
 
 // FreeBSD's cpuset.h (as of 7.2) doesn't provide CPU_COUNT, nor do older Linux
