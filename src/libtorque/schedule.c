@@ -170,16 +170,25 @@ earlyerr:
 
 static inline
 int setup_thread_stack(stack_t *s,pthread_attr_t *attr){
-	// FIXME might want a larger stack? definitely take caches into account
+	if(pthread_attr_init(attr)){
+		return -1;
+	}
+	s->ss_flags = 0;
+	// FIXME might want a larger stack? definitely consider caches. also
+	/* need align stack on page boundary (see pthread_attr_setstack(3))
 	s->ss_size = PTHREAD_STACK_MIN >= SIGSTKSZ ?
 		PTHREAD_STACK_MIN : SIGSTKSZ;
 	if((s->ss_sp = malloc(s->ss_size)) == NULL){
+		pthread_attr_destroy(&attr);
 		return -1;
 	}
 	if(pthread_attr_setstack(attr,s->ss_sp,s->ss_size)){
 		free(s->ss_sp);
+		pthread_attr_destroy(&attr);
 		return -1;
-	}
+	}*/
+	s->ss_size = 0;
+	s->ss_sp = NULL;
 	return 0;
 }
 
@@ -192,11 +201,7 @@ int spawn_thread(libtorque_ctx *ctx){
 	pthread_t tid;
 	int ret = 0;
 
-	if(pthread_attr_init(&attr)){
-		return -1;
-	}
 	if(setup_thread_stack(&tidguard.stack,&attr)){
-		pthread_attr_destroy(&attr);
 		return -1;
 	}
 	if(pthread_mutex_init(&tidguard.lock,NULL)){
@@ -258,6 +263,7 @@ int block_threads(libtorque_ctx *ctx){
 int get_thread_aid(void){
 	// sched_getcpu() is unsafe on ubuntu 8.04's glibc 2.7 + 2.6.9; it
 	// coredumps on entry, jumping to an invalid address. best avoided.
+	// this might actually be related to valgrind. hrmm.
 #if defined(LIBTORQUE_LINUX) && (__GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 7)
 	return sched_getcpu();
 #else
