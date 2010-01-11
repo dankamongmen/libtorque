@@ -71,8 +71,14 @@ static void
 signal_demultiplexer(int s){
 	evhandler *ev = get_thread_evh();
 
-	++ev->stats.events;
-	handle_evsource_read(ev->evsources->sigarray,s);
+	// If we're called from another thread (signal handlers are process-wide,
+	// and it's possible that the client fails to mask one of our signals),
+	// ev will be NULL and we oughtn't process the event. this shouldn't
+	// be happening except due to user error. we ought track it, though...
+	if(ev){
+		++ev->stats.events;
+		handle_evsource_read(ev->evsources->sigarray,s);
+	}
 }
 
 int init_epoll_sigset(void){
