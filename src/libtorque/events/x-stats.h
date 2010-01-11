@@ -7,3 +7,6 @@ STATDEF(volctxsw)	// voluntary context switches
 STATDEF(involctxsw)	// involuntary context switches
 PTRDEF(stackptr)	// stack base pointer
 STATDEF(stacksize)	// stack size in bytes
+
+// Events we track, especially errors
+STATDEF(pollerr)	// errors in the core event retrieval call
