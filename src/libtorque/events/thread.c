@@ -85,25 +85,51 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 	return 0;
 }
 
+#if defined(LIBTORQUE_LINUX) && !defined(LIBTORQUE_LINUX_SIGNALFD)
+static sig_atomic_t sem_rxcommonsignal;
+
+static inline void
+check_for_termination(void){
+	if(sem_rxcommonsignal){
+		int s;
+
+		s = sem_rxcommonsignal;
+		sem_rxcommonsignal = 0;
+		rxcommonsignal(s,NULL,NULL);
+	}
+}
+
+static void
+rxcommonsignal_handler(int s){
+	sem_rxcommonsignal = s;
+}
+#else
+#define check_for_termination(...)
+#endif
+
 void event_thread(libtorque_ctx *ctx,evhandler *e){
 	tsd_evhandler = e;
 	tsd_ctx = ctx;
 	while(1){
 		int events;
 
+		check_for_termination();
 		events = Kevent(e->evq->efd,PTR_TO_CHANGEV(&e->evec),e->evec.changesqueued,
 					PTR_TO_EVENTV(&e->evec),e->evec.vsizes);
-		if(events <= 0){
+		if(events < 0){
+			if(errno != EINTR){
+				++e->stats.pollerr;
+			}
 			continue;
 		}
-		do{
+		while(events--){
 #ifdef LIBTORQUE_LINUX
-			handle_event(e,&PTR_TO_EVENTV(&e->evec)->events[--events]);
+			handle_event(e,&PTR_TO_EVENTV(&e->evec)->events[events]);
 #else
-			handle_event(e,&PTR_TO_EVENTV(&e->evec)[--events]);
+			handle_event(e,&PTR_TO_EVENTV(&e->evec)[events]);
 #endif
 			++e->stats.events;
-		}while(events);
+		}
 		++e->stats.rounds;
 	}
 }
@@ -167,13 +193,6 @@ prep_common_sigset(sigset_t *s){
 	return sigemptyset(s) || sigaddset(s,EVTHREAD_TERM);
 }
 
-#if defined(LIBTORQUE_LINUX) && !defined(LIBTORQUE_LINUX_SIGNALFD)
-static void
-rxcommonsignal_pwaitwrapper(int s){
-	rxcommonsignal(s,NULL,NULL);
-}
-#endif
-
 // All event queues (evqueues) will need to register events on the common
 // signals (on Linux, this is done via a common signalfd()). Either way, we
 // don't want to touch the evsources more than once.
@@ -193,7 +212,7 @@ int initialize_common_sources(struct evtables *evt){
 	}
 	setup_evsource(evt->fdarray,evt->common_signalfd,signalfd_demultiplexer,NULL,NULL,NULL);
 #elif defined(LIBTORQUE_LINUX)
-	if(init_epoll_sigset(rxcommonsignal_pwaitwrapper)){
+	if(init_epoll_sigset(rxcommonsignal_handler)){
 		return -1;
 	}
 #endif

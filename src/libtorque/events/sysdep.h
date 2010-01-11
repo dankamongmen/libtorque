@@ -46,6 +46,9 @@ struct libtorque_cbctx;
 
 int signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
 #else
+/*#if __GLIBC__ == 2 && __GLIBC_MINOR__ > 5
+#define LIBTORQUE_LINUX_PWAIT
+#endif*/
 extern const sigset_t *epoll_sigset;
 
 int init_epoll_sigset(void (*)(int));
@@ -71,23 +74,31 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 	if(ret){
 		return ret;
 	}
+	// Calling epoll_wait() with nevents <= 0 is an error (EINVAL), but
+	// not for our kevent() emulation semantics. Return 0 early.
 	if(nevents == 0){
 		return 0;
 	}
+	// We don't block on EINTR unless we're using signalfd's, since an
+	// EINTR in that case actually represents processing (hence counting
+	// it as an event), and thus we ought do per-round things (such as
+	// checking for termination). Furthermore, we can't do most processing
+	// inside an actual signal handler, so we must do it outside.
 #ifdef LIBTORQUE_LINUX_PWAIT
-	while((ret = epoll_pwait(epfd,eventlist->events,nevents,-1,epoll_sigset)) < 0){
+	ret = epoll_pwait(epfd,eventlist->events,nevents,-1,epoll_sigset);
 #else
-#if !defined(LIBTORQUE_LINUX_SIGNALFD)
+#if defined(LIBTORQUE_LINUX_SIGNALFD)
+	do{
+#else
 	if(pthread_sigmask(SIG_SETMASK,epoll_sigset,&tmp)){
 		return -1;
 	}
 #endif
-	while((ret = epoll_wait(epfd,eventlist->events,nevents,-1)) < 0){
+		ret = epoll_wait(epfd,eventlist->events,nevents,-1);
+#if defined(LIBTORQUE_LINUX_SIGNALFD)
+	}while(ret >= 0 || errno == EINTR);
 #endif
-		if(errno != EINTR){ // loop on EINTR
-			break;
-		}
-	}
+#endif
 #if !defined(LIBTORQUE_LINUX_SIGNALFD) && !defined(LIBTORQUE_LINUX_PWAIT)
 	pthread_sigmask(SIG_SETMASK,&tmp,NULL);
 #endif

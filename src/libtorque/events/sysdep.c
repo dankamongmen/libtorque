@@ -79,15 +79,16 @@ int init_epoll_sigset(void (*rcb)(int)){
 	   else got done?). it's not a huge deal, merely a complex one. also,
 	   note that we're coming in with a fully-masked set due to
 	   libtorque_init_masked()'s call chain. to actually get at the calling
-	   process's entry signal mask, we'd need pass it down.
-	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
+	   process's entry signal mask, we'd need pass it down. */
+	if(sigfillset(&epoll_sigset_base)){
 		return -1;
-	}*/
-	if(sigemptyset(&epoll_sigset_base)){
+	}
+	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
 		return -1;
 	}
 	memset(&act,0,sizeof(act));
 	act.sa_handler = rcb;
+	sigfillset(&act.sa_mask);
 	if(sigaction(EVTHREAD_TERM,&act,NULL)){
 		return -1;
 	}
@@ -111,6 +112,7 @@ int add_epoll_sigset(const sigset_t *s,unsigned maxsignal){
 
 	memset(&act,0,sizeof(act));
 	act.sa_handler = signal_demultiplexer;
+	sigfillset(&act.sa_mask);
 	if(pthread_mutex_lock(&epoll_sigset_lock)){
 		return -1;
 	}
