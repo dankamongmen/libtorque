@@ -150,7 +150,7 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Received no signals.\n");
 		return EXIT_FAILURE;
 	}
-	printf("Successfully cleaned up.\n");
+	printf("Received %ju total signal%s.\n",totalsigs,totalsigs == 1 ? "" : "s");
 	return EXIT_SUCCESS;
 
 err:
