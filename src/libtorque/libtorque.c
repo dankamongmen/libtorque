@@ -58,7 +58,7 @@ static int
 free_etables(evtables *e){
 	int ret = 0;
 
-#ifdef LIBTORQUE_LINUX
+#ifdef LIBTORQUE_LINUX_SIGNALFD
 	ret |= close(e->common_signalfd);
 #endif
 	ret |= destroy_evsources(e->sigarray);
