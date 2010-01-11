@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <libtorque/schedule.h>
+#include <libtorque/events/sysdep.h>
 
 struct evsource;
 struct evhandler;
