@@ -116,6 +116,7 @@ void event_thread(libtorque_ctx *ctx,evhandler *e){
 		check_for_termination();
 		events = Kevent(e->evq->efd,PTR_TO_CHANGEV(&e->evec),e->evec.changesqueued,
 					PTR_TO_EVENTV(&e->evec),e->evec.vsizes);
+		++e->stats.rounds;
 		if(events < 0){
 			if(errno != EINTR){
 				++e->stats.pollerr;
@@ -130,7 +131,6 @@ void event_thread(libtorque_ctx *ctx,evhandler *e){
 #endif
 			++e->stats.events;
 		}
-		++e->stats.rounds;
 	}
 }
 
