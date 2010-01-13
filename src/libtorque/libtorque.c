@@ -135,10 +135,6 @@ libtorque_ctx *libtorque_init(libtorque_err *e){
 			return NULL;
 		}
 	}
-	if(sigaction(EVTHREAD_TERM,NULL,&oldact)){
-		*e = LIBTORQUE_ERR_ASSERT;
-		return NULL;
-	}
 	if(sigfillset(&add) || pthread_sigmask(SIG_BLOCK,&add,&old)){
 		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
