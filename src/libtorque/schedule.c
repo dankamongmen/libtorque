@@ -141,12 +141,9 @@ thread(void *void_marshal){
 		goto earlyerr;
 	}
 	if(marshal->ctx->ev == NULL){
-		ev->nextev = ev;
 		marshal->ctx->ev = ev;
 		ev->nexttid = pthread_self();
 	}else{
-		ev->nextev = marshal->ctx->ev->nextev;
-		marshal->ctx->ev->nextev = ev;
 		ev->nexttid = marshal->ctx->ev->nexttid;
 		marshal->ctx->ev->nexttid = pthread_self();
 	}
