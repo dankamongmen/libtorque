@@ -37,7 +37,7 @@ create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
 	ssl_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_rxbuffer(&ret->rxb) == 0){
+		if(initialize_rxbuffer(ctx,&ret->rxb) == 0){
 			ret->ctx = ctx;
 			ret->sslctx = sslctx;
 			ret->cbstate = cbstate;
@@ -347,7 +347,7 @@ accept_contrxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
 		libtorquercb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquewcb tx = sc->txfxn ? ssl_txfxn : NULL;
 
-		if(initialize_rxbuffer(&sc->rxb)){
+		if(initialize_rxbuffer(sc->ctx,&sc->rxb)){
 			goto err;
 		}
 		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
@@ -381,7 +381,7 @@ accept_conttxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
 		libtorquercb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquewcb tx = sc->txfxn ? ssl_txfxn : NULL;
 
-		if(initialize_rxbuffer(&sc->rxb)){
+		if(initialize_rxbuffer(sc->ctx,&sc->rxb)){
 			goto err;
 		}
 		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
@@ -426,7 +426,7 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 		libtorquercb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquewcb tx = sc->txfxn ? ssl_txfxn : NULL;
 
-		if(initialize_rxbuffer(&csc->rxb)){
+		if(initialize_rxbuffer(sc->ctx,&csc->rxb)){
 			free_ssl_cbstate(csc);
 			return -1;
 		}

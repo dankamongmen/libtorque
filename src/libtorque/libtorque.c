@@ -225,7 +225,7 @@ libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if((cbctx.rxbuf = create_rxbuffer()) == NULL){
+	if((cbctx.rxbuf = create_rxbuffer(ctx)) == NULL){
 		return LIBTORQUE_ERR_RESOURCE;
 	}
 	if(add_fd_to_evhandler(ctx,ctx->ev,fd,buffered_rxfxn,tx,&cbctx,state,EPOLLONESHOT)){
