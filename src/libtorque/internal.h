@@ -32,7 +32,8 @@ typedef struct libtorque_topt {
 // A node is defined as an area where all memory has the same speed as seen
 // from some arbitrary set of CPUs (ignoring caches).
 typedef struct libtorque_nodet {
-	size_t psize;
+	unsigned psizes;
+	size_t *psizevals;
 	uintmax_t size;
 	unsigned count;
 	unsigned nodeid;

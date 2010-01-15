@@ -19,13 +19,17 @@ add_node(unsigned *count,libtorque_nodet **nodes,const libtorque_nodet *node){
 	return (*nodes) + (*count)++;
 }
 
+// rlimit_as is expressed in terms of the system's default page size
 static uintmax_t
-determine_sysmem(size_t psize){
+determine_sysmem(void){
 	struct rlimit rlim;
+	long pages,psize;
 	uintmax_t ret;
-	long pages;
 
 	if((pages = sysconf(_SC_PHYS_PAGES)) <= 0){
+		return 0;
+	}
+	if((psize = sysconf(_SC_PAGESIZE)) <= 0){
 		return 0;
 	}
 	ret = (uintmax_t)pages * psize;
@@ -41,24 +45,29 @@ determine_sysmem(size_t psize){
 	return ret;
 }
 
-// FIXME there can be multiple page sizes!
-static size_t
-determine_pagesize(void){
+// FIXME there can be multiple page sizes! extract this from tlb descriptions
+static int
+determine_pagesizes(libtorque_nodet *mem){
 	long psize;
 
 	if((psize = sysconf(_SC_PAGESIZE)) <= 0){
-		return 0;
+		return -1;
 	}
-	return (size_t)psize;
+	if((mem->psizevals = malloc(sizeof(*mem->psizevals))) == NULL){
+		return -1;
+	}
+	mem->psizevals[0] = psize;
+	mem->psizes = 1;
+	return 0;
 }
 
 int detect_memories(libtorque_ctx *ctx){
 	libtorque_nodet umamem;
 
-	if((umamem.psize = determine_pagesize()) <= 0){
+	if(determine_pagesizes(&umamem)){
 		return -1;
 	}
-	if((umamem.size = determine_sysmem(umamem.psize)) <= 0){
+	if((umamem.size = determine_sysmem()) <= 0){
 		return -1;
 	}
 	umamem.nodeid = 0;
