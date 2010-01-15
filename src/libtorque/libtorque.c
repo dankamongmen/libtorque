@@ -116,10 +116,29 @@ libtorque_init_sigmasked(libtorque_err *e){
 	return ctx;
 }
 
+// libtorque threads mask all signals save those synchronously delivered due to
+// program error. those registered are unblocked in the event receipt loop, or
+// handled as regular events via EVFILT_SIGNAL or signalfds.
 static inline int
 makesigmask(sigset_t *s){
+	const int unblocked[] = {
+		SIGILL,
+		SIGABRT,
+		SIGFPE,
+		SIGSEGV,
+		SIGBUS,
+		SIGXCPU,
+		SIGSTKFLT,
+	};
+	unsigned z;
+
 	if(sigfillset(s)){
 		return -1;
+	}
+	for(z = 0 ; z < sizeof(unblocked) / sizeof(*unblocked) ; ++z){
+		if(sigdelset(s,unblocked[z])){
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -143,9 +162,6 @@ libtorque_ctx *libtorque_init(libtorque_err *e){
 			return NULL;
 		}
 	}
-	// libtorque threads mask all signals, since they're either using
-	// EVFILT_SIGNAL/signalfd or epoll_pwait(), and we don't want to have
-	// other signals delivered (save synchronous ones, FIXME see bug 113).
 	if(makesigmask(&add) || pthread_sigmask(SIG_BLOCK,&add,&old)){
 		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
