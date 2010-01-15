@@ -165,12 +165,13 @@ Environment variables can affect the build by overriding defaults:
  XSLTPROC (XSL processor. Default: xsltproc)
  MARCH/MTUNE (Code generation settings. See below)
 
-Policy decisions can be made by defining certain variables:
+Build policy can be modified by defining certain variables:
 
- LIBTORQUE_WITHOUT_ADNS (if defined, do not build in GNU adns support)
- LIBTORQUE_WITHOUT_OPENSSL (if defined, do not build in OpenSSL support)
- LIBTORQUE_WITHOUT_NUMA (if defined, do not build in libNUMA support)
- LIBTORQUE_WITHOUT_EV (if defined, do not build libev-based testing binaries)
+ LIBTORQUE_WITHOUT_ADNS (do not build in GNU adns support)
+ LIBTORQUE_WITHOUT_OPENSSL (do not build in OpenSSL support)
+ LIBTORQUE_WITHOUT_NUMA (do not build in libNUMA support)
+ LIBTORQUE_WITHOUT_EV (do not build libev-based testing binaries)
+ LIBTORQUE_WITHOUT_WERROR (do not compile with -Werror -- use is discouraged)
 
 Changing environment variables ought be followed by the 'clean' target;
 this is one of the very few times the 'clean' target must be used.
