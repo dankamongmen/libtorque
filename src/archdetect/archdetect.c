@@ -250,27 +250,29 @@ detail_memory_nodes(const libtorque_ctx *ctx,unsigned mem_nodecount){
 
 	for(n = 0 ; n < mem_nodecount ; ++n){
 		const libtorque_nodet *mdesc;
-		unsigned z,printed = 0;
+		unsigned z;
 
 		if((mdesc = libtorque_node_getdesc(ctx,n)) == NULL){
 			fprintf(stderr,"Couldn't look up mem node %u\n",n);
 			return EXIT_FAILURE;
 		}
 		if(mdesc->psizes <= 0){
-			fprintf(stderr,"Error: page size count  of %u\n",mdesc->psizes);
+			fprintf(stderr,"Error: page size count of %u\n",mdesc->psizes);
 			return -1;
 		}
 		printf("(%4ux) Memory node %u of %u:\n\t",mdesc->count,
 				n + 1,mem_nodecount);
 		fprintf_bunit(stdout,"B",mdesc->size);
-		printf(" total, ");
+		printf(" total in ");
 		for(z = 0 ; z < mdesc->psizes ; ++z){
-			if(printed){
-				printf(", ");
-			}else{
-				printed = 1;
-			}
 			fprintf_bunit(stdout,"B",mdesc->psizevals[z]);
+			if(z + 1 < mdesc->psizes){
+				if(z + 2 == mdesc->psizes){
+					printf(" and ");
+				}else{
+					printf(", ");
+				}
+			}
 		}
 		printf(" pages\n");
 	}
