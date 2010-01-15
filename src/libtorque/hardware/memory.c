@@ -165,3 +165,23 @@ const libtorque_nodet *libtorque_node_getdesc(const libtorque_ctx *ctx,unsigned 
 	}
 	return NULL;
 }
+
+size_t large_system_pagesize(const libtorque_ctx *ctx){
+	size_t ret = 0;
+	unsigned z;
+
+	printf("NODECOUNT: %u\n",ctx->nodecount);
+	for(z = 0 ; z < ctx->nodecount ; ++z){
+		const libtorque_nodet *node;
+		unsigned p;
+
+		node = &ctx->manodes[z];
+		for(p = 0 ; p < node->psizes ; ++p){
+			if(node->psizevals[p] > ret){
+				ret = node->psizevals[p];
+			}
+		}
+	}
+	printf("RETURN: %zu\n",ret);
+	return ret;
+}
