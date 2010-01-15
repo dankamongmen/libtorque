@@ -22,7 +22,7 @@ struct CRYPTO_dynlock_value {
 };
 
 typedef struct ssl_cbstate {
-	struct libtorque_ctx *ctx;
+	struct libtorque_ctx *ctx; // FIXME should be able to be eliminated
 	SSL_CTX *sslctx;
 	SSL *ssl;
 	void *cbstate;
@@ -255,7 +255,7 @@ int ssl_tx(ssl_cbstate *ssl,const void *buf,int len){
 static int ssl_rxfxn(int,struct libtorque_cbctx *,void *);
 
 static int
-ssl_txrxfxn(int fd,void *cbs){
+ssl_txrxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),void *cbs){
 	ssl_cbstate *sc = cbs;
 	int r,err;
 
@@ -323,20 +323,20 @@ ssl_rxfxn(int fd,struct libtorque_cbctx *cbctx,void *cbstate){
 }
 
 static int
-ssl_txfxn(int fd,void *cbs){
+ssl_txfxn(int fd,struct libtorque_cbctx *cbctx,void *cbs){
 	const ssl_cbstate *sc = cbs;
 
 	if(sc->txfxn == NULL){
 		return -1;
 	}
-	return sc->txfxn(fd,sc->cbstate);
+	return sc->txfxn(fd,cbctx,sc->cbstate);
 }
 
-static int accept_conttxfxn(int,void *);
+static int accept_conttxfxn(int,struct libtorque_cbctx *,void *);
 
 static int
 accept_contrxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
-			void *cbstate){
+						void *cbstate){
 	ssl_cbstate *sc = cbstate;
 	int ret;
 
@@ -370,7 +370,8 @@ err:
 }
 
 static int
-accept_conttxfxn(int fd,void *cbs){
+accept_conttxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
+						void *cbs){
 	ssl_cbstate *sc = cbs;
 	int ret;
 
