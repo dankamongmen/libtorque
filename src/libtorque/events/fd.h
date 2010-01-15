@@ -11,10 +11,10 @@ extern "C" {
 struct evectors;
 struct evhandler;
 
-int add_fd_to_evhandler(struct evhandler *,int,libtorquercb,
-				libtorquewcb,libtorque_cbctx *,void *,int)
+int add_fd_to_evhandler(struct libtorque_ctx *,struct evhandler *,int,
+			libtorquercb,libtorquewcb,libtorque_cbctx *,void *,int)
 	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull (1)));
+	__attribute__ ((nonnull (1,2)));
 
 #ifdef __cplusplus
 }

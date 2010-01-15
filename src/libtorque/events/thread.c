@@ -21,25 +21,25 @@ libtorque_ctx *get_thread_ctx(void){
 	return tsd_ctx;
 }
 
-static void
-handle_event(evhandler *eh,const kevententry *e){
+static inline void
+handle_event(libtorque_ctx *ctx,const kevententry *e){
 #ifdef LIBTORQUE_LINUX
 	if(e->events & EPOLLIN){
 #else
 	if(e->filter == EVFILT_READ){
 #endif
-		handle_evsource_read(eh->evsources->fdarray,KEVENTENTRY_FD(e));
+		handle_evsource_read(ctx->eventtables.fdarray,KEVENTENTRY_FD(e));
 	}
 #ifdef LIBTORQUE_LINUX
 	if(e->events & EPOLLOUT){
 #else
 	if(e->filter == EVFILT_WRITE){
 #endif
-		handle_evsource_write(eh->evsources->fdarray,KEVENTENTRY_FD(e));
+		handle_evsource_write(ctx->eventtables.fdarray,KEVENTENTRY_FD(e));
 	}
 #ifdef LIBTORQUE_FREEBSD
 	if(e->filter == EVFILT_SIGNAL){
-		handle_evsource_read(eh->evsources->sigarray,KEVENTENTRY_SIG(e));
+		handle_evsource_read(ctx->eventtables.sigarray,KEVENTENTRY_SIG(e));
         }
 #endif
 }
@@ -127,9 +127,9 @@ void event_thread(libtorque_ctx *ctx,evhandler *e){
 		}
 		while(events--){
 #ifdef LIBTORQUE_LINUX
-			handle_event(e,&PTR_TO_EVENTV(&e->evec)->events[events]);
+			handle_event(ctx,&PTR_TO_EVENTV(&e->evec)->events[events]);
 #else
-			handle_event(e,&PTR_TO_EVENTV(&e->evec)[events]);
+			handle_event(ctx,&PTR_TO_EVENTV(&e->evec)[events]);
 #endif
 			++e->stats.events;
 		}
@@ -225,12 +225,10 @@ int initialize_common_sources(struct evtables *evt){
 }
 
 static int
-initialize_evhandler(evhandler *e,evtables *evsources,evqueue *evq,
-				const stack_t *stack){
+initialize_evhandler(evhandler *e,evqueue *evq,const stack_t *stack){
 	memset(e,0,sizeof(*e));
 	e->stats.stackptr = stack->ss_sp;
 	e->stats.stacksize = stack->ss_size;
-	e->evsources = evsources;
 	if(ref_evqueue(evq)){
 		return -1;
 	}
@@ -274,12 +272,11 @@ int create_efd(void){
 	return fd;
 }
 
-evhandler *create_evhandler(evtables *evsources,evqueue *evq,
-					const stack_t *stack){
+evhandler *create_evhandler(evqueue *evq,const stack_t *stack){
 	evhandler *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_evhandler(ret,evsources,evq,stack) == 0){
+		if(initialize_evhandler(ret,evq,stack) == 0){
 			return ret;
 		}
 		free(ret);

@@ -47,10 +47,12 @@ int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)
 
 	do{
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
+			libtorque_ctx *ctx = get_thread_ctx();
 			evhandler *e = get_thread_evh();
 
 			++e->stats.events;
-			ret |= handle_evsource_read(e->evsources->sigarray,si.ssi_signo);
+			ret |= handle_evsource_read(ctx->eventtables.sigarray,
+							si.ssi_signo);
 			// FIXME do... what, exactly with ret?
 		}else if(r >= 0){
 			// FIXME stat short read! return -1?

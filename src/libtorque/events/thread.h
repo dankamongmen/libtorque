@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-struct evtables;
 struct evectors;
 
 #include <pthread.h>
@@ -15,12 +14,12 @@ struct evectors;
 typedef struct evhandler {
 	evqueue *evq;			// can be (likely is) shared
 	pthread_t nexttid;
-	struct evtables *evsources;	// lives in libtorque_ctx, shared
+	// FIXME why do we need this at all?
 	evectors evec;			// one for each thread
 	evthreadstats stats;		// one for each thread
 } evhandler;
 
-evhandler *create_evhandler(struct evtables *,evqueue *,const stack_t *)
+evhandler *create_evhandler(evqueue *,const stack_t *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((malloc));
