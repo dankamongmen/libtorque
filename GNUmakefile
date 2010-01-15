@@ -232,7 +232,7 @@ flow:
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
-all: docs test
+all: test docs
 
 docs: $(TAGS) $(DOCS)
 
