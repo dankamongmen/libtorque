@@ -169,7 +169,7 @@ ifdef MTUNE
 MFLAGS+=-mtune=$(MTUNE)
 endif
 # Not using: -Wpadded, -Wconversion, -Wstrict-overflow=(>1)
-WFLAGS+=-Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
+WFLAGS+=-Werror -Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
         -Wstrict-prototypes -Wmissing-declarations -Wnested-externs \
         -Wsign-compare -Wpointer-arith -Wbad-function-cast -Wcast-qual \
         -Wdeclaration-after-statement -Wfloat-equal -Wpacked -Winvalid-pch \
@@ -249,7 +249,7 @@ $(SSLCERT) $(SSLKEY): $(GLOBOBJDEPS)
 	openssl req -utf8 -batch -nodes -out $(SSLCERT) -keyout $(SSLKEY) -x509 -new
 
 VALGRIND:=valgrind
-VALGRINDOPTS:=--tool=memcheck --leak-check=full --trace-children=yes --show-reachable=yes --error-exitcode=1 -v --track-origins=yes
+VALGRINDOPTS:=--tool=memcheck --leak-check=full --trace-children=yes --show-reachable=yes --error-exitcode=1 -v --track-origins=yes --track-fds=yes
 hardtest: $(TAGS) $(BINS) $(LIBS) $(TESTBINS)
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
 
