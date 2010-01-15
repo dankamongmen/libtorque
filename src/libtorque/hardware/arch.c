@@ -241,11 +241,11 @@ err:
 libtorque_err detect_architecture(libtorque_ctx *ctx){
 	libtorque_err ret;
 
-	if(detect_memories(ctx)){
-		ret = LIBTORQUE_ERR_MEMDETECT;
+	if( (ret = detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)) ){
 		goto err;
 	}
-	if( (ret = detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)) ){
+	if(detect_memories(ctx)){
+		ret = LIBTORQUE_ERR_MEMDETECT;
 		goto err;
 	}
 	return 0;
