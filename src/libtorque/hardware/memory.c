@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/resource.h>
 #include <libtorque/internal.h>
 #include <libtorque/hardware/numa.h>
@@ -45,6 +46,28 @@ determine_sysmem(void){
 	return ret;
 }
 
+static inline int
+add_pagesize(unsigned *psizes,size_t **psizevals,size_t psize){
+	size_t s = (*psizes + 1) * sizeof(**psizevals);
+	typeof(**psizevals) *tmp;
+
+	if((tmp = realloc(*psizevals,s)) == NULL){
+		return -1;
+	}
+	*psizevals = tmp;
+	while((unsigned)(tmp - *psizevals) < *psizes){
+		if(*tmp > psize){
+			memmove(tmp + 1,tmp,sizeof(*tmp) *
+				(*psizes - (unsigned)(tmp - *psizevals)));
+			break;
+		}
+		++tmp;
+	}
+	*tmp = psize;
+	(*psizes)++;
+	return 0;
+}
+
 // FIXME there can be multiple page sizes! extract this from tlb descriptions
 static int
 determine_pagesizes(libtorque_nodet *mem){
@@ -53,11 +76,11 @@ determine_pagesizes(libtorque_nodet *mem){
 	if((psize = sysconf(_SC_PAGESIZE)) <= 0){
 		return -1;
 	}
-	if((mem->psizevals = malloc(sizeof(*mem->psizevals))) == NULL){
+	mem->psizes = 0;
+	mem->psizevals = NULL;
+	if(add_pagesize(&mem->psizes,&mem->psizevals,psize)){
 		return -1;
 	}
-	mem->psizevals[0] = psize;
-	mem->psizes = 1;
 	return 0;
 }
 
