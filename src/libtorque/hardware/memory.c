@@ -82,9 +82,15 @@ determine_pagesizes(const libtorque_ctx *ctx,libtorque_nodet *mem){
 	}
 	for(cput = 0 ; cput < ctx->cpu_typecount ; ++cput){
 		const libtorque_cput *cpu;
+		unsigned tlbt;
 
 		if((cpu = libtorque_cpu_getdesc(ctx,cput)) == NULL){
 			return -1;
+		}
+		for(tlbt = 0 ; tlbt < cpu->tlbs ; ++tlbt){
+			const libtorque_tlbt *tlb;
+
+			tlb = &cpu->tlbdescs[tlbt];
 		}
 	}
 	return 0;
