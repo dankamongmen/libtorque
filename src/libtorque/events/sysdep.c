@@ -42,7 +42,6 @@ int flush_evector_changes(evhandler *eh,evectors *ev){
 int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 			void *cbstate __attribute__ ((unused))){
 	struct signalfd_siginfo si;
-	int ret = 0;
 	ssize_t r;
 
 	do{
@@ -51,17 +50,15 @@ int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)
 			evhandler *e = get_thread_evh();
 
 			++e->stats.events;
-			ret |= handle_evsource_read(ctx->eventtables.sigarray,
+			handle_evsource_read(ctx->eventtables.sigarray,
 							si.ssi_signo);
-			// FIXME do... what, exactly with ret?
 		}else if(r >= 0){
-			// FIXME stat short read! return -1?
+			// FIXME stat short read!
 		}
 	}while(r >= 0 || errno == EINTR);
-	if(errno != EAGAIN){
-		// FIXME stat on error reading signalfd! return -1?
+	if(errno != EAGAIN && errno != EWOULDBLOCK){
+		// FIXME stat on error reading signalfd!
 	}
-	return 0;
 }
 #elif defined(LIBTORQUE_LINUX)
 // FIXME ack, these need to be per-context, not global!
