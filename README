@@ -1,8 +1,8 @@
-                       ============================================
-                       libtorque, a multithreaded I/O event library
-                       Copyright © 2009 Nick Black <dank@qemfd.net>
-                       Render this document with fixed-width fonts.
-                       ============================================
+                          ==================================================
+                             libtorque, a multithreaded I/O event library
+                          Copyright © 2009, 2010 Nick Black <dank@qemfd.net>
+                             Render this document with fixed-width fonts!
+                          ==================================================
 ___________________________________________________________________
 888 ,e, 888        d8           "...tear the roof off the sucka..."
 888  "  888 88e   d88    e88 88e  888,8,  e88 888 8888 8888  ,e e,
@@ -49,11 +49,11 @@ libtorque was conceived as a project for Professor Richard Vuduc's Fall 2009
 Georgia Institute of Technology. The original proposal for libtorque is
 available at:
 
-	http://dank.qemfd.net/tabpower/cse6230proposal.pdf
+        http://dank.qemfd.net/tabpower/cse6230proposal.pdf
 
 libtorque is licensed under version 2 of the Apache License:
 
-	http://www.apache.org/licenses/LICENSE-2.0.html
+        http://www.apache.org/licenses/LICENSE-2.0.html
 
 A copy can be found in the toplevel file LICENSE.
 
@@ -98,8 +98,8 @@ NO_LIBTHR is not active in make.conf. If using another pthread library as the
 default, bind libpthread references to libthr via the following entries in
 /etc/libmap.conf:
 
-	libpthread.so.2         libthr.so.2
-	libpthread.so           libthr.so
+        libpthread.so.2         libthr.so.2
+        libpthread.so           libthr.so
 
 If using a 32-bit version of the library on a 64-bit system, place these same
 lines in /etc/libmap32.conf. The mapping may be restricted to libtorque if
@@ -159,7 +159,7 @@ Environment variables can affect the build by overriding defaults:
 
  PREFIX (Installation prefix. Default: /usr/local)
  DOCPREFIX (Doc installation prefix. Default: /usr/local/share (Linux),
-						/usr/local (FreeBSD))
+                                                /usr/local (FreeBSD))
  CC (C compiler executable. Default: gcc-4.4 (Linux), gcc44 (FreeBSD))
  TAGBIN (Source tag generator. Default: exctags if on path, otherwise ctags)
  XSLTPROC (XSL processor. Default: xsltproc)
