@@ -25,8 +25,8 @@
 //      handled according to their default dispositions.  It is not possible to
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
-int add_timer_to_evhandler(evhandler *eh,const struct itimerspec *t,
-			libtorquercb rfxn,void *cbstate){
+int add_timer_to_evhandler(struct libtorque_ctx *ctx,evhandler *eh,
+		const struct itimerspec *t,libtorquercb rfxn,void *cbstate){
 #ifdef LIBTORQUE_LINUX_TIMERFD
 	int fd;
 
@@ -37,13 +37,13 @@ int add_timer_to_evhandler(evhandler *eh,const struct itimerspec *t,
 		close(fd);
 		return -1;
 	}
-	if(add_fd_to_evhandler(eh,fd,rfxn,NULL,NULL,cbstate,0)){
+	if(add_fd_to_evhandler(ctx,eh,fd,rfxn,NULL,NULL,cbstate,0)){
 		close(fd);
 		return -1;
 	}
 #elif defined(LIBTORQUE_LINUX)
 //#error "Need Linux 2.6.25 / GNU libc 2.8 for timerfd"
-	if(!eh || !t || !rfxn || !cbstate){
+	if(!ctx || !eh || !t || !rfxn || !cbstate){
 		return -1;
 	}
 	return -1; // FIXME working around compile

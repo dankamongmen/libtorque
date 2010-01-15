@@ -61,7 +61,7 @@ struct libtorque_ctx *libtorque_init(libtorque_err *)
 // Read callbacks get a triad: our callback state, and their own. Ours is just
 // as opaque to them as theirs is to us.
 typedef int (*libtorquercb)(int,struct libtorque_cbctx *,void *);
-typedef int (*libtorquewcb)(int,void *);
+typedef int (*libtorquewcb)(int,struct libtorque_cbctx *,void *);
 
 // Invoke the callback upon receipt of any of the specified signals. The signal
 // set may not contain EVTHREAD_TERM (usually SIGTERM), SIGKILL or SIGSTOP.

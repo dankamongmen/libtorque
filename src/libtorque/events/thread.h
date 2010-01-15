@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-struct evtables;
 struct evectors;
 
 #include <pthread.h>
@@ -15,13 +14,12 @@ struct evectors;
 typedef struct evhandler {
 	evqueue *evq;			// can be (likely is) shared
 	pthread_t nexttid;
-	struct evhandler *nextev;	// makes a circular linked list
-	struct evtables *evsources;	// lives in libtorque_ctx, shared
+	// FIXME why do we need this at all?
 	evectors evec;			// one for each thread
 	evthreadstats stats;		// one for each thread
 } evhandler;
 
-evhandler *create_evhandler(struct evtables *,evqueue *,const stack_t *)
+evhandler *create_evhandler(evqueue *,const stack_t *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((malloc));
@@ -36,12 +34,17 @@ void event_thread(libtorque_ctx *,evhandler *)
 	__attribute__ ((noreturn));
 
 // Used to set up common signal-related evtable sources during initialization
-int initialize_common_sources(struct evtables *);
+int initialize_common_sources(struct evtables *)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)));
 
 // Performs a thread-local lookup to get the libtorque context or evhandler. Do
 // not cache across callback invocations!
-evhandler *get_thread_evh(void);
-libtorque_ctx *get_thread_ctx(void);
+evhandler *get_thread_evh(void)
+	__attribute__ ((warn_unused_result));
+
+libtorque_ctx *get_thread_ctx(void)
+	__attribute__ ((warn_unused_result));
 
 #ifdef __cplusplus
 }

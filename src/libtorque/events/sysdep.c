@@ -47,10 +47,12 @@ int signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)
 
 	do{
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
+			libtorque_ctx *ctx = get_thread_ctx();
 			evhandler *e = get_thread_evh();
 
 			++e->stats.events;
-			ret |= handle_evsource_read(e->evsources->sigarray,si.ssi_signo);
+			ret |= handle_evsource_read(ctx->eventtables.sigarray,
+							si.ssi_signo);
 			// FIXME do... what, exactly with ret?
 		}else if(r >= 0){
 			// FIXME stat short read! return -1?
@@ -69,15 +71,17 @@ static pthread_mutex_t epoll_sigset_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void
 signal_demultiplexer(int s){
-	evhandler *ev = get_thread_evh();
+	libtorque_ctx *ctx = get_thread_ctx();
 
 	// If we're called from another thread (signal handlers are process-wide,
 	// and it's possible that the client fails to mask one of our signals),
-	// ev will be NULL and we oughtn't process the event. this shouldn't
-	// be happening except due to user error. we ought track it, though...
-	if(ev){
+	// ev will be NULL and we oughtn't process the event. that shouldn't
+	// happen, except due to user error.
+	if(ctx){
+		evhandler *ev = get_thread_evh();
+
 		++ev->stats.events;
-		handle_evsource_read(ev->evsources->sigarray,s);
+		handle_evsource_read(ctx->eventtables.sigarray,s);
 	}
 }
 

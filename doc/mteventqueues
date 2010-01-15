@@ -12,6 +12,7 @@ details might change without warning.
 3. Functional semantics
 4. Performance semantics
 5. Deductions
+6. Signals
 
 -----------------------------------------------------------------------------
 1. Details of the Linux epoll(7) implementation (taken from 2.6.32.2):
@@ -71,6 +72,9 @@ sys_epoll_ctl() validates input, and:
  -- EPOLL_CTL_DEL and EPOLL_CTL_MOD with a non-present fd generates ENOENT
  - call the appropriate one of ep_insert(), ep_remove(), ep_modify()
  - releases "mtx"
+
+The sys_epoll_pwait() extension is implemented in terms of sys_epoll_wait(),
+wrapping the latter in appropriate sigprocmask() calls.
 
 -----------------------------------------------------------------------------
 2. Details of the FreeBSD kqueue(7) implementation:
@@ -184,3 +188,47 @@ generated during the event loop, blocking against a retrieval operation
 can add latency. Remember, retrievals contending means either that load is
 negligible, or that we're not retrieving nearly enough events at a time. Using
 TCP-like windows would solve that problem for multiple event threads).
+
+-----------------------------------------------------------------------------
+6. Signals
+-----------------------------------------------------------------------------
+All other threads in the application must have libtorque-registered signals
+masked, or else libtorque might not be able to receive relevant signals. Upon
+creation, libtorque threads mask all signals. When a signal is registered with
+libtorque, a common handler is installed for that signal, demultiplexing into
+the signal event table. Note that since handlers are process-wide, failure to
+mask appropriate signals in application threads might result in libtorque
+signals being handled in their contexts.
+
+Signals and POSIX threads have a historically complicated relationship (see
+the document doc/termination for more details about threads). When
+EVFILT_SIGNAL (FreeBSD) or signalfd's (Linux) are used, they can be cleanly
+handled within our standard event semantics. On older Linux kernels, however,
+signalfds are not available. There, we must handle signals via the standard
+POSIX signal delivery mechanism, adding a new complexity to the event queues.
+Note from {2} that delivery of a signal results in immediate exit from
+epoll_wait() and release of associated locks, thus the multiple threads of an
+event queue will automatically enjoy distribution of events (this is
+independent of any sa_mask value or SA_NODEFER flag provided to sigaction(2),
+since each thread has its own signal mask).
+
+If libtorque threads unblocked its signals throughout their lifetimes, those
+signals could be delivered during event handling callbacks. Synchronization
+requires that only one thread be handling a given event source at a time, so
+repeated delivery of a signal during such a callback would both block the
+event source's progress in that thread (it's busy handling the signal) and
+preclude (without major contortions) any other thread handling the event.
+
+POSIX signal handlers' action is heavily restricted. pthread_mutex_lock() is
+not safe to call within a signal handler, nor is the C library's dynamic
+allocation interface. We certainly cannot directly invoke registered callbacks
+from the signal handler. The standard signal-handling idioms are:
+
+--event: post to a global semaphore having type sig_atomic_t
+--exception: clean up transprocess resources (files, etc), re-raise signal
+
+Note that progress under the event idiom requires some thread to examine the
+semaphore, and handle the event in its context. GNUlibc specifies that handling
+a signal interrupts all event multiplexing interfaces with EINTR, regardless of
+the use of SA_RESTART, so the semaphore check must live no further away from
+the epoll_wait() call than whatever scope is defined by the loop on EINTR.

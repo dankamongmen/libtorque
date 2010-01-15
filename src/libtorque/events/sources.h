@@ -54,24 +54,6 @@ static inline void setup_evsource(evsource *,int,libtorquercb,libtorquewcb,
 					libtorque_cbctx *,void *)
 	__attribute__ ((nonnull(1)));
 
-// We need no locking here, because the only time someone should call
-// setup_evsource is when they've been handed the file descriptor from the OS,
-// and not handed it off to anything else which would register it. If it was
-// already being used, it must have been removed from the event queue (by
-// guarantees of the epoll/kqueue mechanisms), and thus no events exist for it.
-static inline void
-setup_evsource(evsource *evs,int n,libtorquercb rfxn,libtorquewcb tfxn,
-		libtorque_cbctx *ctx,void *v){
-	evs[n].rxfxn = rfxn;
-	evs[n].txfxn = tfxn;
-	if(ctx){
-		evs[n].cbctx = *ctx;
-	}else{
-		memset(&evs[n].cbctx,0,sizeof(evs[n].cbctx));
-	}
-	evs[n].cbstate = v;
-}
-
 static inline void set_evsource_rx(evsource *,int,libtorquercb)
 	__attribute__ ((nonnull(1)));
 
@@ -86,6 +68,24 @@ set_evsource_rx(evsource *evs,int n,libtorquercb rx){
 static inline void
 set_evsource_tx(evsource *evs,int n,libtorquewcb tx){
 	evs[n].txfxn = tx;
+}
+
+// We need no locking here, because the only time someone should call
+// setup_evsource is when they've been handed the file descriptor from the OS,
+// and not handed it off to anything else which would register it. If it was
+// already being used, it must have been removed from the event queue (by
+// guarantees of the epoll/kqueue mechanisms), and thus no events exist for it.
+static inline void
+setup_evsource(evsource *evs,int n,libtorquercb rfxn,libtorquewcb tfxn,
+		libtorque_cbctx *ctx,void *v){
+	set_evsource_rx(evs,n,rfxn);
+	set_evsource_tx(evs,n,tfxn);
+	if(ctx){
+		evs[n].cbctx = *ctx;
+	}else{
+		memset(&evs[n].cbctx,0,sizeof(evs[n].cbctx));
+	}
+	evs[n].cbstate = v;
 }
 
 static inline int handle_evsource_read(evsource *,int)
@@ -105,7 +105,7 @@ handle_evsource_read(evsource *evs,int n){
 static inline int
 handle_evsource_write(evsource *evs,int n){
 	if(evs[n].txfxn){
-		return evs[n].txfxn(n,evs[n].cbstate);
+		return evs[n].txfxn(n,&evs[n].cbctx,evs[n].cbstate);
 	}
 	return -1;
 }

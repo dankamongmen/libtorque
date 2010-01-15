@@ -116,6 +116,33 @@ libtorque_init_sigmasked(libtorque_err *e){
 	return ctx;
 }
 
+// libtorque threads mask all signals save those synchronously delivered due to
+// program error. those registered are unblocked in the event receipt loop, or
+// handled as regular events via EVFILT_SIGNAL or signalfds.
+static inline int
+makesigmask(sigset_t *s){
+	const int unblocked[] = {
+		SIGILL,
+		SIGABRT,
+		SIGFPE,
+		SIGSEGV,
+		SIGBUS,
+		SIGXCPU,
+		SIGSTKFLT,
+	};
+	unsigned z;
+
+	if(sigfillset(s)){
+		return -1;
+	}
+	for(z = 0 ; z < sizeof(unblocked) / sizeof(*unblocked) ; ++z){
+		if(sigdelset(s,unblocked[z])){
+			return -1;
+		}
+	}
+	return 0;
+}
+
 libtorque_ctx *libtorque_init(libtorque_err *e){
 	struct sigaction oldact;
 	libtorque_ctx *ret;
@@ -135,11 +162,7 @@ libtorque_ctx *libtorque_init(libtorque_err *e){
 			return NULL;
 		}
 	}
-	if(sigaction(EVTHREAD_TERM,NULL,&oldact)){
-		*e = LIBTORQUE_ERR_ASSERT;
-		return NULL;
-	}
-	if(sigfillset(&add) || pthread_sigmask(SIG_BLOCK,&add,&old)){
+	if(makesigmask(&add) || pthread_sigmask(SIG_BLOCK,&add,&old)){
 		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
 	}
@@ -162,7 +185,7 @@ libtorque_err libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 	if(pthread_sigmask(SIG_BLOCK,sigs,NULL)){
 		return LIBTORQUE_ERR_ASSERT;
 	}
-	if(add_signal_to_evhandler(ctx->ev,sigs,fxn,state)){
+	if(add_signal_to_evhandler(ctx,ctx->ev,sigs,fxn,state)){
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	return 0;
@@ -170,7 +193,7 @@ libtorque_err libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 
 libtorque_err libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
 			libtorquercb fxn,void *state){
-	if(add_timer_to_evhandler(ctx->ev,t,fxn,state)){
+	if(add_timer_to_evhandler(ctx,ctx->ev,t,fxn,state)){
 		return LIBTORQUE_ERR_UNAVAIL; // FIXME
 	}
 	return 0;
@@ -185,7 +208,7 @@ libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb 
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if(add_fd_to_evhandler(ctx->ev,fd,rx,tx,&cbctx,state,0)){
+	if(add_fd_to_evhandler(ctx,ctx->ev,fd,rx,tx,&cbctx,state,0)){
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	return 0;
@@ -205,7 +228,7 @@ libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquercb rx,
 	if((cbctx.rxbuf = create_rxbuffer()) == NULL){
 		return LIBTORQUE_ERR_RESOURCE;
 	}
-	if(add_fd_to_evhandler(ctx->ev,fd,buffered_rxfxn,tx,&cbctx,state,EPOLLONESHOT)){
+	if(add_fd_to_evhandler(ctx,ctx->ev,fd,buffered_rxfxn,tx,&cbctx,state,EPOLLONESHOT)){
 		free_rxbuffer(cbctx.rxbuf);
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
