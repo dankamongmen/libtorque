@@ -5,6 +5,7 @@
 #include <sys/resource.h>
 #include <libtorque/internal.h>
 #include <libtorque/hardware/numa.h>
+#include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/memory.h>
 
 static libtorque_nodet *
@@ -68,18 +69,23 @@ add_pagesize(unsigned *psizes,size_t **psizevals,size_t psize){
 	return 0;
 }
 
-// FIXME there can be multiple page sizes! extract this from tlb descriptions
-static int
-determine_pagesizes(libtorque_nodet *mem){
+static inline int
+determine_pagesizes(const libtorque_ctx *ctx,libtorque_nodet *mem){
+	unsigned cput;
 	long psize;
 
 	if((psize = sysconf(_SC_PAGESIZE)) <= 0){
 		return -1;
 	}
-	mem->psizes = 0;
-	mem->psizevals = NULL;
 	if(add_pagesize(&mem->psizes,&mem->psizevals,psize)){
 		return -1;
+	}
+	for(cput = 0 ; cput < ctx->cpu_typecount ; ++cput){
+		const libtorque_cput *cpu;
+
+		if((cpu = libtorque_cpu_getdesc(ctx,cput)) == NULL){
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -87,16 +93,18 @@ determine_pagesizes(libtorque_nodet *mem){
 int detect_memories(libtorque_ctx *ctx){
 	libtorque_nodet umamem;
 
-	if(determine_pagesizes(&umamem)){
-		return -1;
+	umamem.count = 1;
+	umamem.psizes = 0;
+	umamem.psizevals = NULL;
+	if(determine_pagesizes(ctx,&umamem)){
+		goto err;
 	}
 	if((umamem.size = determine_sysmem()) <= 0){
-		return -1;
+		goto err;
 	}
 	umamem.nodeid = 0;
-	umamem.count = 1;
 	if(add_node(&ctx->nodecount,&ctx->manodes,&umamem) == NULL){
-		return -1;
+		goto err;
 	}
 	if(detect_numa(ctx)){
 		goto err;
@@ -105,14 +113,23 @@ int detect_memories(libtorque_ctx *ctx){
 
 err:
 	free_memories(ctx);
+	free(umamem.psizevals);
 	return -1;
 }
 
 void free_memories(libtorque_ctx *ctx){
-	free_numa(ctx);
+	unsigned z;
+
+	for(z = 0 ; z < ctx->nodecount ; ++z){
+		libtorque_nodet *node;
+
+		node = &ctx->manodes[z];
+		free(ctx->manodes[z].psizevals);
+	}
 	free(ctx->manodes);
 	ctx->manodes = NULL;
 	ctx->nodecount = 0;
+	free_numa(ctx);
 }
 
 unsigned libtorque_mem_nodecount(const libtorque_ctx *ctx){
