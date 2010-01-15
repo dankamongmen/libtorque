@@ -58,10 +58,12 @@ struct libtorque_ctx *libtorque_init(libtorque_err *)
 // be able to guarantee the signals, fds, whatever are not the same). The
 // registration implementation is lock- and indeed wait-free.
 
-// Read callbacks get a triad: our callback state, and their own. Ours is just
-// as opaque to them as theirs is to us.
-typedef int (*libtorquercb)(int,struct libtorque_cbctx *,void *);
-typedef int (*libtorquewcb)(int,struct libtorque_cbctx *,void *);
+// Callbacks get a triad: source, our callback state, and their own. Ours is
+// just as opaque to them as theirs is to us. Continuations at their core, the
+// unbuffered typedefs return void.
+typedef void (*libtorquercb)(int,struct libtorque_cbctx *,void *);
+typedef void (*libtorquewcb)(int,struct libtorque_cbctx *,void *);
+typedef int (*libtorquebrcb)(int,struct libtorque_cbctx *,void *);
 
 // Invoke the callback upon receipt of any of the specified signals. The signal
 // set may not contain EVTHREAD_TERM (usually SIGTERM), SIGKILL or SIGSTOP.
@@ -79,10 +81,9 @@ libtorque_err libtorque_addtimer(struct libtorque_ctx *,
 	__attribute__ ((nonnull(1,2,3)));
 
 // Watch for events on the specified file descriptor, and invoke the callbacks.
-// Employ libtorque's read buffering. A buffered read callback ought return -1
-// on error, 1 if the TX callback ought be enabled (that is, an attempt to
-// write generated an EAGAIN), and 0 otherwise.
-libtorque_err libtorque_addfd(struct libtorque_ctx *,int,libtorquercb,
+// Employ libtorque's read buffering. A buffered read callback must return -1
+// if the descriptor has been closed, and 0 otherwise.	
+libtorque_err libtorque_addfd(struct libtorque_ctx *,int,libtorquebrcb,
 					libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
@@ -113,7 +114,7 @@ typedef void SSL_CTX;
 // already (utility functions are provided to do this). If libtorque was not
 // compiled with SSL support, returns LIBTORQUE_ERR_UNAVAIL.
 libtorque_err libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,
-				libtorquercb,libtorquewcb,void *)
+				libtorquebrcb,libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));

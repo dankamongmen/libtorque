@@ -48,7 +48,7 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	return 0;
 }
 
-static int
+static void
 conn_handler(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 				void *v __attribute__ ((unused))){
 
@@ -77,7 +77,6 @@ conn_handler(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 		fprintf(stdout,"Accept() callback errno %d (%s)\n",
 				errno,strerror(errno));
 	}
-	return 0;
 }
 
 static int

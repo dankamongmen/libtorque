@@ -28,7 +28,7 @@ static struct {
 	{ PTHREAD_MUTEX_INITIALIZER, SIGWINCH, 0 },
 };
 
-static int
+static void
 signalrx(int sig,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
 				void *v __attribute__ ((unused))){
 	unsigned z;
@@ -41,7 +41,6 @@ signalrx(int sig,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
 			break;
 		}
 	}
-	return 0;
 }
 
 static void

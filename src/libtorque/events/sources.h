@@ -88,26 +88,24 @@ setup_evsource(evsource *evs,int n,libtorquercb rfxn,libtorquewcb tfxn,
 	evs[n].cbstate = v;
 }
 
-static inline int handle_evsource_read(evsource *,int)
+static inline void handle_evsource_read(evsource *,int)
 	__attribute__ ((nonnull(1)));
 
-static inline int handle_evsource_write(evsource *,int)
+static inline void handle_evsource_write(evsource *,int)
 	__attribute__ ((nonnull(1)));
 
-static inline int
+static inline void
 handle_evsource_read(evsource *evs,int n){
 	if(evs[n].rxfxn){
-		return evs[n].rxfxn(n,&evs[n].cbctx,evs[n].cbstate);
+		evs[n].rxfxn(n,&evs[n].cbctx,evs[n].cbstate);
 	}
-	return -1;
 }
 
-static inline int
+static inline void
 handle_evsource_write(evsource *evs,int n){
 	if(evs[n].txfxn){
-		return evs[n].txfxn(n,&evs[n].cbctx,evs[n].cbstate);
+		evs[n].txfxn(n,&evs[n].cbctx,evs[n].cbstate);
 	}
-	return -1;
 }
 
 int destroy_evsources(evsource *);

@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <string.h>
+#include <libtorque/alloc.h>
 #include <libtorque/internal.h>
 
 // The simplest receive buffer.
@@ -29,9 +30,8 @@ static inline int initialize_rxbuffer(libtorque_rxbuf *)
 
 static inline int
 initialize_rxbuffer(libtorque_rxbuf *rxb){
-	if( (rxb->buffer = malloc(RXBUFSIZE)) ){
+	if( (rxb->buffer = get_big_page(&rxb->buftot)) ){
 		rxb->bufoff = rxb->bufate = 0;
-		rxb->buftot = RXBUFSIZE;
 		return 0;
 	}
 	return -1;
@@ -65,7 +65,7 @@ rxbuffer_valid(const libtorque_rxbuf *rxb,size_t *valid){
 	return rxb->buffer + rxb->bufate;
 }
 
-int buffered_rxfxn(int,libtorque_cbctx *,void *)
+void buffered_rxfxn(int,libtorque_cbctx *,void *)
 	__attribute__ ((nonnull(2)));
 
 #ifndef LIBTORQUE_WITHOUT_SSL

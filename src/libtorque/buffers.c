@@ -7,7 +7,7 @@
 static inline int
 callback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
 	if(rxb->bufoff - rxb->bufate){
-		return ((const libtorquercb)cbctx->cbstate)(fd,cbctx,cbstate);
+		return ((const libtorquebrcb)cbctx->cbstate)(fd,cbctx,cbstate);
 	}
 	return 0;
 }
@@ -44,7 +44,7 @@ growrxbuf(libtorque_rxbuf *rxb){
 	return 0;
 }
 
-int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
+void buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 	libtorque_rxbuf *rxb = cbctx->rxbuf;
 	int r;
 
@@ -73,7 +73,7 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			if(restorefd(fd,EPOLLOUT)){
 				break;
 			}
-			return 0;
+			return;
 		}else if(errno == EAGAIN || errno == EWOULDBLOCK){
 			int cb;
 
@@ -83,11 +83,10 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			if(restorefd(fd,cb ? EPOLLOUT : 0)){
 				break;
 			}
-			return 0;
+			return;
 		}else if(errno != EINTR){
 			break;
 		}
 	}
 	close(fd);
-	return -1;
 }

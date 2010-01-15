@@ -216,7 +216,7 @@ libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb 
 
 // We only currently provide one buffering scheme. When that changes, we still
 // won't want to expose anything more than necessary to applications...
-libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquercb rx,
+libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
 				libtorquewcb tx,void *state){
 	libtorque_cbctx cbctx = {
 		.cbstate = rx,
@@ -244,7 +244,7 @@ libtorque_err libtorque_addpath(libtorque_ctx *ctx,const char *path,libtorquercb
 
 #ifndef LIBTORQUE_WITHOUT_SSL
 libtorque_err libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
-			libtorquercb rx,libtorquewcb tx,void *state){
+			libtorquebrcb rx,libtorquewcb tx,void *state){
 	struct ssl_cbstate *cbs;
 
 	if((cbs = create_ssl_cbstate(ctx,sslctx,state,rx,tx)) == NULL){
