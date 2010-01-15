@@ -31,10 +31,8 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 		r = write(fd,buf + w,len);
 		if(r < 0){
 			if(errno == EAGAIN || errno == EWOULDBLOCK){
-				if(w){
-					printf("wrote %zu/%zu\n",w,len);
-					rxbuffer_advance(cbctx->rxbuf,w);
-				}
+				printf("wrote %zu/%zu\n",w,len);
+				rxbuffer_advance(cbctx->rxbuf,w);
 				return 0;
 			}else if(errno != EINTR){
 				fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,
@@ -69,7 +67,7 @@ conn_handler(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 					fcntl(sd,F_SETFL,flags | (long)O_NONBLOCK)){
 				close(sd);
 			}else if(libtorque_addfd(libtorque_getcurctx(),sd,
-						echo_server,echo_server,NULL)){
+						echo_server,NULL,NULL)){
 				fprintf(stderr,"Couldn't add client sd %d\n",sd);
 				close(sd);
 			}

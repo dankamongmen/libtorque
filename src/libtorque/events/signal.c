@@ -27,8 +27,8 @@
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 //
-int add_signal_to_evhandler(libtorque_ctx *ctx,evhandler *eh,const sigset_t *sigs,
-			libtorquercb rfxn,void *cbstate){
+int add_signal_to_evhandler(libtorque_ctx *ctx,evhandler *eh __attribute__ ((unused)),
+			const sigset_t *sigs,libtorquercb rfxn,void *cbstate){
 	unsigned z;
 #ifdef LIBTORQUE_LINUX_SIGNALFD
 	{
@@ -45,7 +45,7 @@ int add_signal_to_evhandler(libtorque_ctx *ctx,evhandler *eh,const sigset_t *sig
 		}
 	}
 #elif defined(LIBTORQUE_LINUX)
-	if(add_epoll_sigset(sigs,eh->evsources->sigarraysize)){
+	if(add_epoll_sigset(sigs,ctx->eventtables.sigarraysize)){
 		return -1;
 	}
 #elif defined(LIBTORQUE_FREEBSD)

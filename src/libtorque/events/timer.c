@@ -43,7 +43,7 @@ int add_timer_to_evhandler(struct libtorque_ctx *ctx,evhandler *eh,
 	}
 #elif defined(LIBTORQUE_LINUX)
 //#error "Need Linux 2.6.25 / GNU libc 2.8 for timerfd"
-	if(!eh || !t || !rfxn || !cbstate){
+	if(!ctx || !eh || !t || !rfxn || !cbstate){
 		return -1;
 	}
 	return -1; // FIXME working around compile
