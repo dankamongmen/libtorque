@@ -44,7 +44,7 @@ handle_event(libtorque_ctx *ctx,const kevententry *e){
 #endif
 }
 
-static void
+static int
 rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 				void *cbstate __attribute__ ((unused))){
 	if(sig == EVTHREAD_TERM){
@@ -82,6 +82,7 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 		pthread_exit(ret);
 	}
 	// FIXME else?
+	return 0;
 }
 
 #if defined(LIBTORQUE_LINUX) && !defined(LIBTORQUE_LINUX_SIGNALFD)

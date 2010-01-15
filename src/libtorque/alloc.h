@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-void *get_pages(size_t,int)
+void *get_pages(size_t)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
 
@@ -20,7 +20,7 @@ void *get_big_page(size_t *)
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));
 
-void *mod_pages(void *,size_t,size_t,int)
+void *mod_pages(void *,size_t,size_t)
 	// __attribute__ ((malloc)) cannot be used with mod_pages (if the VMA is
 	// not moved, the return value will alias the input pointer).
 	__attribute__ ((warn_unused_result));

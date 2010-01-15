@@ -35,8 +35,8 @@ growrxbuf(libtorque_rxbuf *rxb){
 	typeof(*rxb->buffer) *tmp;
 	size_t news;
 
-	news = rxb->buftot + RXBUFSIZE; // FIXME blehhhh
-	if((tmp = realloc(rxb->buffer,news)) == NULL){
+	news = rxb->buftot * 2; // FIXME hrmmm
+	if((tmp = mod_pages(rxb->buffer,rxb->buftot,news)) == NULL){
 		return -1;
 	}
 	rxb->buffer = tmp;
