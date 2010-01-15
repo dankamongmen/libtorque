@@ -70,6 +70,18 @@ add_pagesize(unsigned *psizes,size_t **psizevals,size_t psize){
 }
 
 static inline int
+match_pagesize(unsigned psizes,const size_t *psvals,size_t ps){
+	unsigned n;
+
+	for(n = 0 ; n < psizes ; ++n){
+		if(psvals[n] >= ps){
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static inline int
 determine_pagesizes(const libtorque_ctx *ctx,libtorque_nodet *mem){
 	unsigned cput;
 	long psize;
@@ -91,6 +103,11 @@ determine_pagesizes(const libtorque_ctx *ctx,libtorque_nodet *mem){
 			const libtorque_tlbt *tlb;
 
 			tlb = &cpu->tlbdescs[tlbt];
+			if(!match_pagesize(mem->psizes,mem->psizevals,tlb->pagesize)){
+				if(add_pagesize(&mem->psizes,&mem->psizevals,tlb->pagesize)){
+					return -1;
+				}
+			}
 		}
 	}
 	return 0;
