@@ -52,8 +52,6 @@ int buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 		if(rxb->buftot - rxb->bufoff == 0){
 			int cb;
 
-			// FIXME need we do anything if cb > 1? won't we get a
-			// repeat later?
 			if((cb = callback(rxb,fd,cbctx,cbstate)) < 0){
 				break;
 			}
