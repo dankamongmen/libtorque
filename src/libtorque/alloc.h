@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+struct libtorque_ctx;
+
 void *get_pages(size_t)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
@@ -15,7 +17,7 @@ void *get_pages(size_t)
 // primarily per-connection buffers. Also, such an allocation will (hopefully)
 // trigger large TLB support in the OS immediately. The return is suitable for
 // use with mod_pages(). Returns the actual allocation size in the parameter.
-void *get_big_page(size_t *)
+void *get_big_page(const struct libtorque_ctx *,size_t *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));
