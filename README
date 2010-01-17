@@ -256,6 +256,7 @@ Various design documents can be found in the doc/ subdirectory. Included among
 them are:
 
  doc/mteventqueues - "Event Queues and Threads"
+ doc/termination - "Termination"
 
 ----------------------------------------------------------------libtorque-----
 -=+ V. Writing libtorque applications +=-
@@ -291,7 +292,7 @@ directories. That having been said:
       N libtorque contexts in a process lead to N threads per processor,
       assuming the process's cpuset doesn't change between initializations)
    - SIGPIPE is ignored if it was previously handled via the default action
-   - SIGTERM and will be intercepted by (some instance of) libtorque subject to
+   - SIGTERM will be intercepted by some instance of libtorque subject to
       operating system-specific rules. See kqueue(7) or signalfd(2) (this also
       applies to any signals registered via libtorque_addsignal())
    - allocation of moderate amounts of memory and a handful of file descriptors
@@ -376,6 +377,8 @@ directories. That having been said:
    EINTR is indicated only when no data had been moved upon signal delivery; a
    short result is returned otherwise.
 
+ - Failure to mask signals registered with libtorque in all other threads.
+
 ----------------------------------------------------------------libtorque-----
 -=+ VI. FAQ +=-
 ----------------------------------------------------------------libtorque-----
@@ -419,10 +422,12 @@ A: libtorque uses POSIX threads, and reflects those semantics. An IPC signal
    at least one libtorque thread.
 
    In summary: to ensure delivery to non-libtorque threads, don't register the
-   relevant signals with libtorque. To ensure handling within libtorque, mask
-   the relevant signals (in all threads) prior to invoking libtorque, and
-   register them for handling.
+   relevant signals with libtorque, and mask them prior to calling
+   libtorque_init(). To ensure handling within libtorque, mask the relevant
+   signals (in all threads) prior to calling libtorque_init(), and register
+   them for handling. Always be sure to keep SIGTERM blocked.
 
-Q: Will signal handlers be called if libtorque is also listening for that
-   signal?
-A: Signal delivered to libtorque threads will be consumed.
+Q: Will signal handlers be called if libtorque is listening for that signal?
+A: Signal delivered to libtorque threads will be consumed. It doesn't matter
+   anyway, since you ought have the relevant signals blocked in other threads.
+   Furthermore, libtorque might modify the (process-wide) signal handler.

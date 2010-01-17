@@ -59,28 +59,19 @@ signal_demultiplexer(int s){
 	}
 }
 
-int init_epoll_sigset(void){
+int init_epoll_sigset(const sigset_t *ss){
 	struct sigaction act;
 
-	/* FIXME we'd like to use sigfillset(), so that we're blocking any
-	   signal not explicitly registered with us (mod TERM/KILL/STOP).
-	   unfortunately, that doesn't affect a currently-blocked epoll_wait(),
-	   and thus if only signals are activated as event sources, they'll
-	   never actually get called. we could use an internal wakeup signal
-	   (or add some state to the SIGTERM handler, rxcommonsignal())...
-	   though, this is actually the more natural semantics, and there's an
-	   argument that they're the correct ones (if they didn't explicitly
-	   have the signal blocked by the time we're called, who knows what all
-	   else got done?). it's not a huge deal, merely a complex one. also,
-	   note that we're coming in with a fully-masked set due to
-	   libtorque_init_masked()'s call chain. to actually get at the calling
-	   process's entry signal mask, we'd need pass it down.
-	if(sigfillset(&epoll_sigset_base)){
+	/* Signals which were blocked on entry ought remain blocked throughout,
+	 * since we can assume the calling application had some reason to do so
+	 * (most likely that we want to synchronously receive said signal). */
+	if(sigdelset(ss,EVTHREAD_TERM)){
 		return -1;
 	}
+	memcpy(&epoll_sigset_base,ss,sizeof(*ss));
 	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
 		return -1;
-	}*/
+	}
 	memset(&act,0,sizeof(act));
 	act.sa_handler = signal_demultiplexer;
 	sigfillset(&act.sa_mask);

@@ -188,7 +188,7 @@ prep_common_sigset(sigset_t *s){
 // All event queues (evqueues) will need to register events on the common
 // signals (on Linux, this is done via a common signalfd()). Either way, we
 // don't want to touch the evsources more than once.
-int initialize_common_sources(struct evtables *evt){
+int initialize_common_sources(struct evtables *evt,const sigset_t *ss __attribute__ ((unused))){
 	sigset_t s;
 
 	if(prep_common_sigset(&s)){
@@ -205,7 +205,7 @@ int initialize_common_sources(struct evtables *evt){
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,NULL,NULL);
 #elif defined(LIBTORQUE_LINUX)
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal_handler,NULL,NULL,NULL);
-	if(init_epoll_sigset()){
+	if(init_epoll_sigset(ss)){
 		return -1;
 	}
 #else

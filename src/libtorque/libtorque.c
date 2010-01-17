@@ -28,7 +28,7 @@ max_fds(void){
 }
 
 static inline int
-initialize_etables(evtables *e){
+initialize_etables(evtables *e,const sigset_t *ss){
 	if((e->fdarraysize = max_fds()) <= 0){
 		return -1;
 	}
@@ -46,7 +46,7 @@ initialize_etables(evtables *e){
 		destroy_evsources(e->fdarray);
 		return -1;
 	}
-	if(initialize_common_sources(e)){
+	if(initialize_common_sources(e,ss)){
 		destroy_evsources(e->sigarray);
 		destroy_evsources(e->fdarray);
 		return -1;
@@ -67,11 +67,11 @@ free_etables(evtables *e){
 }
 
 static inline libtorque_ctx *
-create_libtorque_ctx(libtorque_err *e){
+create_libtorque_ctx(libtorque_err *e,const sigset_t *ss){
 	libtorque_ctx *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_etables(&ret->eventtables)){
+		if(initialize_etables(&ret->eventtables,ss)){
 			free(ret);
 			*e = LIBTORQUE_ERR_RESOURCE;
 			return NULL;
@@ -104,10 +104,10 @@ free_libtorque_ctx(libtorque_ctx *ctx){
 }
 
 static libtorque_ctx *
-libtorque_init_sigmasked(libtorque_err *e){
+libtorque_init_sigmasked(libtorque_err *e,const sigset_t *ss){
 	libtorque_ctx *ctx;
 
-	if((ctx = create_libtorque_ctx(e)) == NULL){
+	if((ctx = create_libtorque_ctx(e,ss)) == NULL){
 		return NULL;
 	}
 	if( (*e = detect_architecture(ctx)) ){
@@ -167,7 +167,7 @@ libtorque_ctx *libtorque_init(libtorque_err *e){
 		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
 	}
-	ret = libtorque_init_sigmasked(e);
+	ret = libtorque_init_sigmasked(e,&old);
 	if(pthread_sigmask(SIG_SETMASK,&old,NULL)){
 		libtorque_stop(ret);
 		*e = LIBTORQUE_ERR_ASSERT;

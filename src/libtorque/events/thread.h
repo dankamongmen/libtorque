@@ -34,7 +34,7 @@ void event_thread(libtorque_ctx *,evhandler *)
 	__attribute__ ((noreturn));
 
 // Used to set up common signal-related evtable sources during initialization
-int initialize_common_sources(struct evtables *)
+int initialize_common_sources(struct evtables *,const sigset_t *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
