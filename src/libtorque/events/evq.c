@@ -31,7 +31,6 @@ int ref_evqueue(evqueue *e){
 // fd is the common signalfd
 static inline int
 add_commonfds_to_evhandler(int fd,evqueue *evq){
-	EVECTOR_AUTOS(1,ev,evbase);
 	struct epoll_ctl_data ecd;
 	struct epoll_event ee;
 	struct kevent k;
@@ -52,10 +51,7 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 	k.events = &ee;
 	k.ctldata = &ecd;
 	ecd.op = EPOLL_CTL_ADD;
-	if(add_evector_kevents(&ev,&k,1)){
-		return -1;
-	}
-	if(flush_evqueue_changes(evq,&ev)){
+	if(add_evector_kevents(evq,&k,1)){
 		return -1;
 	}
 	return 0;
@@ -65,7 +61,7 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 static inline int
 add_evqueue_baseevents(const libtorque_ctx *ctx,evqueue *e){
 #ifdef LIBTORQUE_FREEBSD
-	EVECTORS_AUTO(8,ev,evbase);
+	EVECTOR_AUTOS(8,ev);
 
 		for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
 			struct kevent k;

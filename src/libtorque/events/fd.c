@@ -5,8 +5,8 @@
 #include <libtorque/events/sources.h>
 
 static inline int
-add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn,
-					int eflags){
+add_fd_event(const struct evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,
+						int eflags){
 #ifdef LIBTORQUE_LINUX
 	struct epoll_ctl_data ecd;
 	struct epoll_event ee;
@@ -29,7 +29,7 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn,
 	if(tfxn){
 		ee.events |= EPOLLOUT;
 	}
-	if(add_evector_kevents(ev,&k,1)){
+	if(add_evector_kevents(evq,&k,1)){
 		return -1;
 	}
 #elif defined(LIBTORQUE_FREEBSD)
@@ -42,7 +42,7 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn,
 	if(tfxn){
 		EV_SET(&k[1],fd,EVFILT_WRITE,EV_ADD | EV_CLEAR | eflags,0,0,NULL);
 	}
-	if(add_evector_kevents(ev,k,!!tfxn + !!rfxn)){
+	if(add_evector_kevents(eh,k,!!tfxn + !!rfxn)){
 		return -1;
 	}
 #else
@@ -54,14 +54,12 @@ add_fd_event(struct evectors *ev,int fd,libtorquercb rfxn,libtorquewcb tfxn,
 int add_fd_to_evhandler(libtorque_ctx *ctx,evhandler *eh,int fd,
 			libtorquercb rfxn,libtorquewcb tfxn,
 			libtorque_cbctx *cbctx,void *cbstate,int eflags){
-	EVECTOR_AUTOS(1,ev,evbase);
-
 	if((unsigned)fd >= ctx->eventtables.fdarraysize){
 		return -1;
 	}
-	if(add_fd_event(&ev,fd,rfxn,tfxn,eflags)){
+	setup_evsource(ctx->eventtables.fdarray,fd,rfxn,tfxn,cbctx,cbstate);
+	if(add_fd_event(eh->evq,fd,rfxn,tfxn,eflags)){
 		return -1;
 	}
-	setup_evsource(ctx->eventtables.fdarray,fd,rfxn,tfxn,cbctx,cbstate);
-	return flush_evector_changes(eh,&ev);
+	return 0;
 }

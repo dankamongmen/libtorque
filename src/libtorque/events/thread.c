@@ -170,18 +170,12 @@ init_evectors(evectors *ev){
 	if(create_evector(&ev->eventv,ev->vsizes)){
 		return -1;
 	}
-	if(create_evector(&ev->changev,ev->vsizes)){
-		destroy_evector(&ev->eventv);
-		return -1;
-	}
-	ev->changesqueued = 0;
 	return 0;
 }
 
 static void
 destroy_evectors(evectors *e){
 	if(e){
-		destroy_evector(&e->changev);
 		destroy_evector(&e->eventv);
 	}
 }

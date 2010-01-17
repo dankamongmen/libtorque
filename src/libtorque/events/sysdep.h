@@ -23,6 +23,12 @@ extern "C" {
 #define PTR_TO_EVENTV(ev) (&(ev)->eventv)
 typedef struct epoll_event kevententry;
 #define KEVENTENTRY_FD(k) ((k)->data.fd)
+#define EVECTOR_AUTOS(count,name) \
+	struct epoll_ctl_data ctlarr[count]; \
+	kevententry evarr[count]; \
+	evectors name = { .eventv = { .ctldata = ctlarr, .events = evarr, }, \
+		.changev = { .ctldata = ctlarr, .events = evarr, }, \
+		.vsizes = (count), }
 
 struct kevent { // each element an array, each array the same number of members
 	struct epoll_ctl_data {
@@ -123,6 +129,8 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 typedef struct kevent kevententry;
 #define KEVENTENTRY_FD(k) ((int)(k)->ident)
 #define KEVENTENTRY_SIG(k) ((int)(k)->ident) // Doesn't exist on Linux
+#define EVECTOR_AUTOS(count,name) struct kevent name##_base[count]; \
+	evectors name = { .eventv = n2, .changev = n2, .vsize = (count), }
 
 #include <pthread.h>
 
@@ -147,31 +155,20 @@ typedef struct evectors {
 	// compat-<OS>.h provides a kqueue-like interface (in terms of change
 	// vectorization, which linux doesn't support) for non-BSD's
 #ifdef LIBTORQUE_LINUX
-	struct kevent eventv,changev;
+	struct kevent eventv;
 #elif defined(LIBTORQUE_FREEBSD)
-	struct kevent *eventv,*changev;
+	struct kevent *eventv;
 #else
 #error "No operating system support for event notification"
 #endif
-	int vsizes,changesqueued;
+	int vsizes;
 } evectors;
 
-#ifdef LIBTORQUE_FREEBSD
-#define EVECTOR_AUTOS(count,name,n2) struct kevent n2[count]; evectors name = \
- { .eventv = n2, .changev = n2, .vsize = (count), .changesqueued = 0, }
-#else
-#define EVECTOR_AUTOS(count,name,n2) \
-	struct epoll_ctl_data ctlarr[count]; \
-	kevententry evarr[count]; \
-	evectors name = { .eventv = { .ctldata = ctlarr, .events = evarr, }, \
-		.changev = { .ctldata = ctlarr, .events = evarr, }, \
-		.vsizes = (count), .changesqueued = 0, }
-#endif
+struct evqueue;
 
-struct evhandler;
-
-int add_evector_kevents(struct evectors *,const struct kevent *,int);
-int flush_evector_changes(struct evhandler *,evectors *);
+int add_evector_kevents(const struct evqueue *,struct kevent *,int)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1,2)));
 
 #ifdef __cplusplus
 }
