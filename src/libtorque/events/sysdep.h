@@ -27,7 +27,6 @@ typedef struct epoll_event kevententry;
 	struct epoll_ctl_data ctlarr[count]; \
 	kevententry evarr[count]; \
 	evectors name = { .eventv = { .ctldata = ctlarr, .events = evarr, }, \
-		.changev = { .ctldata = ctlarr, .events = evarr, }, \
 		.vsizes = (count), }
 
 struct kevent { // each element an array, each array the same number of members
@@ -130,7 +129,7 @@ typedef struct kevent kevententry;
 #define KEVENTENTRY_FD(k) ((int)(k)->ident)
 #define KEVENTENTRY_SIG(k) ((int)(k)->ident) // Doesn't exist on Linux
 #define EVECTOR_AUTOS(count,name) struct kevent name##_base[count]; \
-	evectors name = { .eventv = n2, .changev = n2, .vsize = (count), }
+	evectors name = { .eventv = name##_base, .vsize = (count), }
 
 #include <pthread.h>
 
