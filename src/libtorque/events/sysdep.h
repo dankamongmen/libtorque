@@ -21,7 +21,6 @@ extern "C" {
 #include <sys/epoll.h>
 
 #define PTR_TO_EVENTV(ev) (&(ev)->eventv)
-#define PTR_TO_CHANGEV(ev) (&(ev)->changev)
 typedef struct epoll_event kevententry;
 #define KEVENTENTRY_FD(k) ((k)->data.fd)
 
@@ -121,7 +120,6 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 #include <sys/event.h>
 
 #define PTR_TO_EVENTV(ev) ((ev)->eventv)
-#define PTR_TO_CHANGEV(ev) ((ev)->changev)
 typedef struct kevent kevententry;
 #define KEVENTENTRY_FD(k) ((int)(k)->ident)
 #define KEVENTENTRY_SIG(k) ((int)(k)->ident) // Doesn't exist on Linux
