@@ -67,17 +67,19 @@ free_etables(evtables *e){
 }
 
 static inline libtorque_ctx *
-create_libtorque_ctx(void){
+create_libtorque_ctx(libtorque_err *e){
 	libtorque_ctx *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
 		if(initialize_etables(&ret->eventtables)){
 			free(ret);
+			*e = LIBTORQUE_ERR_RESOURCE;
 			return NULL;
 		}
 		if(init_evqueue(ret,&ret->evq)){
 			free_etables(&ret->eventtables);
 			free(ret);
+			*e = LIBTORQUE_ERR_RESOURCE;
 			return NULL;
 		}
 		ret->sched_zone = NULL;
@@ -105,8 +107,7 @@ static libtorque_ctx *
 libtorque_init_sigmasked(libtorque_err *e){
 	libtorque_ctx *ctx;
 
-	if((ctx = create_libtorque_ctx()) == NULL){
-		*e = LIBTORQUE_ERR_INIT;
+	if((ctx = create_libtorque_ctx(e)) == NULL){
 		return NULL;
 	}
 	if( (*e = detect_architecture(ctx)) ){
