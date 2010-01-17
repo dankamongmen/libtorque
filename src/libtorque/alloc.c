@@ -5,6 +5,10 @@
 #include <libtorque/alloc.h>
 #include <libtorque/hardware/memory.h>
 
+#ifdef LIBTORQUE_FREEBSD
+#define MAP_ANONYMOUS MAP_ANON
+#endif
+
 void *get_pages(size_t s){
 	const int flags = MAP_PRIVATE | MAP_ANONYMOUS;
 	void *ret;
