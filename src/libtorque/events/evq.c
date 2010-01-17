@@ -61,26 +61,7 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 static inline int
 add_evqueue_baseevents(const libtorque_ctx *ctx,evqueue *e){
 #ifdef LIBTORQUE_FREEBSD
-	EVECTOR_AUTOS(8,ev);
-
-		for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
-			struct kevent k;
-
-			if(!sigismember(sigs,z)){
-				continue;
-			}
-			EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
-			if(add_evector_kevents(ev,&k,1)){
-				if(flush_evector_changes(eh,ev)){
-					return -1;
-				}
-			}
-		}
-		if(flush_evector_changes(eh,ev)){
-			return -1;
-		}
-	}
-	if(add_signal_to_evhandler(e,&s,rxcommonsignal,NULL)){
+	if(add_signal_to_evhandler(ctx,e,&s,rxcommonsignal,NULL)){
 		return -1;
 	}
 	return 0;

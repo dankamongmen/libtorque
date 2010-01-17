@@ -8,10 +8,9 @@ extern "C" {
 #include <libtorque/libtorque.h>
 #include <libtorque/events/sources.h>
 
-struct evectors;
-struct evhandler;
+struct evqueue;
 
-int add_fswatch_to_evhandler(struct evhandler *,const char *,libtorquercb,void *)
+int add_fswatch_to_evhandler(const struct evqueue *,const char *,libtorquercb,void *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull (1,2,3)));
 

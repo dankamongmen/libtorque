@@ -7,10 +7,10 @@ extern "C" {
 
 #include <libtorque/events/sources.h>
 
-struct evhandler;
+struct evqueue;
 struct libtorque_ctx;
 
-int add_timer_to_evhandler(struct libtorque_ctx *,struct evhandler *,
+int add_timer_to_evhandler(struct libtorque_ctx *,const struct evqueue *,
 				const struct itimerspec *,libtorquercb,void *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull (1,2,3,4)));

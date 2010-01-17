@@ -27,9 +27,16 @@
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 //
-int add_signal_to_evhandler(libtorque_ctx *ctx,evhandler *eh __attribute__ ((unused)),
+int add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ ((unused)),
 			const sigset_t *sigs,libtorquercb rfxn,void *cbstate){
 	unsigned z;
+
+	for(z = 1 ; z < ctx->eventtables.sigarraysize ; ++z){
+		if(sigismember(sigs,z)){
+			setup_evsource(ctx->eventtables.sigarray,z,rfxn,
+					NULL,NULL,cbstate);
+		}
+	}
 #ifdef LIBTORQUE_LINUX_SIGNALFD
 	{
 		// FIXME we could restrict this all to a single signalfd, since
@@ -39,7 +46,7 @@ int add_signal_to_evhandler(libtorque_ctx *ctx,evhandler *eh __attribute__ ((unu
 		if((fd = signalfd(-1,sigs,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			return -1;
 		}
-		if(add_fd_to_evhandler(ctx,eh,fd,signalfd_demultiplexer,NULL,NULL,eh,0)){
+		if(add_fd_to_evhandler(ctx,evq,fd,signalfd_demultiplexer,NULL,NULL,NULL,0)){
 			close(fd);
 			return -1;
 		}
@@ -49,34 +56,19 @@ int add_signal_to_evhandler(libtorque_ctx *ctx,evhandler *eh __attribute__ ((unu
 		return -1;
 	}
 #elif defined(LIBTORQUE_FREEBSD)
-	{
-		EVECTORS_AUTO(8,ev,evbase);
+	for(z = 1 ; z < ctx->eventtables.sigarraysize ; ++z){
+		struct kevent k;
 
-		for(z = 1 ; z < eh->evsources->sigarraysize ; ++z){
-			struct kevent k;
-
-			if(!sigismember(sigs,z)){
-				continue;
-			}
-			EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
-			if(add_evector_kevents(ev,&k,1)){
-				if(flush_evector_changes(eh,ev)){
-					return -1;
-				}
-			}
+		if(!sigismember(sigs,z)){
+			continue;
 		}
-		if(flush_evector_changes(eh,ev)){
-			return -1;
+		EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
+		if(add_evector_kevents(evq,&k,1)){
+			return -1; // FIXME go back and purge any we added?
 		}
 	}
 #else
 #error "No signal event implementation on this OS"
 #endif
-	for(z = 1 ; z < ctx->eventtables.sigarraysize ; ++z){
-		if(sigismember(sigs,z)){
-			setup_evsource(ctx->eventtables.sigarray,z,rfxn,
-					NULL,NULL,cbstate);
-		}
-	}
 	return 0;
 }

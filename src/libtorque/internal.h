@@ -124,7 +124,7 @@ typedef struct libtorque_ctx {
 	libtorque_nodet *manodes;	// dynarray of NUMA node descriptors
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
 	evtables eventtables;		// callback state tables
-	struct evhandler *ev;		// evhandler of list leader
+	struct evhandler *ev;		// evhandler of list leader FIXME purge
 } libtorque_ctx;
 
 #endif
