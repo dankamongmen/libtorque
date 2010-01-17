@@ -156,6 +156,14 @@ System calls are, as ever, to be avoided when prudent. Using larger event
 receipt buffers minimizes system calls into the event queueing framework,
 but can lead to a poor short-term distribution of work and poor parallelism.
 
+Batching of changes cannot be accomplished with the current Linux epoll_ctl()
+implementation, despite our internal kevent() emulation affecting such an API
+(it actually iterates over the list, invoking epoll_ctl() in turn). Until this
+is changed, batching of changes is a non-starter on Linux. FreeBSD does provide
+the interface; it remains to be determined whether this is worth the latency
+penalties. Multithreading makes this less of an issue, but also leads to more
+possible contention on change registration.
+
 -----------------------------------------------------------------------------
 5. Deductions
 -----------------------------------------------------------------------------
