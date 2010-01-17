@@ -7,6 +7,7 @@ extern "C" {
 
 #include <signal.h>
 
+#define EVTHREAD_INT	SIGINT
 #define EVTHREAD_TERM	SIGTERM
 
 #include <errno.h>

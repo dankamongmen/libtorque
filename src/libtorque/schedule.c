@@ -89,6 +89,8 @@ reap_thread(pthread_t tid){
 	sigset_t ss,os;
 	int ret = 0;
 
+	// No need to watch out for EVTHREAD_INT here (the issue is that
+	// EVTHREAD_TERM will be raised freely in a chain reaction).
 	if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM)){
 		return -1;
 	}

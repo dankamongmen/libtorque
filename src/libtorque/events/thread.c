@@ -47,7 +47,7 @@ handle_event(libtorque_ctx *ctx,const kevententry *e){
 static void
 rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 				void *cbstate __attribute__ ((unused))){
-	if(sig == EVTHREAD_TERM){
+	if(sig == EVTHREAD_TERM || sig == EVTHREAD_INT){
 		void *ret = PTHREAD_CANCELED;
 		evhandler *e = get_thread_evh();
 		struct rusage ru;
@@ -182,7 +182,8 @@ destroy_evectors(evectors *e){
 
 static inline int
 prep_common_sigset(sigset_t *s){
-	return sigemptyset(s) || sigaddset(s,EVTHREAD_TERM);
+	return sigemptyset(s) || sigaddset(s,EVTHREAD_TERM) ||
+			sigaddset(s,EVTHREAD_INT);
 }
 
 // All event queues (evqueues) will need to register events on the common
@@ -194,7 +195,7 @@ int initialize_common_sources(struct evtables *evt,const sigset_t *ss __attribut
 	if(prep_common_sigset(&s)){
 		return -1;
 	}
-	if(EVTHREAD_TERM >= evt->sigarraysize){
+	if(EVTHREAD_TERM >= evt->sigarraysize || EVTHREAD_INT >= evt->sigarraysize){
 		return -1;
 	}
 #ifdef LIBTORQUE_LINUX_SIGNALFD
@@ -203,13 +204,16 @@ int initialize_common_sources(struct evtables *evt,const sigset_t *ss __attribut
 	}
 	setup_evsource(evt->fdarray,evt->common_signalfd,signalfd_demultiplexer,NULL,NULL,NULL);
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,NULL,NULL);
+	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal,NULL,NULL,NULL);
 #elif defined(LIBTORQUE_LINUX)
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal_handler,NULL,NULL,NULL);
+	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal_handler,NULL,NULL,NULL);
 	if(init_epoll_sigset(ss)){
 		return -1;
 	}
 #else
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,NULL,NULL);
+	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal,NULL,NULL,NULL);
 #endif
 	return 0;
 }
