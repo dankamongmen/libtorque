@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <libtorque/schedule.h>
+#include <libtorque/libtorque.h>
 #include <libtorque/events/sysdep.h>
 
 struct evsource;
@@ -96,10 +97,13 @@ typedef struct libtorque_rxbuf {
 	size_t buftot;			// length of the buffer
 	size_t bufoff;			// how far we've dirtied the buffer
 	size_t bufate;			// how much input the client's released
+	libtorquebrcb rx;		// inner rx callback
+	libtorquebwcb tx;		// inner tx callback
 } libtorque_rxbuf;
 
+// FIXME this almost certainly ought be a union
 typedef struct libtorque_cbctx {
-	libtorque_rxbuf *rxbuf;		// FIXME
+	libtorque_rxbuf *rxbuf;
 	void *cbstate;			// arbitrary crap FIXME
 } libtorque_cbctx;
 

@@ -220,18 +220,17 @@ libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb 
 // We only currently provide one buffering scheme. When that changes, we still
 // won't want to expose anything more than necessary to applications...
 libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
-				libtorquewcb tx,void *state){
-	libtorque_cbctx cbctx = {
-		.cbstate = rx,
-	};
+				libtorquebwcb tx,void *state){
+	libtorque_cbctx cbctx;
 
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if((cbctx.rxbuf = create_rxbuffer(ctx)) == NULL){
+	if((cbctx.rxbuf = create_rxbuffer(ctx,rx,tx)) == NULL){
 		return LIBTORQUE_ERR_RESOURCE;
 	}
-	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,tx,&cbctx,state,EPOLLONESHOT)){
+	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
+					&cbctx,state,EPOLLONESHOT)){
 		free_rxbuffer(cbctx.rxbuf);
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}

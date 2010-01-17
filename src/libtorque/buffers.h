@@ -36,20 +36,24 @@ initialize_rxbuffer(const struct libtorque_ctx *ctx,libtorque_rxbuf *rxb){
 	return -1;
 }
 
-static inline libtorque_rxbuf *create_rxbuffer(struct libtorque_ctx *)
+static inline libtorque_rxbuf *create_rxbuffer(struct libtorque_ctx *,
+					libtorquebrcb,libtorquebwcb)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));
 
 static inline libtorque_rxbuf *
-create_rxbuffer(struct libtorque_ctx *ctx){
+create_rxbuffer(struct libtorque_ctx *ctx,libtorquebrcb rx,libtorquebwcb tx){
 	libtorque_rxbuf *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_rxbuffer(ctx,ret)){
-			free(ret);
-			ret = NULL;
+		if(initialize_rxbuffer(ctx,ret) == 0){
+			ret->rx = rx;
+			ret->tx = tx;
+			return ret;
 		}
+		free(ret);
+		ret = NULL;
 	}
 	return ret;
 }
@@ -65,8 +69,11 @@ rxbuffer_valid(const libtorque_rxbuf *rxb,size_t *valid){
 	return rxb->buffer + rxb->bufate;
 }
 
+void buffered_txfxn(int,libtorque_cbctx *,void *)
+	__attribute__ ((nonnull(2,3)));
+
 void buffered_rxfxn(int,libtorque_cbctx *,void *)
-	__attribute__ ((nonnull(2)));
+	__attribute__ ((nonnull(2,3)));
 
 #ifndef LIBTORQUE_WITHOUT_SSL
 #include <openssl/ssl.h>

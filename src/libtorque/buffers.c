@@ -5,9 +5,17 @@
 #include <libtorque/events/thread.h>
 
 static inline int
-callback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
+rxback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
 	if(rxb->bufoff - rxb->bufate){
-		return ((const libtorquebrcb)cbctx->cbstate)(fd,cbctx,cbstate);
+		return rxb->rx(fd,cbctx,cbstate);
+	}
+	return 0;
+}
+
+static inline int
+txback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
+	if(rxb->bufoff - rxb->bufate){
+		return rxb->tx(fd,cbctx,cbstate);
 	}
 	return 0;
 }
@@ -44,6 +52,23 @@ growrxbuf(libtorque_rxbuf *rxb){
 	return 0;
 }
 
+void buffered_txfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
+	libtorque_rxbuf *rxb = cbctx->rxbuf;
+	int cb;
+
+	// FIXME very likely incomplete
+	if((cb = txback(rxb,fd,cbctx,cbstate)) < 0){
+		goto err;
+	}
+	if(restorefd(fd,0)){
+		goto err;
+	}
+	return;
+
+err:
+	close(fd);
+}
+
 void buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 	libtorque_rxbuf *rxb = cbctx->rxbuf;
 	int r;
@@ -52,7 +77,7 @@ void buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 		if(rxb->buftot - rxb->bufoff == 0){
 			int cb;
 
-			if((cb = callback(rxb,fd,cbctx,cbstate)) < 0){
+			if((cb = rxback(rxb,fd,cbctx,cbstate)) < 0){
 				break;
 			}
 			if(rxb->buftot - rxb->bufoff == 0){
@@ -67,7 +92,7 @@ void buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			int cb;
 
 			// must close, *unless* TX indicated
-			if((cb = callback(rxb,fd,cbctx,cbstate)) <= 0){
+			if((cb = rxback(rxb,fd,cbctx,cbstate)) <= 0){
 				break;
 			}
 			if(restorefd(fd,EPOLLOUT)){
@@ -77,7 +102,7 @@ void buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 		}else if(errno == EAGAIN || errno == EWOULDBLOCK){
 			int cb;
 
-			if((cb = callback(rxb,fd,cbctx,cbstate)) < 0){
+			if((cb = rxback(rxb,fd,cbctx,cbstate)) < 0){
 				break;
 			}
 			if(restorefd(fd,cb ? EPOLLOUT : 0)){

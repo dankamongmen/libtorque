@@ -170,7 +170,6 @@ size_t large_system_pagesize(const libtorque_ctx *ctx){
 	size_t ret = 0;
 	unsigned z;
 
-	printf("NODECOUNT: %u\n",ctx->nodecount);
 	for(z = 0 ; z < ctx->nodecount ; ++z){
 		const libtorque_nodet *node;
 		unsigned p;
@@ -182,6 +181,5 @@ size_t large_system_pagesize(const libtorque_ctx *ctx){
 			}
 		}
 	}
-	printf("RETURN: %zu\n",ret);
 	return ret;
 }
