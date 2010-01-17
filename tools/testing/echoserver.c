@@ -28,7 +28,7 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	while(w < len){
 		ssize_t r;
 
-		r = write(fd,buf + w,len);
+		r = write(fd,buf + w,len - w);
 		if(r < 0){
 			if(errno == EAGAIN || errno == EWOULDBLOCK){
 				printf("wrote %zu/%zu\n",w,len);
@@ -67,7 +67,7 @@ conn_handler(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 					fcntl(sd,F_SETFL,flags | (long)O_NONBLOCK)){
 				close(sd);
 			}else if(libtorque_addfd(libtorque_getcurctx(),sd,
-						echo_server,NULL,NULL)){
+					echo_server,NULL,NULL)){
 				fprintf(stderr,"Couldn't add client sd %d\n",sd);
 				close(sd);
 			}
