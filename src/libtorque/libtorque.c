@@ -289,7 +289,7 @@ libtorque_err libtorque_block(libtorque_ctx *ctx){
 		ret |= free_libtorque_ctx(ctx);
 		ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	}
-	return ret ? LIBTORQUE_ERR_SHUTDOWN : 0;
+	return ret ? LIBTORQUE_ERR_ASSERT : 0;
 }
 
 libtorque_err libtorque_stop(libtorque_ctx *ctx){
@@ -299,5 +299,5 @@ libtorque_err libtorque_stop(libtorque_ctx *ctx){
 		ret |= reap_threads(ctx);
 		ret |= free_libtorque_ctx(ctx);
 	}
-	return ret ? LIBTORQUE_ERR_SHUTDOWN : 0;
+	return ret ? LIBTORQUE_ERR_ASSERT : 0;
 }

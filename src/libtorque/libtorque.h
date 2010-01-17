@@ -15,7 +15,6 @@ struct libtorque_cbctx;
 typedef enum {
 	LIBTORQUE_ERR_NONE = 0,
 	LIBTORQUE_ERR_ASSERT,	// principal precondition/expectation failure
-	LIBTORQUE_ERR_SHUTDOWN,	// undifferentiated shutdown failure (FIXME break these down)
 	LIBTORQUE_ERR_CPUDETECT,// error detecting available processor units
 	LIBTORQUE_ERR_MEMDETECT,// error detecting available memories
 	LIBTORQUE_ERR_AFFINITY, // error in the affinity subsystem
