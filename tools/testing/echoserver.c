@@ -67,7 +67,7 @@ conn_handler(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 					fcntl(sd,F_SETFL,flags | (long)O_NONBLOCK)){
 				close(sd);
 			}else if(libtorque_addfd(libtorque_getcurctx(),sd,
-					echo_server,NULL,NULL)){
+					echo_server,echo_server,NULL)){
 				fprintf(stderr,"Couldn't add client sd %d\n",sd);
 				close(sd);
 			}
