@@ -179,6 +179,8 @@ libtorque_ctx *libtorque_init(libtorque_err *e){
 libtorque_err libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 			libtorquercb fxn,void *state){
 	// FIXME check for empty signal set via sigisemptyset()/freebsd equiv
+	// We do allow EVTHREAD_INT to be overriden -- that's just there for
+	// convenience (possibly only mine). We *use* EVTHREAD_TERM, though.
 	if(sigismember(sigs,EVTHREAD_TERM) || sigismember(sigs,SIGKILL) ||
 			sigismember(sigs,SIGSTOP)){
 		return LIBTORQUE_ERR_INVAL;
@@ -218,18 +220,17 @@ libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb 
 // We only currently provide one buffering scheme. When that changes, we still
 // won't want to expose anything more than necessary to applications...
 libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
-				libtorquewcb tx,void *state){
-	libtorque_cbctx cbctx = {
-		.cbstate = rx,
-	};
+				libtorquebwcb tx,void *state){
+	libtorque_cbctx cbctx;
 
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if((cbctx.rxbuf = create_rxbuffer(ctx)) == NULL){
+	if((cbctx.rxbuf = create_rxbuffer(ctx,rx,tx)) == NULL){
 		return LIBTORQUE_ERR_RESOURCE;
 	}
-	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,tx,&cbctx,state,EPOLLONESHOT)){
+	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
+					&cbctx,state,EPOLLONESHOT)){
 		free_rxbuffer(cbctx.rxbuf);
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
@@ -279,7 +280,8 @@ libtorque_err libtorque_block(libtorque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx){
-		if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM)){
+		if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM) ||
+				sigaddset(&ss,EVTHREAD_INT)){
 			return LIBTORQUE_ERR_ASSERT;
 		}
 		if(pthread_sigmask(SIG_BLOCK,&ss,&os)){

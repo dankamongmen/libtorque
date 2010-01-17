@@ -62,6 +62,7 @@ struct libtorque_ctx *libtorque_init(libtorque_err *)
 typedef void (*libtorquercb)(int,struct libtorque_cbctx *,void *);
 typedef void (*libtorquewcb)(int,struct libtorque_cbctx *,void *);
 typedef int (*libtorquebrcb)(int,struct libtorque_cbctx *,void *);
+typedef int (*libtorquebwcb)(int,struct libtorque_cbctx *,void *);
 
 // Invoke the callback upon receipt of any of the specified signals. The signal
 // set may not contain EVTHREAD_TERM (usually SIGTERM), SIGKILL or SIGSTOP.
@@ -82,7 +83,7 @@ libtorque_err libtorque_addtimer(struct libtorque_ctx *,
 // Employ libtorque's read buffering. A buffered read callback must return -1
 // if the descriptor has been closed, and 0 otherwise.	
 libtorque_err libtorque_addfd(struct libtorque_ctx *,int,libtorquebrcb,
-					libtorquewcb,void *)
+					libtorquebwcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
