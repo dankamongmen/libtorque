@@ -15,7 +15,7 @@ extern "C" {
 // A level contains $N > 0$ scheduling groups and a description of hardware
 // unique to that level. A unique surjection from classes of usable hardware to
 // levels (no hardware class is described at two levels, and all usable
-// hardware is described by the scheduling universe) is defined by via our
+// hardware is described by the scheduling universe) is defined by this
 // discovery algorithm.
 //
 // The reality compactifies things a bit, but in theory:
