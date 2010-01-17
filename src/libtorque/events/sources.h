@@ -14,13 +14,7 @@ extern "C" {
 // The alignment ought be determined at runtime based off L1 parameters, and
 // combined with software indexing FIXME.
 
-typedef struct evsourcsb {
-	pthread_mutex_t lock;
-	unsigned score;
-} evsourcesb;
-
 typedef struct evsource {
-	evsourcesb sboard;	// source scoreboard (or use EPOLLONESHOT)
 	libtorquercb rxfxn;	// read-type event callback function
 	libtorquewcb txfxn;	// write-type event callback function
 	libtorque_cbctx cbctx;	// libtorque internal per-source state
