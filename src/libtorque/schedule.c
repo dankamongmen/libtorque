@@ -142,11 +142,10 @@ thread(void *void_marshal){
 	}
 	if(marshal->ctx->ev == NULL){
 		marshal->ctx->ev = ev;
-		ev->nexttid = pthread_self();
 	}else{
 		ev->nexttid = marshal->ctx->ev->nexttid;
-		marshal->ctx->ev->nexttid = pthread_self();
 	}
+	marshal->ctx->ev->nexttid = pthread_self();
 	marshal->status = THREAD_STARTED;
 	pthread_cond_broadcast(&marshal->cond);
 	pthread_mutex_unlock(&marshal->lock);
