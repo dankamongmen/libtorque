@@ -66,13 +66,15 @@ int init_epoll_sigset(const sigset_t *ss){
 	 * since we can assume the calling application had some reason to do so
 	 * (most likely that we want to synchronously receive said signal). */
 	memcpy(&epoll_sigset_base,ss,sizeof(*ss));
-	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
+	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM) ||
+			sigdelset(&epoll_sigset_base,EVTHREAD_INT)){
 		return -1;
 	}
 	memset(&act,0,sizeof(act));
 	act.sa_handler = signal_demultiplexer;
 	sigfillset(&act.sa_mask);
-	if(sigaction(EVTHREAD_TERM,&act,NULL)){
+	if(sigaction(EVTHREAD_TERM,&act,NULL) ||
+			sigaction(EVTHREAD_INT,&act,NULL)){
 		return -1;
 	}
 	return 0;
