@@ -5,8 +5,7 @@
 extern "C" {
 #endif
 
-struct libtorque_ctx;
-struct libtorque_topt;
+#include <libtorque/libtorque.h>
 
 // We are not considering distributed systems in this model.
 //
@@ -56,7 +55,9 @@ struct libtorque_topt;
 // together in the first instance, we must now break apart. Or do you simply
 // favor trading events across groups to within groups? Must investigate...
 const struct libtorque_topt *libtorque_get_topology(struct libtorque_ctx *)
-	__attribute__ ((visibility("default")));
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)));
 
 struct top_map {
 	unsigned thread;	// FIXME hw-genericize via dynarray
@@ -65,8 +66,11 @@ struct top_map {
 };
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-int topologize(struct libtorque_ctx *,struct top_map *,unsigned,unsigned,
-					unsigned,unsigned,unsigned);
+libtorque_err topologize(struct libtorque_ctx *,struct top_map *,unsigned,
+				unsigned,unsigned,unsigned,unsigned)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)));
+
 void reset_topology(struct libtorque_ctx *);
 
 #ifdef __cplusplus
