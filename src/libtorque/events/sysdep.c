@@ -65,9 +65,6 @@ int init_epoll_sigset(const sigset_t *ss){
 	/* Signals which were blocked on entry ought remain blocked throughout,
 	 * since we can assume the calling application had some reason to do so
 	 * (most likely that we want to synchronously receive said signal). */
-	if(sigdelset(ss,EVTHREAD_TERM)){
-		return -1;
-	}
 	memcpy(&epoll_sigset_base,ss,sizeof(*ss));
 	if(sigdelset(&epoll_sigset_base,EVTHREAD_TERM)){
 		return -1;
