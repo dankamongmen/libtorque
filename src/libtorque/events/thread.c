@@ -278,24 +278,51 @@ evhandler *create_evhandler(evqueue *evq,const stack_t *stack){
 	return NULL;
 }
 
-static void print_evstats(const evthreadstats *stats){
-	printf("<thread aid=\"%d\">",get_thread_aid());
+static inline int
+print_evthread(FILE *fp){
+	int aid;
+
+	if((aid = get_thread_aid()) < 0){
+		return -1;
+	}
+	if(fprintf(fp,"aid=\"%d\"",aid) < 0){
+		return -1;
+	}
+	return 0;
+}
+
+static inline int
+print_evstats(const evthreadstats *stats){
+	if(printf("<thread ") < 0){
+		return -1;
+	}
+	if(print_evthread(stdout)){
+		return -1;
+	}
+	if(printf(">") < 0){
+		return -1;
+	}
 #define PRINTSTAT(s,field,format) \
- do { if((s)->field){ printf("<" #field ">%" format "</" #field ">",(s)->field); } }while(0)
+ do { if((s)->field){ if(printf("<" #field ">%" format "</" #field ">",(s)->field) < 0){ return -1; } } }while(0)
 #define STATDEF(field) PRINTSTAT(stats,field,"ju");
 #define PTRDEF(field) PRINTSTAT(stats,field,"p");
 #include <libtorque/events/x-stats.h>
 #undef PTRDEF
 #undef STATDEF
 #undef PRINTSTAT
-	printf("</thread>\n");
+	if(printf("</thread>\n") < 0){
+		return -1;
+	}
+	return 0;
 }
 
 int destroy_evhandler(evhandler *e){
 	int ret = 0;
 
 	if(e){
-		print_evstats(&e->stats);
+		if(print_evstats(&e->stats)){
+			ret = -1;
+		}
 		destroy_evectors(&e->evec);
 		ret |= destroy_evqueue(e->evq);
 		free(e);
