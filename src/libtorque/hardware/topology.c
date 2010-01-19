@@ -134,18 +134,12 @@ static const libtorque_cput *lookup_aid_intop(const libtorque_ctx *,const libtor
 
 static const libtorque_cput *
 lookup_aid_intop(const libtorque_ctx *ctx,const libtorque_topt *top,unsigned aid){
-	const libtorque_cput *ret;
-
 	do{
-		// FIXME ought be able to prune via CPU_ISSET w/out recursing
-		if(top->sub){
-			if( (ret = lookup_aid_intop(ctx,top->sub,aid)) ){
-				return ret;
+		if(CPU_ISSET(aid,&top->schedulable)){
+			if(top->sub){
+				return lookup_aid_intop(ctx,top->sub,aid);
 			}
-		}else{
-			if(CPU_ISSET(aid,&top->schedulable)){
-				return libtorque_cpu_getdesc(ctx,top->cpudesc);
-			}
+			return libtorque_cpu_getdesc(ctx,top->cpudesc);
 		}
 	}while( (top = top->next) );
 	return NULL;
