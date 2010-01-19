@@ -27,13 +27,13 @@ typedef struct ssl_cbstate {
 	SSL *ssl;
 	void *cbstate;
 	libtorquebrcb rxfxn;
-	libtorquewcb txfxn;
+	libtorquebwcb txfxn;
 	libtorque_rxbuf rxb;
 } ssl_cbstate;
 
 struct ssl_cbstate *
 create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
-					libtorquebrcb rx,libtorquewcb tx){
+					libtorquebrcb rx,libtorquebwcb tx){
 	ssl_cbstate *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
@@ -252,10 +252,10 @@ int ssl_tx(ssl_cbstate *ssl,const void *buf,int len){
 	return ret;
 }
 
-static void ssl_rxfxn(int,struct libtorque_cbctx *,void *);
+static void ssl_rxfxn(int,void *);
 
 static void
-ssl_txrxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),void *cbs){
+ssl_txrxfxn(int fd,void *cbs){
 	ssl_cbstate *sc = cbs;
 	int r,err;
 
@@ -263,11 +263,7 @@ ssl_txrxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),void *
 		goto err;
 	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) > 0){
-		libtorque_cbctx torquectx = {
-			.rxbuf = &sc->rxb,
-			.cbstate = sc,
-		};
-		if(sc->rxfxn(fd,&torquectx,sc->cbstate)){
+		if(sc->rxfxn(fd,&sc->rxb,sc->cbstate)){
 			goto err;
 		}
 	}
@@ -289,20 +285,15 @@ err:
 }
 
 static void
-ssl_rxfxn(int fd,struct libtorque_cbctx *cbctx,void *cbstate){
-	ssl_cbstate *sc = cbctx->cbstate;
+ssl_rxfxn(int fd,void *cbstate){
+	ssl_cbstate *sc = cbstate;
 	int r,err;
 
 	if(sc->rxfxn == NULL){ // FIXME still necessary?
 		goto err;
 	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) >= 0){
-		libtorque_cbctx torquectx = {
-			.rxbuf = &sc->rxb,
-			.cbstate = sc,
-		};
-
-		if(sc->rxfxn(fd,&torquectx,cbstate)){
+		if(sc->rxfxn(fd,&sc->rxb,sc->cbstate)){
 			goto err;
 		}
 	}
@@ -324,22 +315,21 @@ err:
 }
 
 static void
-ssl_txfxn(int fd,struct libtorque_cbctx *cbctx,void *cbs){
+ssl_txfxn(int fd,void *cbs){
 	ssl_cbstate *sc = cbs;
 
 	if(sc->txfxn == NULL){
 		free_ssl_cbstate(sc);
 		close(fd);
 	}else{
-		sc->txfxn(fd,cbctx,sc->cbstate);
+		sc->txfxn(fd,&sc->rxb,sc->cbstate);
 	}
 }
 
-static void accept_conttxfxn(int,struct libtorque_cbctx *,void *);
+static void accept_conttxfxn(int,void *);
 
 static void
-accept_contrxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
-						void *cbstate){
+accept_contrxfxn(int fd,void *cbstate){
 	ssl_cbstate *sc = cbstate;
 	int ret;
 
@@ -372,8 +362,7 @@ err:
 }
 
 static void
-accept_conttxfxn(int fd,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
-						void *cbs){
+accept_conttxfxn(int fd,void *cbs){
 	ssl_cbstate *sc = cbs;
 	int ret;
 
@@ -456,8 +445,7 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 	return 0;
 }
 
-void ssl_accept_rxfxn(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
-			void *cbstate){
+void ssl_accept_rxfxn(int fd,void *cbstate){
 	struct sockaddr_in sina;
 	socklen_t slen;
 	int sd;

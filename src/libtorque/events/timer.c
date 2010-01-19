@@ -37,7 +37,7 @@ int add_timer_to_evhandler(struct libtorque_ctx *ctx,const struct evqueue *evq,
 		close(fd);
 		return -1;
 	}
-	if(add_fd_to_evhandler(ctx,evq,fd,rfxn,NULL,NULL,cbstate,0)){
+	if(add_fd_to_evhandler(ctx,evq,fd,rfxn,NULL,cbstate,0)){
 		close(fd);
 		return -1;
 	}

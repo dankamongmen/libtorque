@@ -91,25 +91,6 @@ typedef struct evtables {
 #endif
 } evtables;
 
-// This is the simplest possible RX buffer; fixed-length, one piece, not even
-// circular (ie, fixed length on connection!). It'll be replaced.
-typedef struct libtorque_rxbuf {
-	char *buffer;			// always points to the buffer's start
-	size_t buftot;			// length of the buffer
-	size_t bufoff;			// how far we've dirtied the buffer
-	size_t bufate;			// how much input the client's released
-	libtorquebrcb rx;		// inner rx callback
-	libtorquebwcb tx;		// inner tx callback
-} libtorque_rxbuf;
-
-// FIXME get rid of this entirely. everything ought just use an opaque
-// structure with the state it needs, and unfold...
-// FIXME this almost certainly ought be a union
-typedef struct libtorque_cbctx {
-	libtorque_rxbuf *rxbuf;
-	void *cbstate;			// arbitrary crap FIXME
-} libtorque_cbctx;
-
 typedef struct evqueue {
 	int efd;
 	/*unsigned refcount;		// refcount and lock are only touched

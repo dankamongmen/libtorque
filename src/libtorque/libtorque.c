@@ -28,7 +28,7 @@ max_fds(void){
 }
 
 static inline int
-initialize_etables(evtables *e,const sigset_t *ss){
+initialize_etables(libtorque_ctx *ctx,evtables *e,const sigset_t *ss){
 	if((e->fdarraysize = max_fds()) <= 0){
 		return -1;
 	}
@@ -46,7 +46,7 @@ initialize_etables(evtables *e,const sigset_t *ss){
 		destroy_evsources(e->fdarray);
 		return -1;
 	}
-	if(initialize_common_sources(e,ss)){
+	if(initialize_common_sources(ctx,e,ss)){
 		destroy_evsources(e->sigarray);
 		destroy_evsources(e->fdarray);
 		return -1;
@@ -71,7 +71,7 @@ create_libtorque_ctx(libtorque_err *e,const sigset_t *ss){
 	libtorque_ctx *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_etables(&ret->eventtables,ss)){
+		if(initialize_etables(ret,&ret->eventtables,ss)){
 			free(ret);
 			*e = LIBTORQUE_ERR_RESOURCE;
 			return NULL;
@@ -204,14 +204,10 @@ libtorque_err libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
 
 libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
 				libtorquewcb tx,void *state){
-	libtorque_cbctx cbctx = {
-		.cbstate = NULL,
-	};
-
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,&cbctx,state,0)){
+	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,0)){
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	return 0;
@@ -221,17 +217,17 @@ libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb 
 // won't want to expose anything more than necessary to applications...
 libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
 				libtorquebwcb tx,void *state){
-	libtorque_cbctx cbctx;
+	libtorque_rxbufcb *cbctx;
 
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if((cbctx.rxbuf = create_rxbuffer(ctx,rx,tx)) == NULL){
+	if((cbctx = create_rxbuffercb(ctx,rx,tx,state)) == NULL){
 		return LIBTORQUE_ERR_RESOURCE;
 	}
 	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
-					&cbctx,state,EPOLLONESHOT)){
-		free_rxbuffer(cbctx.rxbuf);
+					cbctx,EPOLLONESHOT)){
+		free_rxbuffercb(cbctx);
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	return 0;
@@ -246,7 +242,7 @@ libtorque_err libtorque_addpath(libtorque_ctx *ctx,const char *path,libtorquercb
 
 #ifndef LIBTORQUE_WITHOUT_SSL
 libtorque_err libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
-			libtorquebrcb rx,libtorquewcb tx,void *state){
+			libtorquebrcb rx,libtorquebwcb tx,void *state){
 	struct ssl_cbstate *cbs;
 
 	if((cbs = create_ssl_cbstate(ctx,sslctx,state,rx,tx)) == NULL){
@@ -262,8 +258,8 @@ libtorque_err libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
 libtorque_err libtorque_addssl(libtorque_ctx *ctx __attribute__ ((unused)),
 				int fd __attribute__ ((unused)),
 				SSL_CTX *sslctx __attribute__ ((unused)),
-				libtorquercb rx __attribute__ ((unused)),
-				libtorquewcb tx __attribute__ ((unused)),
+				libtorquebrcb rx __attribute__ ((unused)),
+				libtorquebwcb tx __attribute__ ((unused)),
 				void *state __attribute__ ((unused))){
 	return LIBTORQUE_ERR_UNAVAIL;
 }

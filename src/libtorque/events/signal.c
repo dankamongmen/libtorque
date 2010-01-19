@@ -34,7 +34,7 @@ int add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ 
 	for(z = 1 ; z < ctx->eventtables.sigarraysize ; ++z){
 		if(sigismember(sigs,z)){
 			setup_evsource(ctx->eventtables.sigarray,z,rfxn,
-					NULL,NULL,cbstate);
+					NULL,cbstate);
 		}
 	}
 #ifdef LIBTORQUE_LINUX_SIGNALFD
@@ -46,7 +46,7 @@ int add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ 
 		if((fd = signalfd(-1,sigs,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			return -1;
 		}
-		if(add_fd_to_evhandler(ctx,evq,fd,signalfd_demultiplexer,NULL,NULL,NULL,0)){
+		if(add_fd_to_evhandler(ctx,evq,fd,signalfd_demultiplexer,NULL,NULL,0)){
 			close(fd);
 			return -1;
 		}

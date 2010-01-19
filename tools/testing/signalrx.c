@@ -29,8 +29,7 @@ static struct {
 };
 
 static void
-signalrx(int sig,struct libtorque_cbctx *cbctx __attribute__ ((unused)),
-				void *v __attribute__ ((unused))){
+signalrx(int sig,void *v __attribute__ ((unused))){
 	unsigned z;
 
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){

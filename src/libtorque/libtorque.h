@@ -9,7 +9,7 @@ extern "C" {
 
 struct itimerspec;
 struct libtorque_ctx;
-struct libtorque_cbctx;
+struct libtorque_rxbuf;
 
 // Errors can be converted to a string via libtorque_errstr().
 typedef enum {
@@ -59,10 +59,10 @@ struct libtorque_ctx *libtorque_init(libtorque_err *)
 // Callbacks get a triad: source, our callback state, and their own. Ours is
 // just as opaque to them as theirs is to us. Continuations at their core, the
 // unbuffered typedefs return void.
-typedef void (*libtorquercb)(int,struct libtorque_cbctx *,void *);
-typedef void (*libtorquewcb)(int,struct libtorque_cbctx *,void *);
-typedef int (*libtorquebrcb)(int,struct libtorque_cbctx *,void *);
-typedef int (*libtorquebwcb)(int,struct libtorque_cbctx *,void *);
+typedef void (*libtorquercb)(int,void *);
+typedef void (*libtorquewcb)(int,void *);
+typedef int (*libtorquebrcb)(int,struct libtorque_rxbuf *,void *);
+typedef int (*libtorquebwcb)(int,struct libtorque_rxbuf *,void *);
 
 // Invoke the callback upon receipt of any of the specified signals. The signal
 // set may not contain EVTHREAD_TERM (usually SIGTERM), SIGKILL or SIGSTOP.
@@ -113,7 +113,7 @@ typedef void SSL_CTX;
 // already (utility functions are provided to do this). If libtorque was not
 // compiled with SSL support, returns LIBTORQUE_ERR_UNAVAIL.
 libtorque_err libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,
-				libtorquebrcb,libtorquewcb,void *)
+				libtorquebrcb,libtorquebwcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));

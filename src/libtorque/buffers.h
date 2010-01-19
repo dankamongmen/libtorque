@@ -10,6 +10,22 @@ extern "C" {
 #include <libtorque/alloc.h>
 #include <libtorque/internal.h>
 
+// This is the simplest possible RX buffer; fixed-length, one piece, not even
+// circular (ie, fixed length on connection!). It'll be replaced.
+typedef struct libtorque_rxbuf {
+	char *buffer;			// always points to the buffer's start
+	size_t buftot;			// length of the buffer
+	size_t bufoff;			// how far we've dirtied the buffer
+	size_t bufate;			// how much input the client's released
+	libtorquebrcb rx;		// inner rx callback
+	libtorquebwcb tx;		// inner tx callback
+} libtorque_rxbuf;
+
+typedef struct libtorque_rxbufcb {
+	libtorque_rxbuf rxbuf;
+	void *cbstate;			// userspace callback
+} libtorque_rxbufcb;
+
 // The simplest receive buffer.
 static inline void
 rxbuffer_advance(libtorque_rxbuf *rxb,size_t s){
@@ -36,20 +52,22 @@ initialize_rxbuffer(const struct libtorque_ctx *ctx,libtorque_rxbuf *rxb){
 	return -1;
 }
 
-static inline libtorque_rxbuf *create_rxbuffer(struct libtorque_ctx *,
-					libtorquebrcb,libtorquebwcb)
+static inline libtorque_rxbufcb *create_rxbuffercb(struct libtorque_ctx *,
+				libtorquebrcb,libtorquebwcb,void *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));
 
-static inline libtorque_rxbuf *
-create_rxbuffer(struct libtorque_ctx *ctx,libtorquebrcb rx,libtorquebwcb tx){
-	libtorque_rxbuf *ret;
+static inline libtorque_rxbufcb *
+create_rxbuffercb(struct libtorque_ctx *ctx,libtorquebrcb rx,libtorquebwcb tx,
+					void *cbstate){
+	libtorque_rxbufcb *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(initialize_rxbuffer(ctx,ret) == 0){
-			ret->rx = rx;
-			ret->tx = tx;
+		if(initialize_rxbuffer(ctx,&ret->rxbuf) == 0){
+			ret->rxbuf.rx = rx;
+			ret->rxbuf.tx = tx;
+			ret->cbstate = cbstate;
 			return ret;
 		}
 		free(ret);
@@ -63,17 +81,19 @@ free_rxbuffer(libtorque_rxbuf *rxb){
 	dealloc(rxb->buffer,rxb->buftot);
 }
 
+static inline void
+free_rxbuffercb(libtorque_rxbufcb *rxb){
+	free_rxbuffer(&rxb->rxbuf);
+}
+
 static inline const char *
 rxbuffer_valid(const libtorque_rxbuf *rxb,size_t *valid){
 	*valid = rxb->bufoff - rxb->bufate;
 	return rxb->buffer + rxb->bufate;
 }
 
-void buffered_txfxn(int,libtorque_cbctx *,void *)
-	__attribute__ ((nonnull(2,3)));
-
-void buffered_rxfxn(int,libtorque_cbctx *,void *)
-	__attribute__ ((nonnull(2,3)));
+void buffered_txfxn(int,void *) __attribute__ ((nonnull(2)));
+void buffered_rxfxn(int,void *) __attribute__ ((nonnull(2)));
 
 #ifndef LIBTORQUE_WITHOUT_SSL
 #include <openssl/ssl.h>

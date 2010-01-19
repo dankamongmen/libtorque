@@ -52,11 +52,11 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 
 int add_fd_to_evhandler(libtorque_ctx *ctx,const evqueue *evq,int fd,
 			libtorquercb rfxn,libtorquewcb tfxn,
-			libtorque_cbctx *cbctx,void *cbstate,int eflags){
+			void *cbstate,int eflags){
 	if((unsigned)fd >= ctx->eventtables.fdarraysize){
 		return -1;
 	}
-	setup_evsource(ctx->eventtables.fdarray,fd,rfxn,tfxn,cbctx,cbstate);
+	setup_evsource(ctx->eventtables.fdarray,fd,rfxn,tfxn,cbstate);
 	if(add_fd_event(evq,fd,rfxn,tfxn,eflags)){
 		return -1;
 	}

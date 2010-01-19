@@ -14,11 +14,11 @@
 #include <libtorque/libtorque.h>
 
 static int
-echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
+echo_server(int fd,struct libtorque_rxbuf *rxb,void *v __attribute__ ((unused))){
 	const char *buf;
 	size_t len,w;
 
-	buf = rxbuffer_valid(cbctx->rxbuf,&len);
+	buf = rxbuffer_valid(rxb,&len);
 	if(len == 0){
 		fprintf(stdout,"[%4d] closed\n",fd);
 		return -1; // FIXME could still need to transmit
@@ -42,13 +42,13 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 		}
 	}
 	printf("wrote %zu/%zu\n",w,len);
-	rxbuffer_advance(cbctx->rxbuf,w);
+	rxbuffer_advance(rxb,w);
 	return 0;
 }
 
 static void
-conn_handler(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
-				void *v __attribute__ ((unused))){
+conn_handler(int fd,void *v){
+	struct libtorque_ctx *ctx = v;
 
 	fprintf(stdout,"Got a connection on %d\n",fd);
 	do{
@@ -64,8 +64,7 @@ conn_handler(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
 			if(((flags = fcntl(sd,F_GETFL)) < 0) ||
 					fcntl(sd,F_SETFL,flags | (long)O_NONBLOCK)){
 				close(sd);
-			}else if(libtorque_addfd(libtorque_getcurctx(),sd,
-					echo_server,echo_server,NULL)){
+			}else if(libtorque_addfd(ctx,sd,echo_server,echo_server,NULL)){
 				fprintf(stderr,"Couldn't add client sd %d\n",sd);
 				close(sd);
 			}
@@ -199,7 +198,7 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	printf("Registering server sd %d, port %hu\n",sd,ntohs(sin.sin_port));
-	if(libtorque_addfd_unbuffered(ctx,sd,conn_handler,NULL,NULL)){
+	if(libtorque_addfd_unbuffered(ctx,sd,conn_handler,NULL,ctx)){
 		fprintf(stderr,"Couldn't add server sd %d\n",sd);
 		goto err;
 	}

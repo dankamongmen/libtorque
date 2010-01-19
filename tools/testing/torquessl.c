@@ -14,21 +14,20 @@
 #include <libtorque/libtorque.h>
 
 static int
-ssl_conn_handler(int fd __attribute__ ((unused)),libtorque_cbctx *cbctx,
-			void *cbstate __attribute__ ((unused))){
+ssl_conn_handler(int fd __attribute__ ((unused)),struct libtorque_rxbuf *rxbuf,void *cbstate){
 	const char *buf;
 	size_t len;
 
-	buf = rxbuffer_valid(cbctx->rxbuf,&len);
+	buf = rxbuffer_valid(rxbuf,&len);
 	if(len == 0){
 		// fprintf(stdout,"[%4d] closed\n",fd);
 		return -1;
 	}
-	if(ssl_tx(cbctx->cbstate,buf,len) < (int)len){
+	if(ssl_tx(cbstate,buf,len) < (int)len){
 		return -1;
 	}
 	// fprintf(stdout,"[%4d] %.*s\n",fd,(int)len,buf);
-	rxbuffer_advance(cbctx->rxbuf,len);
+	rxbuffer_advance(rxbuf,len);
 	return 0;
 }
 

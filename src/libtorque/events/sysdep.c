@@ -16,14 +16,13 @@ int add_evector_kevents(const evqueue *evq,struct kevent *k,int kcount){
 }
 
 #ifdef LIBTORQUE_LINUX_SIGNALFD
-void signalfd_demultiplexer(int fd,libtorque_cbctx *cbctx __attribute__ ((unused)),
-			void *cbstate __attribute__ ((unused))){
+void signalfd_demultiplexer(int fd,void *cbstate){
+	const libtorque_ctx *ctx = cbstate;
 	struct signalfd_siginfo si;
 	ssize_t r;
 
 	do{
 		if((r = read(fd,&si,sizeof(si))) == sizeof(si)){
-			libtorque_ctx *ctx = get_thread_ctx();
 			evhandler *e = get_thread_evh();
 
 			++e->stats.events;

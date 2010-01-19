@@ -34,15 +34,14 @@ SSL *new_ssl_conn(SSL_CTX *)
 	__attribute__ ((malloc));
 
 struct ssl_cbstate *
-create_ssl_cbstate(struct libtorque_ctx *,SSL_CTX *,void *,libtorquebrcb,libtorquewcb)
+create_ssl_cbstate(struct libtorque_ctx *,SSL_CTX *,void *,libtorquebrcb,libtorquebwcb)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((malloc));
 
 void free_ssl_cbstate(struct ssl_cbstate *);
 
-void ssl_accept_rxfxn(int,struct libtorque_cbctx *,void *)
-	__attribute__ ((nonnull(2)));
+void ssl_accept_rxfxn(int,void *) __attribute__ ((nonnull(2)));
 
 int ssl_tx(struct ssl_cbstate *,const void *,int)
 	__attribute__ ((visibility("default")))

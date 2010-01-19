@@ -5,17 +5,17 @@
 #include <libtorque/events/thread.h>
 
 static inline int
-rxback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
+rxback(libtorque_rxbuf *rxb,int fd,void *cbstate){
 	if(rxb->bufoff - rxb->bufate){
-		return rxb->rx(fd,cbctx,cbstate);
+		return rxb->rx(fd,rxb,cbstate);
 	}
 	return 0;
 }
 
 static inline int
-txback(libtorque_rxbuf *rxb,int fd,libtorque_cbctx *cbctx,void *cbstate){
+txback(libtorque_rxbuf *rxb,int fd,void *cbstate){
 	if(rxb->bufoff - rxb->bufate){
-		return rxb->tx(fd,cbctx,cbstate);
+		return rxb->tx(fd,rxb,cbstate);
 	}
 	return 0;
 }
@@ -52,12 +52,13 @@ growrxbuf(libtorque_rxbuf *rxb){
 	return 0;
 }
 
-void buffered_txfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
-	libtorque_rxbuf *rxb = cbctx->rxbuf;
+void buffered_txfxn(int fd,void *cbstate){
+	libtorque_rxbufcb *cbctx = cbstate;
+	libtorque_rxbuf *rxb = &cbctx->rxbuf;
 	int cb;
 
 	// FIXME very likely incomplete
-	if((cb = txback(rxb,fd,cbctx,cbstate)) < 0){
+	if((cb = txback(rxb,fd,cbstate)) < 0){
 		goto err;
 	}
 	if(restorefd(fd,0)){
@@ -69,15 +70,16 @@ err:
 	close(fd);
 }
 
-void buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
-	libtorque_rxbuf *rxb = cbctx->rxbuf;
+void buffered_rxfxn(int fd,void *cbstate){
+	libtorque_rxbufcb *cbctx = cbstate;
+	libtorque_rxbuf *rxb = &cbctx->rxbuf;
 	int r;
 
 	for( ; ; ){
 		if(rxb->buftot - rxb->bufoff == 0){
 			int cb;
 
-			if((cb = rxback(rxb,fd,cbctx,cbstate)) < 0){
+			if((cb = rxback(rxb,fd,cbstate)) < 0){
 				break;
 			}
 			if(rxb->buftot - rxb->bufoff == 0){
@@ -92,7 +94,7 @@ void buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 			int cb;
 
 			// must close, *unless* TX indicated
-			if((cb = rxback(rxb,fd,cbctx,cbstate)) <= 0){
+			if((cb = rxback(rxb,fd,cbstate)) <= 0){
 				break;
 			}
 			if(restorefd(fd,EPOLLOUT)){
@@ -102,7 +104,7 @@ void buffered_rxfxn(int fd,libtorque_cbctx *cbctx,void *cbstate){
 		}else if(errno == EAGAIN || errno == EWOULDBLOCK){
 			int cb;
 
-			if((cb = rxback(rxb,fd,cbctx,cbstate)) < 0){
+			if((cb = rxback(rxb,fd,cbstate)) < 0){
 				break;
 			}
 			if(restorefd(fd,cb ? EPOLLOUT : 0)){

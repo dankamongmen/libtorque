@@ -49,7 +49,7 @@ struct kevent { // each element an array, each array the same number of members
 #include <sys/signalfd.h>
 struct libtorque_cbctx;
 
-void signalfd_demultiplexer(int,struct libtorque_cbctx *,void *);
+void signalfd_demultiplexer(int,void *);
 #else
 #if __GLIBC__ == 2 && __GLIBC_MINOR__ > 5
 #define LIBTORQUE_LINUX_PWAIT
