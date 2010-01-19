@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <libtorque/alloc.h>
@@ -23,6 +24,16 @@ void *get_big_page(const struct libtorque_ctx *ctx,size_t *s){
 	if((*s = large_system_pagesize(ctx)) == 0){
 		return NULL;
 	}
+	return get_pages(*s);
+}
+
+// The default stack under NPTL is equal to RLIMIT_STACK's rlim_cur (8M on my
+// Debian machine). Coloring is used inside of NPTL as of at least eglibc 2.10.
+void *get_stack(size_t *s){
+	if(*s == 0){
+		*s = PTHREAD_STACK_MIN;
+	}
+	// round up to (which?) pagesize FIXME
 	return get_pages(*s);
 }
 

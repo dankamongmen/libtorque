@@ -110,7 +110,6 @@ typedef struct libtorque_cbctx {
 typedef struct evqueue {
 	int efd;
 	unsigned refcount;		// refcount and lock are only touched
-	// FIXME we ought be able to eliminate this (see bug 96)
 	pthread_mutex_t lock;		// at initialization / shutdown
 } evqueue;
 

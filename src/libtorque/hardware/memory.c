@@ -166,6 +166,7 @@ const libtorque_nodet *libtorque_node_getdesc(const libtorque_ctx *ctx,unsigned 
 	return NULL;
 }
 
+// FIXME we really ought just compute this value somewhere; this is terrible
 size_t large_system_pagesize(const libtorque_ctx *ctx){
 	size_t ret = 0;
 	unsigned z;
