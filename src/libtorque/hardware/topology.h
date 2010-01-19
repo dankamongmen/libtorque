@@ -32,11 +32,9 @@ extern "C" {
 // caches for a single level: {2proc + L1 + L2 + memory}. Sum over a level's
 // processors' threads for a thread count.
 //
-// Note that SMT does not come into play in shaping the topology hierarchy,
-// only in calculating the number of threads in a topological group. We only
-// schedule to SMT processors if
-//  - shared data is allocated which fits entirely within the group's cache, or
-//  - we need to.
+// Note that all threads of SMT processors will be folded into a single group
+// by this definition, and that heterogeneous groups are only likely at the
+// topmost nodes (since heterogeneous processors likely have different caches).
 //
 // The lowest level for any scheduling hierarchy is OS-schedulable entities.
 // This definition is independent of "threads", "cores", "packages", etc. Our
@@ -68,6 +66,10 @@ struct top_map {
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
 libtorque_err topologize(struct libtorque_ctx *,struct top_map *,unsigned,
 				unsigned,unsigned,unsigned,unsigned)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1,2)));
+
+const struct libtorque_cput *lookup_aid(struct libtorque_ctx *,unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 

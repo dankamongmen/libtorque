@@ -22,11 +22,12 @@ struct evhandler;
 //     of its subgroups.
 //  - every group has at least one schedulable cpu.
 //  - groupids are relevant only within a set of siblings.
-//  - there is a cpu descriptor for each schedulable cpu.
+// Leaf nodes will have cpudesc set, suitable for lookup into ctx->cpudescs
+//  (note that a leaf node cannot encompass heterogeneous setups).
 typedef struct libtorque_topt {
 	cpu_set_t schedulable;
 	unsigned groupid;
-	unsigned *cpudescs;
+	unsigned cpudesc;		// only meaningful when sub == NULL
 	struct libtorque_topt *next,*sub;
 } libtorque_topt;
 
