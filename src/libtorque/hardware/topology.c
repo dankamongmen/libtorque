@@ -14,12 +14,8 @@ create_zone(unsigned id,unsigned cputype){
 	libtorque_topt *s;
 
 	if( (s = malloc(sizeof(*s))) ){
-		if((s->cpudescs = malloc(sizeof(*s->cpudescs))) == NULL){
-			free(s);
-			return NULL;
-		}
-		s->cpudescs[0] = cputype;
 		CPU_ZERO(&s->schedulable);
+		s->cpudesc = cputype;
 		s->groupid = id;
 		s->sub = NULL;
 	}
@@ -121,7 +117,6 @@ free_topology(libtorque_topt *top){
 		libtorque_topt *tmp;
 
 		free_topology(top->sub);
-		free(top->cpudescs);
 		tmp = top->next;
 		free(top);
 		top = tmp;
@@ -131,4 +126,31 @@ free_topology(libtorque_topt *top){
 void reset_topology(libtorque_ctx *ctx){
 	free_topology(ctx->sched_zone);
 	ctx->sched_zone = NULL;
+}
+
+static const libtorque_cput *lookup_aid_intop(const libtorque_ctx *,const libtorque_topt *,unsigned)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1,2)));
+
+static const libtorque_cput *
+lookup_aid_intop(const libtorque_ctx *ctx,const libtorque_topt *top,unsigned aid){
+	const libtorque_cput *ret;
+
+	do{
+		// FIXME ought be able to prune via CPU_ISSET w/out recursing
+		if(top->sub){
+			if( (ret = lookup_aid_intop(ctx,top->sub,aid)) ){
+				return ret;
+			}
+		}else{
+			if(CPU_ISSET(aid,&top->schedulable)){
+				return libtorque_cpu_getdesc(ctx,top->cpudesc);
+			}
+		}
+	}while( (top = top->next) );
+	return NULL;
+}
+
+const libtorque_cput *lookup_aid(libtorque_ctx *ctx,unsigned aid){
+	return lookup_aid_intop(ctx,ctx->sched_zone,aid);
 }
