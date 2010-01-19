@@ -69,7 +69,7 @@ libtorque_err topologize(struct libtorque_ctx *,struct top_map *,unsigned,
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)));
 
-const struct libtorque_cput *lookup_aid(struct libtorque_ctx *,unsigned)
+const struct libtorque_cput *lookup_aid(const struct libtorque_ctx *,unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 

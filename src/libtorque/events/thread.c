@@ -9,6 +9,7 @@
 #include <libtorque/events/thread.h>
 #include <libtorque/events/signal.h>
 #include <libtorque/events/sources.h>
+#include <libtorque/hardware/topology.h>
 
 static __thread libtorque_ctx *tsd_ctx;
 static __thread evhandler *tsd_evhandler;
@@ -48,6 +49,7 @@ static void
 rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 				void *cbstate __attribute__ ((unused))){
 	if(sig == EVTHREAD_TERM || sig == EVTHREAD_INT){
+		const libtorque_ctx *ctx = get_thread_ctx();
 		void *ret = PTHREAD_CANCELED;
 		evhandler *e = get_thread_evh();
 		struct rusage ru;
@@ -76,7 +78,7 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
 		e->stats.vctxsw = ru.ru_nvcsw;
 		e->stats.ictxsw = ru.ru_nivcsw;
-		if(destroy_evhandler(e)){
+		if(destroy_evhandler(ctx,e)){
 			ret = NULL;
 		}
 		pthread_exit(ret);
@@ -279,24 +281,28 @@ evhandler *create_evhandler(evqueue *evq,const stack_t *stack){
 }
 
 static inline int
-print_evthread(FILE *fp){
+print_evthread(FILE *fp,const libtorque_ctx *ctx){
+	const libtorque_cput *cpu;
 	int aid;
 
 	if((aid = get_thread_aid()) < 0){
 		return -1;
 	}
-	if(fprintf(fp,"aid=\"%d\"",aid) < 0){
+	if((cpu = lookup_aid(ctx,aid)) == NULL){
+		return -1;
+	}
+	if(fprintf(fp,"aid=\"%d\" cputype=\"%tu\"",aid,cpu - ctx->cpudescs) < 0){
 		return -1;
 	}
 	return 0;
 }
 
 static inline int
-print_evstats(const evthreadstats *stats){
+print_evstats(const libtorque_ctx *ctx,const evthreadstats *stats){
 	if(printf("<thread ") < 0){
 		return -1;
 	}
-	if(print_evthread(stdout)){
+	if(print_evthread(stdout,ctx)){
 		return -1;
 	}
 	if(printf(">") < 0){
@@ -316,11 +322,11 @@ print_evstats(const evthreadstats *stats){
 	return 0;
 }
 
-int destroy_evhandler(evhandler *e){
+int destroy_evhandler(const libtorque_ctx *ctx,evhandler *e){
 	int ret = 0;
 
 	if(e){
-		if(print_evstats(&e->stats)){
+		if(print_evstats(ctx,&e->stats)){
 			ret = -1;
 		}
 		destroy_evectors(&e->evec);

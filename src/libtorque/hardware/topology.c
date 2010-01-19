@@ -151,6 +151,6 @@ lookup_aid_intop(const libtorque_ctx *ctx,const libtorque_topt *top,unsigned aid
 	return NULL;
 }
 
-const libtorque_cput *lookup_aid(libtorque_ctx *ctx,unsigned aid){
+const libtorque_cput *lookup_aid(const libtorque_ctx *ctx,unsigned aid){
 	return lookup_aid_intop(ctx,ctx->sched_zone,aid);
 }

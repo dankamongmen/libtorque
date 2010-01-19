@@ -139,7 +139,7 @@ thread(void *void_marshal){
 		goto earlyerr;
 	}
 	if(pthread_mutex_lock(&marshal->lock)){
-		destroy_evhandler(ev);
+		destroy_evhandler(ctx,ev);
 		goto earlyerr;
 	}
 	if(marshal->ctx->ev == NULL){
@@ -154,7 +154,8 @@ thread(void *void_marshal){
 	// After this point, anything we wish to use from marshal must've been
 	// copied onto our own stack (hence broadcasting prior to unlocking).
 	event_thread(ctx,ev);
-	destroy_evhandler(ev);
+	// Should never reach here (event_thread() is marked ((noreturn)))
+	destroy_evhandler(ctx,ev);
 	return NULL;
 
 earlyerr:
@@ -162,7 +163,7 @@ earlyerr:
 	marshal->status = THREAD_PREFAIL;
 	pthread_cond_broadcast(&marshal->cond);
 	pthread_mutex_unlock(&marshal->lock);
-	destroy_evhandler(ev);
+	destroy_evhandler(ctx,ev);
 	return NULL;
 }
 

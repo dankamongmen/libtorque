@@ -27,7 +27,8 @@ evhandler *create_evhandler(evqueue *,const stack_t *)
 int create_efd(void)
 	__attribute__ ((warn_unused_result));
 
-int destroy_evhandler(evhandler *);
+int destroy_evhandler(const libtorque_ctx *,evhandler *)
+	__attribute__ ((nonnull(1,2)));
 
 void event_thread(libtorque_ctx *,evhandler *)
 	__attribute__ ((nonnull(1,2)))
