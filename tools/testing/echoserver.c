@@ -21,7 +21,7 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 	buf = rxbuffer_valid(cbctx->rxbuf,&len);
 	if(len == 0){
 		fprintf(stdout,"[%4d] closed\n",fd);
-		return -1;
+		return -1; // FIXME could still need to transmit
 	}
 	fprintf(stdout,"[%4d] Read %zub\n",fd,len);
 	w = 0;
@@ -31,9 +31,7 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 		r = write(fd,buf + w,len - w);
 		if(r < 0){
 			if(errno == EAGAIN || errno == EWOULDBLOCK){
-				printf("wrote %zu/%zu\n",w,len);
-				rxbuffer_advance(cbctx->rxbuf,w);
-				return 0;
+				break;
 			}else if(errno != EINTR){
 				fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,
 						errno,strerror(errno),len);
@@ -44,7 +42,7 @@ echo_server(int fd,libtorque_cbctx *cbctx,void *v __attribute__ ((unused))){
 		}
 	}
 	printf("wrote %zu/%zu\n",w,len);
-	rxbuffer_advance(cbctx->rxbuf,len);
+	rxbuffer_advance(cbctx->rxbuf,w);
 	return 0;
 }
 
