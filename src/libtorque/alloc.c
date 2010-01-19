@@ -2,6 +2,7 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/mman.h>
 #include <libtorque/alloc.h>
 #include <libtorque/hardware/memory.h>
@@ -32,9 +33,10 @@ void *get_big_page(const struct libtorque_ctx *ctx,size_t *s){
 // FIXME there's a lot to do here; this is very naive
 void *get_stack(size_t *s){
 	if(*s == 0){
-		*s = PTHREAD_STACK_MIN;
-	}
-	// round up to (which?) pagesize FIXME
+		*s = PTHREAD_STACK_MIN > SIGSTKSZ ? PTHREAD_STACK_MIN : SIGSTKSZ;
+	}else if(*s < PTHREAD_STACK_MIN || *s < SIGSTKSZ){
+		return NULL;
+	} // round up to (which?) pagesize FIXME
 	return get_pages(*s);
 }
 
