@@ -42,12 +42,33 @@ void *get_stack(size_t *s){
 }
 
 void *mod_pages(void *map,size_t olds,size_t news){
-	//const int flags = MAP_SHARED | MAP_ANONYMOUS;
 	void *ret;
 
+#ifdef LIBTORQUE_LINUX
 	if((ret = mremap(map,olds,news,MREMAP_MAYMOVE)) == MAP_FAILED){
 		ret = NULL;
 	}
+#else
+        // From mmap(2) on freebsd 6.3: A successful FIXED mmap deletes any
+        // previous mapping in the allocated address range. This means:
+        // remapping over a current map will blow it away (unless FIXED isn't
+        // provided, in which case it can't overlap an old mapping). If we were
+	// using a file-based mapping here, we'd offset at "olds" rather than 0.
+        if((ret = mmap((char *)map + olds,news - olds,PROT_READ|PROT_WRITE,
+			MAP_PRIVATE|MAP_ANONYMOUS,-1,0)) == MAP_FAILED){
+		ret = NULL; // We couldn't get the memory whatsoever
+        }else if(ret != (char *)map + olds){  // Did we squash?
+                // We got the memory, but not where we wanted it. Copy over the
+                // old map, and then free it up...
+                munmap(ret,news - olds);
+                if((ret = mmap(NULL,news,PROT_READ|PROT_WRITE,
+				MAP_PRIVATE|MAP_ANONYMOUS,-1,0)) == MAP_FAILED){
+                        return ret;
+                }
+                memcpy(ret,map,olds);
+                munmap(map,olds); // Free the old mapping
+        } // We successfully squashed: ret is a pointer to the original buf.
+#endif
 	return ret;
 }
 
