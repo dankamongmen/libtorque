@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <signal.h>
+#include <pthread.h>
 #include <sys/mman.h>
 #include <libtorque/alloc.h>
 #include <libtorque/hardware/memory.h>
