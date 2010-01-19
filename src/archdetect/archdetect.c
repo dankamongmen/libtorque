@@ -319,9 +319,8 @@ print_cpuset(const libtorque_ctx *ctx,const libtorque_topt *s,unsigned depth){
 			return -1;
 		}
 		if(s->sub == NULL){
-			// FIXME broken for heterogeneous groups
 			ret = printf("(%ux processor type %u)\n",
-					total,s->cpudescs[0] + 1);
+					total,s->cpudesc + 1);
 		}else{
 			ret = printf("(%u threads total)\n",total);
 		}
