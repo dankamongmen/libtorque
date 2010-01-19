@@ -2,7 +2,7 @@
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
-#include <bits/local_lim.h> // FIXME eglibc broke PTHREAD_STACK_MIN :/
+#include <libtorque/alloc.h>
 #include <libtorque/internal.h>
 #include <libtorque/events/evq.h>
 #include <libtorque/events/thread.h>
@@ -171,22 +171,16 @@ int setup_thread_stack(stack_t *s,pthread_attr_t *attr){
 	if(pthread_attr_init(attr)){
 		return -1;
 	}
-	s->ss_flags = 0;
-	// FIXME might want a larger stack? definitely consider caches. also
-	/* need align stack on page boundary (see pthread_attr_setstack(3))
-	s->ss_size = PTHREAD_STACK_MIN >= SIGSTKSZ ?
-		PTHREAD_STACK_MIN : SIGSTKSZ;
-	if((s->ss_sp = malloc(s->ss_size)) == NULL){
-		pthread_attr_destroy(&attr);
+	if((s->ss_sp = get_stack(&s->ss_size)) == NULL){
+		pthread_attr_destroy(attr);
 		return -1;
 	}
 	if(pthread_attr_setstack(attr,s->ss_sp,s->ss_size)){
-		free(s->ss_sp);
-		pthread_attr_destroy(&attr);
+		dealloc(s->ss_sp,s->ss_size);
+		pthread_attr_destroy(attr);
 		return -1;
-	}*/
-	s->ss_size = 0;
-	s->ss_sp = NULL;
+	}
+	s->ss_flags = 0;
 	return 0;
 }
 
@@ -203,20 +197,20 @@ int spawn_thread(libtorque_ctx *ctx){
 		return -1;
 	}
 	if(pthread_mutex_init(&tidguard.lock,NULL)){
-		free(tidguard.stack.ss_sp);
+		dealloc(tidguard.stack.ss_sp,tidguard.stack.ss_size);
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
 	if(pthread_cond_init(&tidguard.cond,NULL)){
 		pthread_mutex_destroy(&tidguard.lock);
-		free(tidguard.stack.ss_sp);
+		dealloc(tidguard.stack.ss_sp,tidguard.stack.ss_size);
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
 	if(pthread_create(&tid,&attr,thread,&tidguard)){
 		pthread_mutex_destroy(&tidguard.lock);
 		pthread_cond_destroy(&tidguard.cond);
-		free(tidguard.stack.ss_sp);
+		dealloc(tidguard.stack.ss_sp,tidguard.stack.ss_size);
 		pthread_attr_destroy(&attr);
 		return -1;
 	}

@@ -36,6 +36,9 @@ void *mod_pages(void *,size_t,size_t)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
+void dealloc(void *,size_t)
+	__attribute__ ((nonnull(1)));
+
 #ifdef __cplusplus
 }
 #endif

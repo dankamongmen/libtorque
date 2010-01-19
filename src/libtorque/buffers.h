@@ -60,7 +60,7 @@ create_rxbuffer(struct libtorque_ctx *ctx,libtorquebrcb rx,libtorquebwcb tx){
 
 static inline void
 free_rxbuffer(libtorque_rxbuf *rxb){
-	free(rxb->buffer);
+	dealloc(rxb->buffer,rxb->buftot);
 }
 
 static inline const char *
