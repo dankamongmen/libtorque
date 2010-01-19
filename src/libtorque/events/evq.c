@@ -5,25 +5,8 @@
 int destroy_evqueue(evqueue *evq){
 	int ret = 0;
 
-	if(pthread_mutex_lock(&evq->lock)){
-		return -1;
-	}
-	if(--evq->refcount == 0){
-		ret |= close(evq->efd);
-		evq->efd = -1;
-	}
-	ret |= pthread_mutex_unlock(&evq->lock);
-	return ret;
-}
-
-int ref_evqueue(evqueue *e){
-	int ret = 0;
-
-	if(pthread_mutex_lock(&e->lock)){
-		return -1;
-	}
-	++e->refcount;
-	ret |= pthread_mutex_unlock(&e->lock);
+	ret |= close(evq->efd);
+	evq->efd = -1;
 	return ret;
 }
 
@@ -76,18 +59,12 @@ add_evqueue_baseevents(const libtorque_ctx *ctx,evqueue *e){
 }
 
 int init_evqueue(libtorque_ctx *ctx,evqueue *e){
-	if(pthread_mutex_init(&e->lock,NULL)){
-		return -1;
-	}
 	if((e->efd = create_efd()) < 0){
-		pthread_mutex_destroy(&e->lock);
 		return -1;
 	}
 	if(add_evqueue_baseevents(ctx,e)){
 		close(e->efd);
-		pthread_mutex_destroy(&e->lock);
 		return -1;
 	}
-	e->refcount = 1;
 	return 0;
 }

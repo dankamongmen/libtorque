@@ -102,6 +102,8 @@ typedef struct libtorque_rxbuf {
 	libtorquebwcb tx;		// inner tx callback
 } libtorque_rxbuf;
 
+// FIXME get rid of this entirely. everything ought just use an opaque
+// structure with the state it needs, and unfold...
 // FIXME this almost certainly ought be a union
 typedef struct libtorque_cbctx {
 	libtorque_rxbuf *rxbuf;
@@ -110,8 +112,8 @@ typedef struct libtorque_cbctx {
 
 typedef struct evqueue {
 	int efd;
-	unsigned refcount;		// refcount and lock are only touched
-	pthread_mutex_t lock;		// at initialization / shutdown
+	/*unsigned refcount;		// refcount and lock are only touched
+	pthread_mutex_t lock;		// at initialization / shutdown*/
 } evqueue;
 
 // Whenever a field is added to this structure, make sure it's

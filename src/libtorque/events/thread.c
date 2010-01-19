@@ -78,10 +78,8 @@ rxcommonsignal(int sig,libtorque_cbctx *nullv __attribute__ ((unused)),
 		e->stats.stimeus = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
 		e->stats.vctxsw = ru.ru_nvcsw;
 		e->stats.ictxsw = ru.ru_nivcsw;
-		if(destroy_evhandler(ctx,e)){
-			ret = NULL;
-		}
-		pthread_exit(ret);
+		destroy_evhandler(ctx,e);
+		pthread_exit(ret); // FIXME need clean up stack
 	}
 }
 
@@ -221,13 +219,10 @@ int initialize_common_sources(struct evtables *evt,const sigset_t *ss __attribut
 }
 
 static int
-initialize_evhandler(evhandler *e,evqueue *evq,const stack_t *stack){
+initialize_evhandler(evhandler *e,const evqueue *evq,const stack_t *stack){
 	memset(e,0,sizeof(*e));
 	e->stats.stackptr = stack->ss_sp;
 	e->stats.stacksize = stack->ss_size;
-	if(ref_evqueue(evq)){
-		return -1;
-	}
 	e->evq = evq;
 	if(init_evectors(&e->evec)){
 		return -1;
@@ -268,7 +263,7 @@ int create_efd(void){
 	return fd;
 }
 
-evhandler *create_evhandler(evqueue *evq,const stack_t *stack){
+evhandler *create_evhandler(const evqueue *evq,const stack_t *stack){
 	evhandler *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
@@ -322,16 +317,10 @@ print_evstats(const libtorque_ctx *ctx,const evthreadstats *stats){
 	return 0;
 }
 
-int destroy_evhandler(const libtorque_ctx *ctx,evhandler *e){
-	int ret = 0;
-
+void destroy_evhandler(const libtorque_ctx *ctx,evhandler *e){
 	if(e){
-		if(print_evstats(ctx,&e->stats)){
-			ret = -1;
-		}
+		print_evstats(ctx,&e->stats);
 		destroy_evectors(&e->evec);
-		ret |= destroy_evqueue(e->evq);
 		free(e);
 	}
-	return ret;
 }
