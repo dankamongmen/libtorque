@@ -18,16 +18,21 @@ ssl_conn_handler(int fd __attribute__ ((unused)),struct libtorque_rxbuf *rxbuf,v
 	const char *buf;
 	size_t len;
 
+	printf("HERE %p\n",cbstate);
 	buf = rxbuffer_valid(rxbuf,&len);
+	printf("HERE2\n");
 	if(len == 0){
 		// fprintf(stdout,"[%4d] closed\n",fd);
 		return -1;
 	}
+	printf("HERE3\n");
 	if(ssl_tx(cbstate,buf,len) < (int)len){
 		return -1;
 	}
+	printf("HERE4\n");
 	// fprintf(stdout,"[%4d] %.*s\n",fd,(int)len,buf);
 	rxbuffer_advance(rxbuf,len);
+	printf("HERE5\n");
 	return 0;
 }
 

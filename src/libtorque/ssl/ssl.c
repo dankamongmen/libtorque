@@ -13,6 +13,7 @@
 #include <libtorque/buffers.h>
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/schedule.h>
+#include <libtorque/events/thread.h>
 
 static unsigned numlocks;
 static pthread_mutex_t *openssl_locks;
@@ -22,7 +23,7 @@ struct CRYPTO_dynlock_value {
 };
 
 typedef struct ssl_cbstate {
-	struct libtorque_ctx *ctx; // FIXME should be able to be eliminated
+	//struct libtorque_ctx *ctx; // FIXME should be able to be eliminated
 	SSL_CTX *sslctx;
 	SSL *ssl;
 	void *cbstate;
@@ -38,7 +39,6 @@ create_ssl_cbstate(struct libtorque_ctx *ctx,SSL_CTX *sslctx,void *cbstate,
 
 	if( (ret = malloc(sizeof(*ret))) ){
 		if(initialize_rxbuffer(ctx,&ret->rxb) == 0){
-			ret->ctx = ctx;
 			ret->sslctx = sslctx;
 			ret->cbstate = cbstate;
 			ret->rxfxn = rx;
@@ -269,8 +269,10 @@ ssl_txrxfxn(int fd,void *cbs){
 	}
 	err = SSL_get_error(sc->ssl,r);
 	if(err == SSL_ERROR_WANT_READ){
-		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,ssl_rxfxn);
-		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,NULL);
+		libtorque_ctx *ctx = get_thread_ctx();
+
+		set_evsource_rx(ctx->eventtables.fdarray,fd,ssl_rxfxn);
+		set_evsource_tx(ctx->eventtables.fdarray,fd,NULL);
 	}else if(err == SSL_ERROR_WANT_WRITE){
 		// just let it loop
 	}else{
@@ -299,8 +301,10 @@ ssl_rxfxn(int fd,void *cbstate){
 	}
 	err = SSL_get_error(sc->ssl,r);
 	if(err == SSL_ERROR_WANT_WRITE){
-		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,NULL);
-		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,ssl_txrxfxn);
+		libtorque_ctx *ctx = get_thread_ctx();
+
+		set_evsource_rx(ctx->eventtables.fdarray,fd,NULL);
+		set_evsource_tx(ctx->eventtables.fdarray,fd,ssl_txrxfxn);
 	}else if(err == SSL_ERROR_WANT_READ){
 		// just let it loop
 	}else{
@@ -330,6 +334,7 @@ static void accept_conttxfxn(int,void *);
 
 static void
 accept_contrxfxn(int fd,void *cbstate){
+	libtorque_ctx *ctx = get_thread_ctx();
 	ssl_cbstate *sc = cbstate;
 	int ret;
 
@@ -337,17 +342,17 @@ accept_contrxfxn(int fd,void *cbstate){
 		libtorquercb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquewcb tx = sc->txfxn ? ssl_txfxn : NULL;
 
-		if(initialize_rxbuffer(sc->ctx,&sc->rxb)){
+		if(initialize_rxbuffer(ctx,&sc->rxb)){
 			goto err;
 		}
-		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
-		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,tx);
+		set_evsource_rx(ctx->eventtables.fdarray,fd,rx);
+		set_evsource_tx(ctx->eventtables.fdarray,fd,tx);
 	}else{
 		int err = SSL_get_error(sc->ssl,ret);
 
 		if(err == SSL_ERROR_WANT_WRITE){
-			set_evsource_rx(sc->ctx->eventtables.fdarray,fd,NULL);
-			set_evsource_tx(sc->ctx->eventtables.fdarray,fd,accept_conttxfxn);
+			set_evsource_rx(ctx->eventtables.fdarray,fd,NULL);
+			set_evsource_tx(ctx->eventtables.fdarray,fd,accept_conttxfxn);
 		}else if(err == SSL_ERROR_WANT_READ){
 			// just let it loop
 		}else{
@@ -363,6 +368,7 @@ err:
 
 static void
 accept_conttxfxn(int fd,void *cbs){
+	libtorque_ctx *ctx = get_thread_ctx();
 	ssl_cbstate *sc = cbs;
 	int ret;
 
@@ -370,17 +376,17 @@ accept_conttxfxn(int fd,void *cbs){
 		libtorquercb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquewcb tx = sc->txfxn ? ssl_txfxn : NULL;
 
-		if(initialize_rxbuffer(sc->ctx,&sc->rxb)){
+		if(initialize_rxbuffer(ctx,&sc->rxb)){
 			goto err;
 		}
-		set_evsource_rx(sc->ctx->eventtables.fdarray,fd,rx);
-		set_evsource_tx(sc->ctx->eventtables.fdarray,fd,tx);
+		set_evsource_rx(ctx->eventtables.fdarray,fd,rx);
+		set_evsource_tx(ctx->eventtables.fdarray,fd,tx);
 	}else{
 		int err = SSL_get_error(sc->ssl,ret);
 
 		if(err == SSL_ERROR_WANT_READ){
-			set_evsource_rx(sc->ctx->eventtables.fdarray,fd,accept_contrxfxn);
-			set_evsource_tx(sc->ctx->eventtables.fdarray,fd,NULL);
+			set_evsource_rx(ctx->eventtables.fdarray,fd,accept_contrxfxn);
+			set_evsource_tx(ctx->eventtables.fdarray,fd,NULL);
 		}else if(err == SSL_ERROR_WANT_WRITE){
 			// just let it loop
 		}else{
@@ -396,10 +402,11 @@ err:
 
 static inline int
 ssl_accept_internal(int sd,const ssl_cbstate *sc){
+	libtorque_ctx *ctx = get_thread_ctx();
 	ssl_cbstate *csc;
 	int ret;
 
-	csc = create_ssl_cbstate(sc->ctx,sc->sslctx,sc->cbstate,sc->rxfxn,sc->txfxn);
+	csc = create_ssl_cbstate(ctx,sc->sslctx,sc->cbstate,sc->rxfxn,sc->txfxn);
 	if(csc == NULL){
 		return -1;
 	}
@@ -415,11 +422,11 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 		libtorquercb rx = sc->rxfxn ? ssl_rxfxn : NULL;
 		libtorquewcb tx = sc->txfxn ? ssl_txfxn : NULL;
 
-		if(initialize_rxbuffer(sc->ctx,&csc->rxb)){
+		if(initialize_rxbuffer(ctx,&csc->rxb)){
 			free_ssl_cbstate(csc);
 			return -1;
 		}
-		if(libtorque_addfd_unbuffered(sc->ctx,sd,rx,tx,csc)){
+		if(libtorque_addfd_unbuffered(ctx,sd,rx,tx,csc)){
 			free_ssl_cbstate(csc);
 			return -1;
 		}
@@ -428,12 +435,12 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 
 		err = SSL_get_error(csc->ssl,ret);
 		if(err == SSL_ERROR_WANT_WRITE){
-			if(libtorque_addfd_unbuffered(sc->ctx,sd,NULL,accept_conttxfxn,csc)){
+			if(libtorque_addfd_unbuffered(ctx,sd,NULL,accept_conttxfxn,csc)){
 				free_ssl_cbstate(csc);
 				return -1;
 			}
 		}else if(err == SSL_ERROR_WANT_READ){
-			if(libtorque_addfd_unbuffered(sc->ctx,sd,accept_contrxfxn,NULL,csc)){
+			if(libtorque_addfd_unbuffered(ctx,sd,accept_contrxfxn,NULL,csc)){
 				free_ssl_cbstate(csc);
 				return -1;
 			}
