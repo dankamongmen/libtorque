@@ -14,7 +14,7 @@
 #include <libtorque/libtorque.h>
 
 static int
-ssl_conn_handler(int fd __attribute__ ((unused)),struct libtorque_rxbuf *rxbuf,void *cbstate){
+ssl_conn_handler(int fd,struct libtorque_rxbuf *rxbuf,void *cbstate){
 	const char *buf;
 	size_t len;
 
@@ -23,7 +23,7 @@ ssl_conn_handler(int fd __attribute__ ((unused)),struct libtorque_rxbuf *rxbuf,v
 		// fprintf(stdout,"[%4d] closed\n",fd);
 		return -1;
 	}
-	if(ssl_tx(cbstate,buf,len) < (int)len){
+	if(ssl_tx(fd,cbstate,buf,len) < (int)len){
 		return -1;
 	}
 	// fprintf(stdout,"[%4d] %.*s\n",fd,(int)len,buf);

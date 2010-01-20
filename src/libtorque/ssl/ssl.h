@@ -43,7 +43,7 @@ void free_ssl_cbstate(struct ssl_cbstate *);
 
 void ssl_accept_rxfxn(int,void *) __attribute__ ((nonnull(2)));
 
-int ssl_tx(struct ssl_cbstate *,const void *,int)
+int ssl_tx(int,struct ssl_cbstate *,const void *,int)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(2)));

@@ -243,16 +243,39 @@ SSL *new_ssl_conn(SSL_CTX *ctx){
 	return SSL_new(ctx);
 }
 
-int ssl_tx(ssl_cbstate *ssl,const void *buf,int len){
-	int ret;
+static void ssl_rxfxn(int,void *);
 
-	if((ret = SSL_write(ssl->ssl,buf,len)) < len){
-		// FIXME set up
+int ssl_tx(int fd,ssl_cbstate *ssl,const void *buf,int len){
+	int ret = 0;
+
+	while(ret < len){
+		int r;
+
+		if((r = SSL_write(ssl->ssl,(const char *)buf + ret,len - ret)) >= 0){
+			ret += r;
+		}else{
+			int err = SSL_get_error(ssl->ssl,r);
+
+			if(err == SSL_ERROR_WANT_READ){
+				libtorque_ctx *ctx = get_thread_ctx();
+
+				set_evsource_rx(ctx->eventtables.fdarray,fd,ssl_rxfxn);
+				set_evsource_tx(ctx->eventtables.fdarray,fd,NULL);
+				if(restorefd(fd,EPOLLIN)){
+					return -1;
+				}
+			}else if(err == SSL_ERROR_WANT_WRITE){
+				if(restorefd(fd,EPOLLOUT|EPOLLIN)){ // just let it loop
+					return -1;
+				}
+			}else{
+				return -1;
+			}
+			break;
+		}
 	}
 	return ret;
 }
-
-static void ssl_rxfxn(int,void *);
 
 static void
 ssl_txrxfxn(int fd,void *cbs){
@@ -274,7 +297,7 @@ ssl_txrxfxn(int fd,void *cbs){
 			goto err;
 		}
 	}else if(err == SSL_ERROR_WANT_WRITE){
-		if(restorefd(fd,EPOLLOUT)){ // just let it loop
+		if(restorefd(fd,EPOLLOUT|EPOLLIN)){ // just let it loop
 			goto err;
 		}
 	}else{
@@ -304,7 +327,7 @@ ssl_rxfxn(int fd,void *cbstate){
 
 		set_evsource_rx(ctx->eventtables.fdarray,fd,NULL);
 		set_evsource_tx(ctx->eventtables.fdarray,fd,ssl_txrxfxn);
-		if(restorefd(fd,EPOLLOUT)){
+		if(restorefd(fd,EPOLLOUT|EPOLLIN)){
 			goto err;
 		}
 	}else if(err == SSL_ERROR_WANT_READ){
