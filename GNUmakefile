@@ -106,6 +106,7 @@ INSTALL:=install -v
 ARCHDETECT:=archdetect
 SSLSRV:=torquessl
 TORQUE:=torque
+TORQUEHOST:=torquehost
 
 # Avoid unnecessary uses of 'pwd'; absolute paths aren't as robust as relative
 # paths against overlong total path names.
@@ -115,8 +116,8 @@ TOOLDIR:=tools
 MANDIR:=doc/man
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
 ARCHDETECTDIRS:=$(SRCDIR)/$(ARCHDETECT)
-SSLSRVDIRS:=$(SRCDIR)/$(SSLSRV)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
+TORQUEHOSTDIRS:=$(SRCDIR)/$(TORQUEHOST)
 
 # Simple compositions from here on out
 LIBOUT:=$(OUT)/lib
@@ -134,16 +135,16 @@ CSRC:=$(shell find $(CSRCDIRS) -type f -name \*.c -print)
 CINC:=$(shell find $(CSRCDIRS) -type f -name \*.h -print)
 ARCHDETECTSRC:=$(foreach dir, $(ARCHDETECTDIRS), $(filter $(dir)/%, $(CSRC)))
 ARCHDETECTOBJ:=$(addprefix $(OUT)/,$(ARCHDETECTSRC:%.c=%.o))
-SSLSRVSRC:=$(foreach dir, $(SSLSRVDIRS), $(filter $(dir)/%, $(CSRC)))
-SSLSRVOBJ:=$(addprefix $(OUT)/,$(SSLSRVSRC:%.c=%.o))
 TORQUESRC:=$(foreach dir, $(TORQUEDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
+TORQUEHOSTSRC:=$(foreach dir, $(TORQUEHOSTDIRS), $(filter $(dir)/%, $(CSRC)))
+TORQUEHOSTOBJ:=$(addprefix $(OUT)/,$(TORQUEHOSTSRC:%.c=%.o))
 SRC:=$(CSRC)
 TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx signaltx torquessl) # FIXME autodiscover
 ifndef LIBTORQUE_WITHOUT_EV
 TESTBINS+=$(addprefix $(BINOUT)/libev-,signalrx)
 endif
-BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(TORQUEHOST))
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
@@ -223,6 +224,8 @@ ARCHDETECTCFLAGS:=$(CFLAGS)
 ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 TORQUECFLAGS:=$(MT_CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
+TORQUEHOSTCFLAGS:=$(CFLAGS)
+TORQUEHOSTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
 TESTBINCFLAGS:=$(MT_CFLAGS)
 TESTBINLFLAGS:=$(LFLAGS) -Wl,-R$(LIBOUT) -L$(LIBOUT) -ltorque
 EVTESTBINLFLAGS:=$(LFLAGS) -lev
@@ -277,6 +280,10 @@ $(LIBOUT)/$(TORQUESTAT): $(TORQUEOBJ)
 $(BINOUT)/$(ARCHDETECT): $(ARCHDETECTOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(ARCHDETECTCFLAGS) -o $@ $(ARCHDETECTOBJ) $(ARCHDETECTLFLAGS)
+
+$(BINOUT)/$(TORQUEHOST): $(TORQUEHOSTOBJ) $(LIBS)
+	@mkdir -p $(@D)
+	$(CC) $(TORQUEHOSTCFLAGS) -o $@ $(TORQUEHOSTOBJ) $(TORQUEHOSTLFLAGS)
 
 $(BINOUT)/$(SSLSRV): $(OUT)/tools/testing/$(SSLSRV).o $(LIBS)
 	@mkdir -p $(@D)
