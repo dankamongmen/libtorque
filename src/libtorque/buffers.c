@@ -75,11 +75,11 @@ void buffered_rxfxn(int fd,void *cbstate){
 		}else if(r == 0){
 			int cb;
 
-			// must close, *unless* TX indicated
+			// must close, *unless* TX indicated FIXME
 			if((cb = rxback(rxb,fd,cbstate)) <= 0){
 				break;
 			}
-			if(restorefd(fd,EPOLLIN|EPOLLOUT)){
+			if(restorefd(fd,EPOLLOUT)){
 				break;
 			}
 			return;
