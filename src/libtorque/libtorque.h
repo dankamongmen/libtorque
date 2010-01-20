@@ -88,10 +88,18 @@ libtorque_err libtorque_addfd(struct libtorque_ctx *,int,libtorquebrcb,
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
-// The same as libtorque_addfd_unbuffered, but manage buffering in the
-// application, calling back immediately on all events. This is (currently) the
-// preferred methodology for accept(2)ing sockets.
+// The same as libtorque_addfd, but manage buffering in the application,
+// calling back immediately on all events (but not in more than one thread).
 libtorque_err libtorque_addfd_unbuffered(struct libtorque_ctx *,int,
+				libtorquercb,libtorquewcb,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)));
+
+// The same as libtorque_addfd_unbuffered, but allow multiple threads to handle
+// event readiness notifications concurrently. This is (currently) the
+// preferred methodology for accept(2)ing sockets.
+libtorque_err libtorque_addfd_concurrent(struct libtorque_ctx *,int,
 				libtorquercb,libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))

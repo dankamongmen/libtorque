@@ -202,17 +202,6 @@ libtorque_err libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
 	return 0;
 }
 
-libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
-				libtorquewcb tx,void *state){
-	if(fd < 0){
-		return LIBTORQUE_ERR_INVAL;
-	}
-	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,0)){
-		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
-	}
-	return 0;
-}
-
 // We only currently provide one buffering scheme. When that changes, we still
 // won't want to expose anything more than necessary to applications...
 libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
@@ -228,6 +217,28 @@ libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
 	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
 					cbctx,EPOLLONESHOT)){
 		free_rxbuffercb(cbctx);
+		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
+	}
+	return 0;
+}
+
+libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
+				libtorquewcb tx,void *state){
+	if(fd < 0){
+		return LIBTORQUE_ERR_INVAL;
+	}
+	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,EPOLLONESHOT)){
+		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
+	}
+	return 0;
+}
+
+libtorque_err libtorque_addfd_concurrent(libtorque_ctx *ctx,int fd,
+				libtorquercb rx,libtorquewcb tx,void *state){
+	if(fd < 0){
+		return LIBTORQUE_ERR_INVAL;
+	}
+	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,0)){
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	return 0;
