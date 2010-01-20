@@ -347,14 +347,20 @@ accept_contrxfxn(int fd,void *cbstate){
 		}
 		set_evsource_rx(ctx->eventtables.fdarray,fd,rx);
 		set_evsource_tx(ctx->eventtables.fdarray,fd,tx);
+		// FIXME probably need restore...?
 	}else{
 		int err = SSL_get_error(sc->ssl,ret);
 
 		if(err == SSL_ERROR_WANT_WRITE){
 			set_evsource_rx(ctx->eventtables.fdarray,fd,NULL);
 			set_evsource_tx(ctx->eventtables.fdarray,fd,accept_conttxfxn);
+			if(restorefd(fd,EPOLLOUT)){
+				goto err;
+			}
 		}else if(err == SSL_ERROR_WANT_READ){
-			// just let it loop
+			if(restorefd(fd,EPOLLIN)){ // just let it loop
+				goto err;
+			}
 		}else{
 			goto err;
 		}
@@ -463,6 +469,9 @@ void ssl_accept_rxfxn(int fd,void *cbstate){
 		slen = sizeof(sina);
 		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) < 0){
 			if(errno != EINTR){ // loop on EINTR
+				if(restorefd(fd,EPOLLIN)){
+					// FIXME stat?;
+				}
 				return;
 			}
 		}
