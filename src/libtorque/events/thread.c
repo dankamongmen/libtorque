@@ -204,8 +204,8 @@ int initialize_common_sources(libtorque_ctx *ctx,struct evtables *evt,const sigs
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,ctx);
 	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal,NULL,ctx);
 #elif defined(LIBTORQUE_LINUX)
-	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal_handler,NULL,NULL);
-	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal_handler,NULL,NULL);
+	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal_handler,NULL,ctx);
+	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal_handler,NULL,ctx);
 	if(init_epoll_sigset(ss)){
 		return -1;
 	}
