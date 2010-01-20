@@ -263,7 +263,7 @@ ssl_txrxfxn(int fd,void *cbs){
 		goto err;
 	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) > 0){
-		if(sc->rxfxn(fd,&sc->rxb,sc->cbstate)){
+		if(sc->rxfxn(fd,&sc->rxb,sc)){
 			goto err;
 		}
 	}
@@ -295,7 +295,7 @@ ssl_rxfxn(int fd,void *cbstate){
 		goto err;
 	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) >= 0){
-		if(sc->rxfxn(fd,&sc->rxb,sc->cbstate)){
+		if(sc->rxfxn(fd,&sc->rxb,sc)){
 			goto err;
 		}
 	}
@@ -326,7 +326,7 @@ ssl_txfxn(int fd,void *cbs){
 		free_ssl_cbstate(sc);
 		close(fd);
 	}else{
-		sc->txfxn(fd,&sc->rxb,sc->cbstate);
+		sc->txfxn(fd,&sc->rxb,sc);
 	}
 }
 
