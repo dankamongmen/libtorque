@@ -21,24 +21,6 @@ txback(libtorque_rxbuf *rxb,int fd,void *cbstate){
 }
 
 static int
-restorefd(int fd,int eflags){
-	struct epoll_event ee;
-	evhandler *evh;
-
-	// eflags should only be 0 or EPOLLOUT
-	evh = get_thread_evh();
-	memset(&ee,0,sizeof(ee));
-	// EPOLLRDHUP isn't available prior to kernel 2.6.17 and GNU libc 2.6.
-	// We shouldn't need it, though.
-	ee.events = EPOLLIN | EPOLLET | EPOLLONESHOT | eflags;
-	ee.data.fd = fd;
-	if(epoll_ctl(evh->evq->efd,EPOLL_CTL_MOD,fd,&ee)){
-		return -1;
-	}
-	return 0;
-}
-
-static int
 growrxbuf(libtorque_rxbuf *rxb){
 	typeof(*rxb->buffer) *tmp;
 	size_t news;
@@ -61,7 +43,7 @@ void buffered_txfxn(int fd,void *cbstate){
 	if((cb = txback(rxb,fd,cbstate)) < 0){
 		goto err;
 	}
-	if(restorefd(fd,0)){
+	if(restorefd(fd,EPOLLIN)){
 		goto err;
 	}
 	return;
@@ -97,7 +79,7 @@ void buffered_rxfxn(int fd,void *cbstate){
 			if((cb = rxback(rxb,fd,cbstate)) <= 0){
 				break;
 			}
-			if(restorefd(fd,EPOLLOUT)){
+			if(restorefd(fd,EPOLLIN|EPOLLOUT)){
 				break;
 			}
 			return;
@@ -107,7 +89,7 @@ void buffered_rxfxn(int fd,void *cbstate){
 			if((cb = rxback(rxb,fd,cbstate)) < 0){
 				break;
 			}
-			if(restorefd(fd,cb ? EPOLLOUT : 0)){
+			if(restorefd(fd,EPOLLIN | (cb ? EPOLLOUT : 0))){
 				break;
 			}
 			return;
