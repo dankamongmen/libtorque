@@ -259,9 +259,6 @@ ssl_txrxfxn(int fd,void *cbs){
 	ssl_cbstate *sc = cbs;
 	int r,err;
 
-	if(sc->rxfxn == NULL){ // FIXME still necessary?
-		goto err;
-	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) > 0){
 		if(sc->rxfxn(fd,&sc->rxb,sc)){
 			goto err;
@@ -273,8 +270,13 @@ ssl_txrxfxn(int fd,void *cbs){
 
 		set_evsource_rx(ctx->eventtables.fdarray,fd,ssl_rxfxn);
 		set_evsource_tx(ctx->eventtables.fdarray,fd,NULL);
+		if(restorefd(fd,EPOLLIN)){
+			goto err;
+		}
 	}else if(err == SSL_ERROR_WANT_WRITE){
-		// just let it loop
+		if(restorefd(fd,EPOLLOUT)){ // just let it loop
+			goto err;
+		}
 	}else{
 		goto err;
 	}
@@ -291,9 +293,6 @@ ssl_rxfxn(int fd,void *cbstate){
 	ssl_cbstate *sc = cbstate;
 	int r,err;
 
-	if(sc->rxfxn == NULL){ // FIXME still necessary?
-		goto err;
-	}
 	while((r = rxbuffer_ssl(&sc->rxb,sc->ssl)) >= 0){
 		if(sc->rxfxn(fd,&sc->rxb,sc)){
 			goto err;
@@ -305,8 +304,13 @@ ssl_rxfxn(int fd,void *cbstate){
 
 		set_evsource_rx(ctx->eventtables.fdarray,fd,NULL);
 		set_evsource_tx(ctx->eventtables.fdarray,fd,ssl_txrxfxn);
+		if(restorefd(fd,EPOLLOUT)){
+			goto err;
+		}
 	}else if(err == SSL_ERROR_WANT_READ){
-		// just let it loop
+		if(restorefd(fd,EPOLLIN)){ // just let it loop
+			goto err;
+		}
 	}else{
 		goto err;
 	}
@@ -326,8 +330,16 @@ ssl_txfxn(int fd,void *cbs){
 		free_ssl_cbstate(sc);
 		close(fd);
 	}else{
-		sc->txfxn(fd,&sc->rxb,sc);
+		if(sc->txfxn(fd,&sc->rxb,sc)){
+			goto err;
+		}
 	}
+	return;
+
+err:
+	free_ssl_cbstate(sc);
+	close(fd);
+	return;
 }
 
 static void accept_conttxfxn(int,void *);
@@ -347,7 +359,9 @@ accept_contrxfxn(int fd,void *cbstate){
 		}
 		set_evsource_rx(ctx->eventtables.fdarray,fd,rx);
 		set_evsource_tx(ctx->eventtables.fdarray,fd,tx);
-		// FIXME probably need restore...?
+		if(restorefd(fd,(rx ? EPOLLIN : 0) | (tx ? EPOLLOUT : 0))){
+			goto err;
+		}
 	}else{
 		int err = SSL_get_error(sc->ssl,ret);
 
