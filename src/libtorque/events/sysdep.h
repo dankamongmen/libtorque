@@ -28,6 +28,7 @@ extern "C" {
 #endif
 #define EVWRITE EPOLLOUT
 #define EVONESHOT EPOLLONESHOT
+#define EVEDGET EPOLLET
 
 #define PTR_TO_EVENTV(ev) (&(ev)->eventv)
 typedef struct epoll_event kevententry;
@@ -136,6 +137,7 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 #define EVREAD EVFILT_READ
 #define EVWRITE EVFILT_WRITE
 #define EVONESHOT EV_ONESHOT
+#define EVEDGET EV_CLEAR
 
 #define PTR_TO_EVENTV(ev) ((ev)->eventv)
 typedef struct kevent kevententry;
