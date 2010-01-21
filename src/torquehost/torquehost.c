@@ -14,20 +14,28 @@ print_version(void){
 static void
 usage(const char *argv0){
 	fprintf(stderr,"usage: %s [ options ]\n",argv0);
+	fprintf(stderr,"\t-f, --pipe: queries on stdin instead of args\n");
 	fprintf(stderr,"\t-h, --help: print this message\n");
 	fprintf(stderr,"\t-v, --version: print version info\n");
 }
 
 static int
-parse_args(int argc,char **argv){
+parse_args(int argc,char **argv,FILE **fp){
+#define SET_ARG_ONCE(opt,arg,val) do{ if(!*(arg)){ *arg = val; }\
+	else{ fprintf(stderr,"Provided '%c' twice\n",(opt)); goto err; }} while(0)
 	int lflag;
 	const struct option opts[] = {
-		{	 .name = "help",
+		{	.name = "pipe",
+			.has_arg = 0,
+			.flag = &lflag,
+			.val = 'f',
+		},
+		{	.name = "help",
 			.has_arg = 0,
 			.flag = &lflag,
 			.val = 'h',
 		},
-		{	 .name = "version",
+		{	.name = "version",
 			.has_arg = 0,
 			.flag = &lflag,
 			.val = 'v',
@@ -37,12 +45,15 @@ parse_args(int argc,char **argv){
 	const char *argv0 = *argv;
 	int c;
 
-	while((c = getopt_long(argc,argv,"hv",opts,NULL)) >= 0){
+	while((c = getopt_long(argc,argv,"hvf",opts,NULL)) >= 0){
 		switch(c){
-		case 'h': case 'v':
+		case 'f': case 'h': case 'v':
 			lflag = c; // intentional fallthrough
 		case 0: // long option
 			switch(lflag){
+				case 'f':
+					SET_ARG_ONCE('f',fp,stdin);
+					break;
 				case 'v':
 					print_version();
 					exit(EXIT_SUCCESS);
@@ -52,9 +63,33 @@ parse_args(int argc,char **argv){
 				default:
 					return -1;
 			}
+			break;
 		default:
 			return -1;
 		}
+	}
+	return 0;
+#undef SET_ARG_ONCE
+
+err:
+	return -1;
+}
+
+static int
+spool_targets(FILE *fp,char **argv){
+	if(fp){
+		if(argv[optind] != NULL){
+			fprintf(stderr,"Query arguments provided with -f/--pipe\n");
+			return -1;
+		}
+		// FIXME
+	}else{
+		if(argv[optind] == NULL){
+			fprintf(stderr,"No query arguments provided, no -f/--pipe\n");
+			return -1;
+		}
+		argv += optind;
+		// FIXME
 	}
 	return 0;
 }
@@ -63,13 +98,18 @@ int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
 	const char *a0 = *argv;
 	libtorque_err err;
+	FILE *fp = NULL;
 
 	if(setlocale(LC_ALL,"") == NULL){
 		fprintf(stderr,"Couldn't set locale\n");
 		goto err;
 	}
-	if(parse_args(argc,argv)){
+	if(parse_args(argc,argv,&fp)){
 		fprintf(stderr,"Error parsing arguments\n");
+		usage(a0);
+		goto err;
+	}
+	if(spool_targets(fp,argv)){
 		usage(a0);
 		goto err;
 	}
