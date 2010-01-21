@@ -87,16 +87,14 @@ err:
 
 // Don't allow the resolution callback to terminate us before we've registered
 // all the queries we intend to run.
-static int res_returns = 1;
+static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void
 lookup_callback(const libtorque_dnsret *dnsret,void *state){
 	char ipbuf[INET_ADDRSTRLEN];
-	int returns;
+	int returns,*shared_returns;
 
-	printf("called back! %p %p type: %d status: %d (%s)\n",dnsret,state,
-			dnsret->type,dnsret->status,adns_strerror(dnsret->status)); // FIXME
 	if(dnsret->status){
 		fprintf(stderr,"resolution error %d (%s)\n",dnsret->status,
 					adns_strerror(dnsret->status));
@@ -107,7 +105,8 @@ lookup_callback(const libtorque_dnsret *dnsret,void *state){
 		printf("%s\n",ipbuf);
 	}
 	pthread_mutex_lock(&lock);
-	returns = --res_returns;
+	shared_returns = state;
+	returns = --*shared_returns;
 	pthread_mutex_unlock(&lock);
 	if(returns <= 0){
 		if(returns < 0){
@@ -117,16 +116,16 @@ lookup_callback(const libtorque_dnsret *dnsret,void *state){
 				printf("Got all returns\n");
 			}
 		}
-		pthread_kill(pthread_self(),SIGTERM); // FIXME need this in libtorque
+		pthread_cond_signal(&cond);
 	}
 }
 
 static int
-add_lookup(struct libtorque_ctx *ctx,const char *host){
+add_lookup(struct libtorque_ctx *ctx,const char *host,int *results){
 	pthread_mutex_lock(&lock);
-	++res_returns;
+	++*results;
 	pthread_mutex_unlock(&lock);
-	if(libtorque_addlookup_dns(ctx,host,lookup_callback,NULL)){
+	if(libtorque_addlookup_dns(ctx,host,lookup_callback,results)){
 		return -1;
 	}
 	return 0;
@@ -151,13 +150,14 @@ fpgetline(FILE *fp){
 }
 
 static int
-spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv){
+spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv,int *results){
+	*results = 1;
 	if(fp){
 		char *l;
 
 		errno = 0;
 		while( (l = fpgetline(fp)) ){
-			if(add_lookup(ctx,l)){
+			if(add_lookup(ctx,l,results)){
 				free(l);
 				return -1;
 			}
@@ -169,7 +169,7 @@ spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv){
 	}else{
 		argv += optind;
 		while(*argv){
-			if(add_lookup(ctx,*argv)){
+			if(add_lookup(ctx,*argv,results)){
 				return -1;
 			}
 			++argv;
@@ -183,6 +183,7 @@ int main(int argc,char **argv){
 	const char *a0 = *argv;
 	libtorque_err err;
 	FILE *fp = NULL;
+	int results;
 
 	if(setlocale(LC_ALL,"") == NULL){
 		fprintf(stderr,"Couldn't set locale\n");
@@ -207,7 +208,7 @@ int main(int argc,char **argv){
 				libtorque_errstr(err));
 		goto err;
 	}
-	if(spool_targets(ctx,fp,argv)){
+	if(spool_targets(ctx,fp,argv,&results)){
 		usage(a0);
 		goto err;
 	}
@@ -215,10 +216,13 @@ int main(int argc,char **argv){
 		printf("Waiting for resolutions, press Ctrl+c to interrupt...\n");
 	}
 	pthread_mutex_lock(&lock);
-	--res_returns;
+	--results;
+	while(results){
+		pthread_cond_wait(&cond,&lock);
+	}
 	pthread_mutex_unlock(&lock);
-	if( (err = libtorque_block(ctx)) ){
-		fprintf(stderr,"Couldn't block on libtorque (%s)\n",
+	if( (err = libtorque_stop(ctx)) ){
+		fprintf(stderr,"Couldn't stop libtorque (%s)\n",
 				libtorque_errstr(err));
 		return EXIT_FAILURE;
 	}
