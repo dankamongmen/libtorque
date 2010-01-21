@@ -26,8 +26,10 @@ Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
   4. libc/pthreads
   5. cpuset
   6. numa
-  7. doc
-  8. misc
+  7. ssl
+  8. dns
+  9. doc
+  A. misc
  III. Building libtorque
  IV. Design issues
   1. design docs
@@ -130,6 +132,19 @@ Version 2.0.3 has been tested. CONFIG_NUMA must be enabled in the kernel; if
 NUMA is properly supported, devices/system/node* directories will be
 present in mounted sysfs filesystems. FreeBSD does not, to my knowledge, expose
 NUMA details as of 7.2.
+
+--ssl requirements----------------------------------------------------------
+
+OpenSSL is supported. Version 0.9.8 has been tested.
+
+GnuTLS support is being considered.
+
+--dns requirements----------------------------------------------------------
+
+GNU adns is supported. Version 1.4 has been tested.
+
+C-ares support is being considered. We might roll our own, one designed for
+highly concurrent operation.
 
 --doc requirements----------------------------------------------------------
 
