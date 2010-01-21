@@ -5,13 +5,15 @@
 
 int libtorque_dns_init(dns_state *dctx){
 #ifndef LIBTORQUE_WITHOUT_ADNS
-	adns_initflags flags = adns_if_debug/* | adns_if_noautosys*/;
+	adns_initflags flags = adns_if_debug | adns_if_noautosys;
 
 	if(adns_init(dctx,flags,NULL)){
 		return -1;
 	}
 #else
-	memset(dctx,0,sizeof(*dctx));
+	if(!dctx){
+		return -1;
+	}
 #endif
 	return 0;
 }
@@ -29,6 +31,11 @@ adns_rx_callback(int fd,void *state){
 	if(gettimeofday(&now,NULL)){
 		// FIXME what?
 	}
+	if(adns_processany(state)){
+		printf("error (%s)\n",strerror(errno));
+		return;
+	}
+	printf("SUCCESS!\n");
 	adns_afterpoll(state,&pfd,1,&now); // FIXME add back?
 }
 
@@ -49,6 +56,7 @@ adns_tx_callback(int fd,void *state){
 }
 
 int load_dns_fds(libtorque_ctx *ctx,dns_state *dctx,const evqueue *evq){
+#ifndef LIBTORQUE_WITHOUT_ADNS
 	struct pollfd pfds[4];
 	int nfds,to = 0,r;
 
@@ -64,10 +72,15 @@ int load_dns_fds(libtorque_ctx *ctx,dns_state *dctx,const evqueue *evq){
 				pfds[nfds].events & (POLLIN | POLLPRI)
 					? adns_rx_callback : NULL,
 				pfds[nfds].events & POLLOUT
-					? adns_tx_callback : NULL,dctx,EPOLLONESHOT)){
+					? adns_tx_callback : NULL,*dctx,EPOLLONESHOT)){
 			// FIMXE return -1;
 		}
 	}
+#else
+	if(!ctx || !evq || !dctx){
+		return -1;
+	}
+#endif
 	return 0;
 }
 
