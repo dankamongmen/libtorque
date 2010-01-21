@@ -249,9 +249,13 @@ testarchdetect: $(BINOUT)/$(ARCHDETECT)
 	@echo -n "Testing $(<F): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $<
 
+ifndef LIBTORQUE_WITHOUT_ADNS
 testtorquehost: $(BINOUT)/$(TORQUEHOST)
 	@echo -n "Testing $(<F): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $< localhost
+else
+testtorquehost:
+endif
 
 SSLKEY:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).key
 SSLCERT:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).cert
