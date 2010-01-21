@@ -52,23 +52,25 @@ int restore_dns_fds(dns_state dctx __attribute__ ((unused)),const evhandler *evh
 #ifndef LIBTORQUE_WITHOUT_ADNS
 static void
 adns_rx_callback(int fd __attribute__ ((unused)),void *state){
-	void *context = NULL;
-	adns_query query = NULL;
-	adns_answer *answer = NULL;
-	libtorquednscb cb;
 	int r;
 
-	if(adns_processany(state)){
-		printf("error (%s)\n",strerror(errno));
-		return;
-	}
-	while((r = adns_check(state,&query,&answer,&context)) == 0){
-		cb = context;
-		cb(answer,NULL);
-		query = NULL;
-	}
-	if(r != EAGAIN){
-		// FIXME what?
+	if( (r = adns_processany(state)) ){
+		return; // FIXME stat? what else?
+	}else{
+		adns_query query = NULL;
+		adns_answer *answer;
+		void *context;
+
+		while((r = adns_check(state,&query,&answer,&context)) == 0){
+			libtorquednscb cb;
+
+			cb = context;
+			cb(answer,NULL);
+			query = NULL;
+		}
+		if(r != EAGAIN){
+			// FIXME what?
+		}
 	}
 	restore_dns_fds(state,get_thread_evh());
 }
