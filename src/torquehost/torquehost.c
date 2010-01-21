@@ -76,9 +76,16 @@ err:
 	return -1;
 }
 
+static void
+lookup_callback(const struct libtorque_dnsret *dnsret,void *state){
+	printf("%p %p\n",dnsret,state); // FIXME
+}
+
 static int
 add_lookup(struct libtorque_ctx *ctx,const char *host){
-	printf("%p %p\n",ctx,host); // FIXME
+	if(libtorque_addlookup_dns(ctx,host,lookup_callback,NULL)){
+		return -1;
+	}
 	return 0;
 }
 

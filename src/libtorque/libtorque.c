@@ -305,14 +305,14 @@ libtorque_err libtorque_addssl(libtorque_ctx *ctx __attribute__ ((unused)),
 
 #ifndef LIBTORQUE_WITHOUT_ADNS
 libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx,const char *owner,
-					libtorquercb rx,void *state){
+					libtorquednscb rx,void *state){
 	printf("%p %s %p %p\n",ctx,owner,rx,state); // FIXME
-	return LIBTORQUE_ERR_UNAVAIL;
+	return 0;
 }
 #else
 libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx __attribute__ ((unused)),
 				const char *owner __attribute__ ((unused)),
-				libtorquercb rx __attribute__ ((unused)),
+				libtorquednscb rx __attribute__ ((unused)),
 				void *state __attribute__ ((unused))){
 	return LIBTORQUE_ERR_UNAVAIL;
 }
