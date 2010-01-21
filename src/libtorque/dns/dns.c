@@ -19,7 +19,7 @@ int libtorque_dns_init(dns_state *dctx){
 	return 0;
 }
 
-int restore_dns_fds(dns_state dctx,const evhandler *evh){
+int restore_dns_fds(dns_state dctx __attribute__ ((unused)),const evhandler *evh){
 #ifndef LIBTORQUE_WITHOUT_ADNS
 	int nfds,to = 0,r,ret = 0;
 	struct pollfd pfds[4];
@@ -42,13 +42,14 @@ int restore_dns_fds(dns_state dctx,const evhandler *evh){
 	}
 	return ret;
 #else
-	if(!evh || !dctx){
+	if(!evh){
 		return -1;
 	}
 	return 0;
 #endif
 }
 
+#ifndef LIBTORQUE_WITHOUT_ADNS
 static void
 adns_rx_callback(int fd __attribute__ ((unused)),void *state){
 	struct timeval now;
@@ -87,6 +88,7 @@ adns_tx_callback(int fd,void *state){
 	}
 	adns_afterpoll(state,&pfd,1,&now); // FIXME add back?
 }
+#endif
 
 int load_dns_fds(libtorque_ctx *ctx,dns_state *dctx,const evqueue *evq){
 #ifndef LIBTORQUE_WITHOUT_ADNS

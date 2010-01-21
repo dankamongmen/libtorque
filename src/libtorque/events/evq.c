@@ -55,6 +55,8 @@ add_evqueue_baseevents(libtorque_ctx *ctx,evqueue *e){
 	return 0;
 #elif defined(LIBTORQUE_LINUX_SIGNALFD)
 	return add_commonfds_to_evhandler(ctx->eventtables.common_signalfd,e);
+#else
+	return 0;
 #endif
 }
 
