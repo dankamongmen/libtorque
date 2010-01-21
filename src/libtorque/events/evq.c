@@ -2,6 +2,7 @@
 #include <libtorque/dns/dns.h>
 #include <libtorque/events/evq.h>
 #include <libtorque/events/thread.h>
+#include <libtorque/events/signal.h>
 
 int destroy_evqueue(evqueue *evq){
 	int ret = 0;
@@ -49,8 +50,15 @@ add_evqueue_baseevents(libtorque_ctx *ctx,evqueue *e){
 		return -1;
 	}
 #ifdef LIBTORQUE_FREEBSD
-	if(add_signal_to_evhandler(ctx,e,&s,rxcommonsignal,NULL)){
-		return -1;
+	{
+		sigset_t s;
+
+		if(sigemptyset(&s) || sigaddset(&s,EVTHREAD_TERM) || sigaddset(&s,EVTHREAD_INT)){
+			return -1;
+		}
+		if(add_signal_to_evhandler(ctx,e,&s,rxcommonsignal,NULL)){
+			return -1;
+		}
 	}
 	return 0;
 #elif defined(LIBTORQUE_LINUX_SIGNALFD)
