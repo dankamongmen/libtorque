@@ -45,8 +45,7 @@ handle_event(libtorque_ctx *ctx,const kevententry *e){
 #endif
 }
 
-static void
-rxcommonsignal(int sig,void *cbstate){
+void rxcommonsignal(int sig,void *cbstate){
 	if(sig == EVTHREAD_TERM || sig == EVTHREAD_INT){
 		const libtorque_ctx *ctx = cbstate;
 		void *ret = PTHREAD_CANCELED;

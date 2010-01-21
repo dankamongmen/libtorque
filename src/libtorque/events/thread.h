@@ -46,6 +46,8 @@ evhandler *get_thread_evh(void)
 libtorque_ctx *get_thread_ctx(void)
 	__attribute__ ((warn_unused_result));
 
+void rxcommonsignal(int,void *);
+
 #ifdef __cplusplus
 }
 #endif
