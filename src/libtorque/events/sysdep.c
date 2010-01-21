@@ -5,16 +5,6 @@
 #include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
 
-// We do not enforce, but do expect and require:
-//  - EV_ADD/EPOLL_CTL_ADD or EPOLL_CTL_MOD to be used as the control operation
-//  - EPOLLET/EV_CLEAR to be used in the flags
-int add_evector_kevents(const evqueue *evq,struct kevent *k,int kcount){
-	if(kcount <= 0){
-		return -1;
-	}
-	return Kevent(evq->efd,k,kcount,NULL,0);
-}
-
 #ifdef LIBTORQUE_LINUX_SIGNALFD
 void signalfd_demultiplexer(int fd,void *cbstate){
 	const libtorque_ctx *ctx = cbstate;
@@ -108,13 +98,19 @@ int add_epoll_sigset(const sigset_t *s,unsigned maxsignal){
 #endif
 
 int restorefd(const struct evhandler *evh,int fd,int eflags){
-	struct epoll_event ee;
+	EVECTOR_AUTOS(1,ev);
 
-	// eflags should be union over *only* { 0, EPOLLIN, EPOLLOUT }
-	memset(&ee,0,sizeof(ee));
-	ee.events = EVEDGET | EVONESHOT | eflags;
-	ee.data.fd = fd;
-	if(epoll_ctl(evh->evq->efd,EPOLL_CTL_MOD,fd,&ee)){
+#ifdef LIBTORQUE_LINUX
+	memset(ev.evarr,0,sizeof(*ev.evarr));
+	ev.evarr[0].events = EVEDGET | EVONESHOT | eflags;
+	ev.evarr[0].data.fd = fd;
+	ev.ctlarr[0] = EPOLL_CTL_MOD;
+#elif defined(LIBTORQUE_FREEBSD)
+	ev.eventv[0].filter = eflags;
+	ev.eventv[0].flags = EVEDGET | EVONESHOT;
+	ev.eventv[0].ident = fd;
+#endif
+	if(Kevent(evh->evq->efd,PTR_TO_EVENTV(&ev),1,NULL,0)){
 		return -1;
 	}
 	return 0;

@@ -28,9 +28,7 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 	if(tfxn){
 		ee.events |= EPOLLOUT;
 	}
-	if(add_evector_kevents(evq,&k,1)){
-		return -1;
-	}
+	return Kevent(evq->efd,&k,1,NULL,0);
 #elif defined(LIBTORQUE_FREEBSD)
 	struct kevent k[2];
 
@@ -41,9 +39,7 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 	if(tfxn){
 		EV_SET(&k[1],fd,EVFILT_WRITE,EV_ADD | EV_CLEAR | eflags,0,0,NULL);
 	}
-	if(add_evector_kevents(evq,k,!!tfxn + !!rfxn)){
-		return -1;
-	}
+	return Kevent(evq->efd,k,!!tfxn + !!rfxn,NULL,0);
 #else
 #error "No fd event implementation on this OS"
 #endif

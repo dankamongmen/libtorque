@@ -131,7 +131,9 @@ makesigmask(sigset_t *s){
 		SIGSEGV,
 		SIGBUS,
 		SIGXCPU,
+#ifdef SIGSTKFLT
 		SIGSTKFLT,
+#endif
 	};
 	unsigned z;
 
@@ -231,7 +233,7 @@ libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
 		return LIBTORQUE_ERR_RESOURCE;
 	}
 	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
-					cbctx,EPOLLONESHOT)){
+					cbctx,EVONESHOT)){
 		free_rxbuffercb(cbctx);
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
@@ -243,7 +245,7 @@ libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb 
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,EPOLLONESHOT)){
+	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,EVONESHOT)){
 		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	return 0;

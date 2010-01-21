@@ -41,14 +41,12 @@ int add_timer_to_evhandler(struct libtorque_ctx *ctx,const struct evqueue *evq,
 		close(fd);
 		return -1;
 	}
-#elif defined(LIBTORQUE_LINUX)
+#elif defined(LIBTORQUE_LINUX) || defined(LIBTORQUE_FREEBSD)
 //#error "Need Linux 2.6.25 / GNU libc 2.8 for timerfd"
 	if(!ctx || !evq || !t || !rfxn || !cbstate){
 		return -1;
 	}
 	return -1; // FIXME working around compile
-#elif defined(LIBTORQUE_FREEBSD)
-#error "Need to implement FreeBSD timerfd"
 #else
 #error "No timer event implementation on this OS"
 #endif

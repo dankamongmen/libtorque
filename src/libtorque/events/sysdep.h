@@ -144,7 +144,7 @@ typedef struct kevent kevententry;
 #define KEVENTENTRY_FD(k) ((int)(k)->ident)
 #define KEVENTENTRY_SIG(k) ((int)(k)->ident) // Doesn't exist on Linux
 #define EVECTOR_AUTOS(count,name) struct kevent name##_base[count]; \
-	evectors name = { .eventv = name##_base, .vsize = (count), }
+	evectors name = { .eventv = name##_base, .vsizes = (count), }
 
 #include <pthread.h>
 
@@ -178,12 +178,7 @@ typedef struct evectors {
 	int vsizes;
 } evectors;
 
-struct evqueue;
 struct evhandler;
-
-int add_evector_kevents(const struct evqueue *,struct kevent *,int)
-	__attribute__ ((warn_unused_result))
-	__attribute__ ((nonnull(1,2)));
 
 int restorefd(const struct evhandler *,int fd,int eflags)
 	__attribute__ ((warn_unused_result))
