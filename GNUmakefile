@@ -144,7 +144,10 @@ TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx signaltx torquessl) # FIXME
 ifndef LIBTORQUE_WITHOUT_EV
 TESTBINS+=$(addprefix $(BINOUT)/libev-,signalrx)
 endif
-BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT) $(TORQUEHOST))
+BINS:=$(addprefix $(BINOUT)/,$(ARCHDETECT))
+ifndef LIBTORQUE_WITHOUT_ADNS
+BINS+=$(addprefix $(BINOUT)/,$(TORQUEHOST))
+endif
 LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
