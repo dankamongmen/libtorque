@@ -184,7 +184,7 @@ int main(int argc,char **argv){
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
-	if((ctx = libtorque_init(&err,NULL)) == NULL){
+	if((ctx = libtorque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
 				libtorque_errstr(err));
 		goto err;

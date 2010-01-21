@@ -158,14 +158,11 @@ libtorque_err libtorque_sigmask(sigset_t *olds){
 	return 0;
 }
 
-libtorque_ctx *libtorque_init(libtorque_err *e,sigset_t *olds){
+libtorque_ctx *libtorque_init(libtorque_err *e){
 	struct sigaction oldact;
 	libtorque_ctx *ret;
 	sigset_t old,add;
 
-	if(olds == NULL){
-		olds = &old;
-	}
 	*e = LIBTORQUE_ERR_NONE;
 	// If SIGPIPE isn't being handled or at least ignored, start ignoring
 	// it (don't blow away a preexisting handler, though).
@@ -180,21 +177,11 @@ libtorque_ctx *libtorque_init(libtorque_err *e,sigset_t *olds){
 			return NULL;
 		}
 	}
-	// Ensure that EVTHREAD_INT and EVTHREAD_TERM are both henceforth
-	// blocked in the calling thread. This isn't full assurance (other
-	// threads might have already been created with the signals unblocked),
-	// but it's better than nothing.
-	if(libtorque_sigmask(olds)){
-		*e = LIBTORQUE_ERR_ASSERT;
-		return NULL;
-	}
 	if(makesigmask(&add) || pthread_sigmask(SIG_BLOCK,&add,&old)){
 		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
 	}
 	ret = libtorque_init_sigmasked(e,&old);
-	// EVTHREAD_INT and _TERM were blocked before we got the old mask, so
-	// they'll remain blocked on exit.
 	if(pthread_sigmask(SIG_SETMASK,&old,NULL)){
 		libtorque_stop(ret);
 		*e = LIBTORQUE_ERR_ASSERT;

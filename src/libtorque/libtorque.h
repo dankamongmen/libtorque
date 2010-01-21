@@ -27,8 +27,8 @@ typedef enum {
 } libtorque_err;
 
 // Properly mask signals used internally by libtorque. This ought be called
-// prior to calling any libtorque functions, or creating any threads. If the
-// parameter is not NULL, the current signal mask will be stored there.
+// prior to creating any threads. If the parameter is not NULL, the current
+// signal mask will be stored there.
 libtorque_err libtorque_sigmask(sigset_t *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result));
@@ -55,14 +55,13 @@ libtorque_err libtorque_sigmask(sigset_t *)
 // cpusets are no problem, and usually desirable). Again, make sure you really
 // want to be using multiple instances.
 //
-// Upon successful return, EVTHREAD_TERM and EVTHREAD_INT will be blocked in
-// the calling thread, even if they weren't before. To be totally safe,
-// especially in programs with multiple threads outside of libtorque,
-// libtorque_sigmask() ought be called prior to launching *any* threads. If the
-// sigset_t parameter is not NULL, the old signal mask will be stored there.
-struct libtorque_ctx *libtorque_init(libtorque_err *,sigset_t *)
+// If libtorque_block() or libtorque_stop() are to be used, it is imperative
+// that all other threads have libtorque's internally-used signals masked. This
+// is best accomplished by calling libtorque_sigmask() early in the program.
+struct libtorque_ctx *libtorque_init(libtorque_err *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));
 
 // Multiple threads may add event sources to a libtorque instance concurrently,
