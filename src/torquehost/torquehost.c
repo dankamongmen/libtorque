@@ -16,10 +16,15 @@ print_version(FILE *fp){
 
 static void
 usage(const char *argv0){
-	fprintf(stderr,"usage: %s [ options ] -f | queries\n",argv0);
+	fprintf(stderr,"usage:\t%s [ global-opts ] [ query-opts ] query\n",argv0);
+	fprintf(stderr,"\t\t\t[ [ query-opts ] query ...]\n");
+	fprintf(stderr,"\t%s [ global-opts ] [ query-opts ] -f|--pipe\n",argv0);
+	fprintf(stderr,"\nglobal options:\n");
 	fprintf(stderr,"\t-f, --pipe: queries on stdin instead of args\n");
 	fprintf(stderr,"\t-h, --help: print this message\n");
 	fprintf(stderr,"\t-v, --version: print version info\n");
+	//fprintf(stderr,"\nper-query options:\n");
+	fprintf(stderr,"\n");
 	print_version(stderr);
 }
 
@@ -49,7 +54,7 @@ parse_args(int argc,char **argv,FILE **fp){
 	const char *argv0 = *argv;
 	int c;
 
-	while((c = getopt_long(argc,argv,"hvf",opts,NULL)) >= 0){
+	while((c = getopt_long(argc,argv,"fhv",opts,NULL)) >= 0){
 		switch(c){
 		case 'f': case 'h': case 'v':
 			lflag = c; // intentional fallthrough
@@ -58,11 +63,11 @@ parse_args(int argc,char **argv,FILE **fp){
 				case 'f':
 					SET_ARG_ONCE('f',fp,stdin);
 					break;
-				case 'v':
-					print_version(stdout);
-					exit(EXIT_SUCCESS);
 				case 'h':
 					usage(argv0);
+					exit(EXIT_SUCCESS);
+				case 'v':
+					print_version(stdout);
 					exit(EXIT_SUCCESS);
 				default:
 					return -1;
@@ -125,10 +130,6 @@ spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv){
 	if(fp){
 		char *l;
 
-		if(argv[optind] != NULL){
-			fprintf(stderr,"Query arguments provided with -f/--pipe\n");
-			return -1;
-		}
 		errno = 0;
 		while( (l = fpgetline(fp)) ){
 			if(add_lookup(ctx,l)){
@@ -141,10 +142,6 @@ spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv){
 			return -1;
 		}
 	}else{
-		if(argv[optind] == NULL){
-			fprintf(stderr,"No query arguments provided, no -f/--pipe\n");
-			return -1;
-		}
 		argv += optind;
 		while(*argv){
 			if(add_lookup(ctx,*argv)){
@@ -168,6 +165,15 @@ int main(int argc,char **argv){
 	}
 	if(parse_args(argc,argv,&fp)){
 		fprintf(stderr,"Error parsing arguments\n");
+		usage(a0);
+		goto err;
+	}
+	if(fp && argv[optind]){
+		fprintf(stderr,"Query arguments provided with -f/--pipe\n");
+		usage(a0);
+		goto err;
+	}else if(!fp && !argv[optind]){
+		fprintf(stderr,"No query arguments provided, no -f/--pipe\n");
 		usage(a0);
 		goto err;
 	}
