@@ -49,6 +49,21 @@ int restore_dns_fds(dns_state dctx __attribute__ ((unused)),const evhandler *evh
 #endif
 }
 
+typedef struct dnsmarshal {
+	libtorquednscb cb;
+	void *cbstate;
+} dnsmarshal;
+
+dnsmarshal *create_dnsmarshal(libtorquednscb cb,void *cbstate){
+	dnsmarshal *ret;
+
+	if( (ret = malloc(sizeof(*ret))) ){
+		ret->cb = cb;
+		ret->cbstate = cbstate;
+	}
+	return ret;
+}
+
 #ifndef LIBTORQUE_WITHOUT_ADNS
 static void
 adns_rx_callback(int fd __attribute__ ((unused)),void *state){
@@ -62,10 +77,9 @@ adns_rx_callback(int fd __attribute__ ((unused)),void *state){
 		void *context;
 
 		while((r = adns_check(state,&query,&answer,&context)) == 0){
-			libtorquednscb cb;
+			dnsmarshal *ds = context;
 
-			cb = context;
-			cb(answer,NULL);
+			ds->cb(answer,ds->cbstate);
 			query = NULL;
 		}
 		if(r != EAGAIN){

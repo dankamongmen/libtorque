@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <libtorque/buffers.h>
 #include <libtorque/ssl/ssl.h>
+#include <libtorque/dns/dns.h>
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/events/fd.h>
@@ -294,17 +295,21 @@ libtorque_err libtorque_addssl(libtorque_ctx *ctx __attribute__ ((unused)),
 #ifndef LIBTORQUE_WITHOUT_ADNS
 libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx,const char *owner,
 					libtorquednscb rx,void *state){
+	struct dnsmarshal *dm;
 	adns_query query;
 
-	if(state){ // FIXME how to encode this?
-		return -1;
+	if((dm = create_dnsmarshal(rx,state)) == NULL){
+		return LIBTORQUE_ERR_RESOURCE;
 	}
 	// FIXME need to lock adns struct...should be one per evqueue
 	// FIXME need allow other than A type!
-	if(adns_submit(ctx->evq.dnsctx,owner,adns_r_a,adns_qf_none,rx,&query)){
+	if(adns_submit(ctx->evq.dnsctx,owner,adns_r_a,adns_qf_none,dm,&query)){
+		free_dnsmarshal(dm);
 		return LIBTORQUE_ERR_INVAL; // FIXME break down error cases
 	}
 	if(load_dns_fds(ctx,&ctx->evq.dnsctx,&ctx->evq)){
+		adns_cancel(query);
+		free_dnsmarshal(dm);
 		return LIBTORQUE_ERR_ASSERT; // FIXME break down error cases
 	}
 	return 0;

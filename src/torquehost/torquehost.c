@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <getopt.h>
+#include <arpa/inet.h>
 #include <libtorque/libtorque.h>
 
 static void
@@ -79,10 +80,17 @@ err:
 
 static void
 lookup_callback(const libtorque_dnsret *dnsret,void *state){
+	char ipbuf[INET_ADDRSTRLEN];
+
 	printf("called back! %p %p type: %d status: %d (%s)\n",dnsret,state,
-			dnsret->type,dnsret->status,""/*adns_strerror(dnsret->status)*/); // FIXME
-	printf("%d %d %d %u\n",adns_s_nomemory,adns_s_unknownrrtype,adns_s_systemfail,dnsret->rrs.inaddr->s_addr);
-	raise(SIGTERM); // FIXME
+			dnsret->type,dnsret->status,adns_strerror(dnsret->status)); // FIXME
+	if(inet_ntop(AF_INET,&dnsret->rrs.inaddr->s_addr,ipbuf,sizeof(ipbuf)) == NULL){
+		fprintf(stderr,"inet_ntop(%ju) failed (%s)\n",
+			(uintmax_t)dnsret->rrs.inaddr->s_addr,strerror(errno));
+	}else{
+		printf("%s\n",ipbuf);
+	}
+	// FIXME
 }
 
 static int
