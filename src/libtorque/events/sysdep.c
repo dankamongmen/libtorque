@@ -107,12 +107,10 @@ int add_epoll_sigset(const sigset_t *s,unsigned maxsignal){
 }
 #endif
 
-int restorefd(int fd,int eflags){
+int restorefd(const struct evhandler *evh,int fd,int eflags){
 	struct epoll_event ee;
-	struct evhandler *evh;
 
 	// eflags should be union over *only* { 0, EPOLLIN, EPOLLOUT }
-	evh = get_thread_evh();
 	memset(&ee,0,sizeof(ee));
 	// EPOLLRDHUP isn't available prior to kernel 2.6.17 and GNU libc 2.6.
 	// We shouldn't need it, though.

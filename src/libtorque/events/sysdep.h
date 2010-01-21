@@ -165,13 +165,15 @@ typedef struct evectors {
 } evectors;
 
 struct evqueue;
+struct evhandler;
 
 int add_evector_kevents(const struct evqueue *,struct kevent *,int)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)));
 
-int restorefd(int fd,int eflags)
-	__attribute__ ((warn_unused_result));
+int restorefd(const struct evhandler *,int fd,int eflags)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1)));
 
 #ifdef __cplusplus
 }

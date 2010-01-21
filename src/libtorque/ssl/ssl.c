@@ -261,11 +261,11 @@ int ssl_tx(int fd,ssl_cbstate *ssl,const void *buf,int len){
 
 				set_evsource_rx(ctx->eventtables.fdarray,fd,ssl_rxfxn);
 				set_evsource_tx(ctx->eventtables.fdarray,fd,NULL);
-				if(restorefd(fd,EPOLLIN)){
+				if(restorefd(get_thread_evh(),fd,EPOLLIN)){
 					return -1;
 				}
 			}else if(err == SSL_ERROR_WANT_WRITE){
-				if(restorefd(fd,EPOLLOUT|EPOLLIN)){ // just let it loop
+				if(restorefd(get_thread_evh(),fd,EPOLLOUT|EPOLLIN)){ // just let it loop
 					return -1;
 				}
 			}else{
@@ -293,11 +293,11 @@ ssl_txrxfxn(int fd,void *cbs){
 
 		set_evsource_rx(ctx->eventtables.fdarray,fd,ssl_rxfxn);
 		set_evsource_tx(ctx->eventtables.fdarray,fd,NULL);
-		if(restorefd(fd,EPOLLIN)){
+		if(restorefd(get_thread_evh(),fd,EPOLLIN)){
 			goto err;
 		}
 	}else if(err == SSL_ERROR_WANT_WRITE){
-		if(restorefd(fd,EPOLLOUT|EPOLLIN)){ // just let it loop
+		if(restorefd(get_thread_evh(),fd,EPOLLOUT|EPOLLIN)){ // just let it loop
 			goto err;
 		}
 	}else{
@@ -327,11 +327,11 @@ ssl_rxfxn(int fd,void *cbstate){
 
 		set_evsource_rx(ctx->eventtables.fdarray,fd,NULL);
 		set_evsource_tx(ctx->eventtables.fdarray,fd,ssl_txrxfxn);
-		if(restorefd(fd,EPOLLOUT|EPOLLIN)){
+		if(restorefd(get_thread_evh(),fd,EPOLLOUT|EPOLLIN)){
 			goto err;
 		}
 	}else if(err == SSL_ERROR_WANT_READ){
-		if(restorefd(fd,EPOLLIN)){ // just let it loop
+		if(restorefd(get_thread_evh(),fd,EPOLLIN)){ // just let it loop
 			goto err;
 		}
 	}else{
@@ -370,6 +370,7 @@ static void accept_conttxfxn(int,void *);
 static void
 accept_contrxfxn(int fd,void *cbstate){
 	libtorque_ctx *ctx = get_thread_ctx();
+	evhandler *evh = get_thread_evh();
 	ssl_cbstate *sc = cbstate;
 	int ret;
 
@@ -382,7 +383,7 @@ accept_contrxfxn(int fd,void *cbstate){
 		}
 		set_evsource_rx(ctx->eventtables.fdarray,fd,rx);
 		set_evsource_tx(ctx->eventtables.fdarray,fd,tx);
-		if(restorefd(fd,(rx ? EPOLLIN : 0) | (tx ? EPOLLOUT : 0))){
+		if(restorefd(evh,fd,(rx ? EPOLLIN : 0) | (tx ? EPOLLOUT : 0))){
 			goto err;
 		}
 	}else{
@@ -391,11 +392,11 @@ accept_contrxfxn(int fd,void *cbstate){
 		if(err == SSL_ERROR_WANT_WRITE){
 			set_evsource_rx(ctx->eventtables.fdarray,fd,NULL);
 			set_evsource_tx(ctx->eventtables.fdarray,fd,accept_conttxfxn);
-			if(restorefd(fd,EPOLLOUT)){
+			if(restorefd(evh,fd,EPOLLOUT)){
 				goto err;
 			}
 		}else if(err == SSL_ERROR_WANT_READ){
-			if(restorefd(fd,EPOLLIN)){ // just let it loop
+			if(restorefd(evh,fd,EPOLLIN)){ // just let it loop
 				goto err;
 			}
 		}else{
@@ -506,7 +507,7 @@ void ssl_accept_rxfxn(int fd,void *cbstate){
 		slen = sizeof(sina);
 		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) < 0){
 			if(errno != EINTR){ // loop on EINTR
-				if(restorefd(fd,EPOLLIN)){
+				if(restorefd(get_thread_evh(),fd,EPOLLIN)){
 					// FIXME stat?;
 				}
 				return;

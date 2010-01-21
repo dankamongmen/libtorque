@@ -2,6 +2,7 @@
 #include <libtorque/dns/dns.h>
 #include <libtorque/internal.h>
 #include <libtorque/events/fd.h>
+#include <libtorque/events/thread.h>
 
 int libtorque_dns_init(dns_state *dctx){
 #ifndef LIBTORQUE_WITHOUT_ADNS
@@ -18,13 +19,38 @@ int libtorque_dns_init(dns_state *dctx){
 	return 0;
 }
 
+int restore_dns_fds(dns_state dctx,const evhandler *evh){
+#ifndef LIBTORQUE_WITHOUT_ADNS
+	int nfds,to = 0,r,ret = 0;
+	struct pollfd pfds[4];
+
+	// FIXME factor this out, share with load_dns_fds()
+	nfds = sizeof(pfds) / sizeof(*pfds);
+	if( (r = adns_beforepoll(dctx,pfds,&nfds,&to,NULL)) ){
+		if(r == ERANGE){
+			// FIXME go back with more space
+		}
+		return -1;
+	}
+	while(nfds--){
+		int flags = 0,fd;
+
+		fd = pfds[nfds].fd;
+		flags |= pfds[nfds].events & (POLLIN | POLLPRI) ? EPOLLIN | EPOLLPRI : 0;
+		flags |= pfds[nfds].events & POLLOUT ? EPOLLOUT : 0;
+		ret |= restorefd(evh,pfds[nfds].fd,flags);
+	}
+	return ret;
+#else
+	if(!evh || !dctx){
+		return -1;
+	}
+	return 0;
+#endif
+}
+
 static void
-adns_rx_callback(int fd,void *state){
-	struct pollfd pfd = {
-		.events = POLLIN|POLLPRI,
-		.revents = POLLIN, // FIXME what about POLLPRI (see adns.h)
-		.fd = fd,
-	};
+adns_rx_callback(int fd __attribute__ ((unused)),void *state){
 	struct timeval now;
 	void *context = NULL;
 	adns_query query = NULL;
@@ -38,14 +64,13 @@ adns_rx_callback(int fd,void *state){
 		printf("error (%s)\n",strerror(errno));
 		return;
 	}
-	adns_afterpoll(state,&pfd,1,&now); // FIXME add back?
 	if(adns_check(state,&query,&answer,&context)){
 		printf("error (%s)\n",strerror(errno));
 		return;
 	}
-	printf("done %p %p\n",answer,context);
 	cb = context;
 	cb(state,NULL);
+	restore_dns_fds(state,get_thread_evh());
 }
 
 static void
@@ -81,7 +106,7 @@ int load_dns_fds(libtorque_ctx *ctx,dns_state *dctx,const evqueue *evq){
 					? adns_rx_callback : NULL,
 				pfds[nfds].events & POLLOUT
 					? adns_tx_callback : NULL,*dctx,EPOLLONESHOT)){
-			// FIMXE return -1;
+			// FIXME return -1;
 		}
 	}
 #else

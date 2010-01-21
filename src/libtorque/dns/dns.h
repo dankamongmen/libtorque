@@ -15,6 +15,7 @@ typedef struct {
 #endif
 
 struct evqueue;
+struct evhandler;
 struct libtorque_ctx;
 
 int libtorque_dns_init(dns_state *)
@@ -24,6 +25,8 @@ int libtorque_dns_init(dns_state *)
 int load_dns_fds(struct libtorque_ctx *,dns_state *,const struct evqueue *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2,3)));
+
+int restore_dns_fds(dns_state,const struct evhandler *);
 
 void libtorque_dns_shutdown(dns_state *);
 
