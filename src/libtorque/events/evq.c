@@ -37,7 +37,7 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 	k.events = &ee;
 	k.ctldata = &ecd;
 	ecd.op = EPOLL_CTL_ADD;
-	if(add_evector_kevents(evq,&k,1)){
+	if(Kevent(evq->efd,&k,1,NULL,0)){
 		return -1;
 	}
 	return 0;

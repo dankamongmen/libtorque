@@ -101,10 +101,10 @@ int restorefd(const struct evhandler *evh,int fd,int eflags){
 	EVECTOR_AUTOS(1,ev);
 
 #ifdef LIBTORQUE_LINUX
-	memset(ev.evarr,0,sizeof(*ev.evarr));
-	ev.evarr[0].events = EVEDGET | EVONESHOT | eflags;
-	ev.evarr[0].data.fd = fd;
-	ev.ctlarr[0] = EPOLL_CTL_MOD;
+	memset(&ev.eventv.events[0],0,sizeof(ev.eventv.events[0]));
+	ev.eventv.events[0].events = EVEDGET | EVONESHOT | eflags;
+	ev.eventv.events[0].data.fd = fd;
+	ev.eventv.ctldata[0].op = EPOLL_CTL_MOD;
 #elif defined(LIBTORQUE_FREEBSD)
 	ev.eventv[0].filter = eflags;
 	ev.eventv[0].flags = EVEDGET | EVONESHOT;
