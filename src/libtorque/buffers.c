@@ -43,7 +43,7 @@ void buffered_txfxn(int fd,void *cbstate){
 	if((cb = txback(rxb,fd,cbstate)) < 0){
 		goto err;
 	}
-	if(restorefd(get_thread_evh(),fd,EPOLLIN)){
+	if(restorefd(get_thread_evh(),fd,EVREAD)){
 		goto err;
 	}
 	return;
@@ -79,7 +79,7 @@ void buffered_rxfxn(int fd,void *cbstate){
 			if((cb = rxback(rxb,fd,cbstate)) <= 0){
 				break;
 			}
-			if(restorefd(get_thread_evh(),fd,EPOLLOUT)){
+			if(restorefd(get_thread_evh(),fd,EVWRITE)){
 				break;
 			}
 			return;
@@ -89,7 +89,7 @@ void buffered_rxfxn(int fd,void *cbstate){
 			if((cb = rxback(rxb,fd,cbstate)) < 0){
 				break;
 			}
-			if(restorefd(get_thread_evh(),fd,EPOLLIN | (cb ? EPOLLOUT : 0))){
+			if(restorefd(get_thread_evh(),fd,EVREAD | (cb ? EVWRITE : 0))){
 				break;
 			}
 			return;

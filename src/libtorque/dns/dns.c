@@ -36,8 +36,8 @@ int restore_dns_fds(dns_state dctx __attribute__ ((unused)),const evhandler *evh
 		int flags = 0,fd;
 
 		fd = pfds[nfds].fd;
-		flags |= pfds[nfds].events & (POLLIN | POLLPRI) ? EPOLLIN | EPOLLPRI : 0;
-		flags |= pfds[nfds].events & POLLOUT ? EPOLLOUT : 0;
+		flags |= pfds[nfds].events & (POLLIN | POLLPRI) ? EVREAD : 0;
+		flags |= pfds[nfds].events & POLLOUT ? EVWRITE : 0;
 		ret |= restorefd(evh,pfds[nfds].fd,flags);
 	}
 	return ret;
@@ -123,7 +123,8 @@ int load_dns_fds(libtorque_ctx *ctx,dns_state *dctx,const evqueue *evq){
 				pfds[nfds].events & (POLLIN | POLLPRI)
 					? adns_rx_callback : NULL,
 				pfds[nfds].events & POLLOUT
-					? adns_tx_callback : NULL,*dctx,EPOLLONESHOT)){
+					? adns_tx_callback : NULL,*dctx,
+					EVONESHOT)){
 			// FIXME return -1;
 		}
 	}
