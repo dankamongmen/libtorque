@@ -97,6 +97,7 @@ DFLAGS+=-DLIBTORQUE_FREEBSD
 MT_DFLAGS:=-D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 MANBIN:=makewhatis
 LDCONFIG:=ldconfig -m
+LFLAGS+=-L/usr/local/lib
 endif
 endif
 
