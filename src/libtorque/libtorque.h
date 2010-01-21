@@ -139,6 +139,13 @@ libtorque_err libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));
 
+// FIXME probably ought take adns_rrtype and adns_queryflags as well...
+libtorque_err libtorque_addlookup_dns(struct libtorque_ctx *,const char *,
+						libtorquercb,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1,2,3)));
+
 // Performs a thread-local lookup of the current ctx. This must not be cached
 // beyond the lifetime of the callback instance!
 struct libtorque_ctx *libtorque_getcurctx(void)

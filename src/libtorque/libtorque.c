@@ -303,6 +303,21 @@ libtorque_err libtorque_addssl(libtorque_ctx *ctx __attribute__ ((unused)),
 }
 #endif
 
+#ifndef LIBTORQUE_WITHOUT_ADNS
+libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx,const char *owner,
+					libtorquercb rx,void *state){
+	printf("%p %s %p %p\n",ctx,owner,rx,state); // FIXME
+	return LIBTORQUE_ERR_UNAVAIL;
+}
+#else
+libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx __attribute__ ((unused)),
+				const char *owner __attribute__ ((unused)),
+				libtorquercb rx __attribute__ ((unused)),
+				void *state __attribute__ ((unused))){
+	return LIBTORQUE_ERR_UNAVAIL;
+}
+#endif
+
 // Performs a thread-local lookup of the current ctx. This must not be cached
 // beyond the lifetime of the callback instance!
 struct libtorque_ctx *libtorque_getcurctx(void){
