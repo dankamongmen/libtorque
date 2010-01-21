@@ -103,7 +103,7 @@ int main(int argc,char **argv){
 	if(parse_args(argc,argv)){
 		return EXIT_FAILURE;
 	}
-	if((ctx = libtorque_init(&err)) == NULL){
+	if((ctx = libtorque_init(&err,NULL)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
 				libtorque_errstr(err));
 		goto err;

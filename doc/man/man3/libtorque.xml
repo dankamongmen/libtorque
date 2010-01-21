@@ -68,6 +68,7 @@
 			<funcprototype>
 			<funcdef>struct libtorque_ctx *<function>libtorque_init</function></funcdef>
 			<paramdef>libtorque_err *<parameter>e</parameter></paramdef>
+			<paramdef>sigset_t *<parameter>olds</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>
 		<funcsynopsis>

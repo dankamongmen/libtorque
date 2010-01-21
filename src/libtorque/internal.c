@@ -9,6 +9,7 @@ static const char * const errstrs[LIBTORQUE_ERR_MAX + 1] = {
 	"Affinity subsystem failure",		// LIBTORQUE_ERR_AFFINITY
 	"Insufficient system resources",	// LIBTORQUE_ERR_RESOURCE
 	"Invalid parameter",			// LIBTORQUE_ERR_INVAL
+	"Invalid sigmask on libtorque entry",	// LIBTORQUE_ERR_SIGMASK
 	"Functionality unavailable on platform",// LIBTORQUE_ERR_UNAVAIL
 
 	"Invalid error identifier"		// LIBTORQUE_ERR_MAX

@@ -61,31 +61,34 @@ parse_args(int argc,char **argv){
 
 int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
-	int ret = EXIT_FAILURE;
 	const char *a0 = *argv;
 	libtorque_err err;
 
 	if(setlocale(LC_ALL,"") == NULL){
 		fprintf(stderr,"Couldn't set locale\n");
-		goto done;
+		goto err;
 	}
 	if(parse_args(argc,argv)){
 		fprintf(stderr,"Error parsing arguments\n");
 		usage(a0);
-		goto done;
+		goto err;
 	}
-	if((ctx = libtorque_init(&err)) == NULL){
+	if((ctx = libtorque_init(&err,NULL)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
 				libtorque_errstr(err));
-		goto done;
+		goto err;
 	}
-	ret = EXIT_SUCCESS;
+	if( (err = libtorque_block(ctx)) ){
+		fprintf(stderr,"Couldn't block on libtorque (%s)\n",
+				libtorque_errstr(err));
+		return EXIT_FAILURE;
+	}
+	return EXIT_SUCCESS;
 
-done:
+err:
 	if( (err = libtorque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't destroy libtorque (%s)\n",
 				libtorque_errstr(err));
-		ret = EXIT_FAILURE;
 	}
-	return ret;
+	return EXIT_FAILURE;
 }

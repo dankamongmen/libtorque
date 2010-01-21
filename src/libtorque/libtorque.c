@@ -144,11 +144,28 @@ makesigmask(sigset_t *s){
 	return 0;
 }
 
-libtorque_ctx *libtorque_init(libtorque_err *e){
+// Ought be called by the client application prior to launching any threads.
+libtorque_err libtorque_sigmask(sigset_t *olds){
+	sigset_t ss;
+
+	if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM) ||
+			sigaddset(&ss,EVTHREAD_INT)){
+		return LIBTORQUE_ERR_ASSERT;
+	}
+	if(pthread_sigmask(SIG_BLOCK,&ss,olds)){
+		return LIBTORQUE_ERR_ASSERT;
+	}
+	return 0;
+}
+
+libtorque_ctx *libtorque_init(libtorque_err *e,sigset_t *olds){
 	struct sigaction oldact;
 	libtorque_ctx *ret;
 	sigset_t old,add;
 
+	if(olds == NULL){
+		olds = &old;
+	}
 	*e = LIBTORQUE_ERR_NONE;
 	// If SIGPIPE isn't being handled or at least ignored, start ignoring
 	// it (don't blow away a preexisting handler, though).
@@ -163,11 +180,21 @@ libtorque_ctx *libtorque_init(libtorque_err *e){
 			return NULL;
 		}
 	}
+	// Ensure that EVTHREAD_INT and EVTHREAD_TERM are both henceforth
+	// blocked in the calling thread. This isn't full assurance (other
+	// threads might have already been created with the signals unblocked),
+	// but it's better than nothing.
+	if(libtorque_sigmask(olds)){
+		*e = LIBTORQUE_ERR_ASSERT;
+		return NULL;
+	}
 	if(makesigmask(&add) || pthread_sigmask(SIG_BLOCK,&add,&old)){
 		*e = LIBTORQUE_ERR_ASSERT;
 		return NULL;
 	}
 	ret = libtorque_init_sigmasked(e,&old);
+	// EVTHREAD_INT and _TERM were blocked before we got the old mask, so
+	// they'll remain blocked on exit.
 	if(pthread_sigmask(SIG_SETMASK,&old,NULL)){
 		libtorque_stop(ret);
 		*e = LIBTORQUE_ERR_ASSERT;
@@ -283,16 +310,16 @@ struct libtorque_ctx *libtorque_getcurctx(void){
 }
 
 libtorque_err libtorque_block(libtorque_ctx *ctx){
-	sigset_t ss,os;
 	int ret = 0;
 
 	if(ctx){
-		if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM) ||
-				sigaddset(&ss,EVTHREAD_INT)){
-			return LIBTORQUE_ERR_ASSERT;
-		}
-		if(pthread_sigmask(SIG_BLOCK,&ss,&os)){
-			return LIBTORQUE_ERR_ASSERT;
+		libtorque_err r;
+		sigset_t os;
+
+		// We ought have already have them blocked on entry, but...this
+		// doesn't help if other threads are unblocked, though.
+		if( (r = libtorque_sigmask(&os)) ){
+			return r;
 		}
 		ret |= block_threads(ctx);
 		ret |= free_libtorque_ctx(ctx);

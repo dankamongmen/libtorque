@@ -20,10 +20,18 @@ typedef enum {
 	LIBTORQUE_ERR_AFFINITY, // error in the affinity subsystem
 	LIBTORQUE_ERR_RESOURCE,	// insufficient memory or descriptors
 	LIBTORQUE_ERR_INVAL,	// an invalid parameter was passed
+	LIBTORQUE_ERR_SIGMASK,	// invalid signal mask upon entry to libtorque
 	LIBTORQUE_ERR_UNAVAIL,	// functionality unavailable on this platform
 
 	LIBTORQUE_ERR_MAX	// sentinel value, should never be seen
 } libtorque_err;
+
+// Properly mask signals used internally by libtorque. This ought be called
+// prior to calling any libtorque functions, or creating any threads. If the
+// parameter is not NULL, the current signal mask will be stored there.
+libtorque_err libtorque_sigmask(sigset_t *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result));
 
 // Create a new libtorque context on the current cpuset. The best performance
 // on the widest set of loads and requirements is achieved by using one
@@ -46,7 +54,13 @@ typedef enum {
 // had running them all with as large a cpuset as possible (ie, overlapping
 // cpusets are no problem, and usually desirable). Again, make sure you really
 // want to be using multiple instances.
-struct libtorque_ctx *libtorque_init(libtorque_err *)
+//
+// Upon successful return, EVTHREAD_TERM and EVTHREAD_INT will be blocked in
+// the calling thread, even if they weren't before. To be totally safe,
+// especially in programs with multiple threads outside of libtorque,
+// libtorque_sigmask() ought be called prior to launching *any* threads. If the
+// sigset_t parameter is not NULL, the old signal mask will be stored there.
+struct libtorque_ctx *libtorque_init(libtorque_err *,sigset_t *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
