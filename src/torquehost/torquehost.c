@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
 #include <locale.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -161,8 +162,9 @@ int main(int argc,char **argv){
 		usage(a0);
 		goto err;
 	}
-	// FIXME only print this if we're interactive
-	printf("Waiting for resolutions, press Ctrl+c to interrupt...\n");
+	if(isatty(fileno(stdout))){
+		printf("Waiting for resolutions, press Ctrl+c to interrupt...\n");
+	}
 	if( (err = libtorque_block(ctx)) ){
 		fprintf(stderr,"Couldn't block on libtorque (%s)\n",
 				libtorque_errstr(err));

@@ -82,13 +82,6 @@ create_libtorque_ctx(libtorque_err *e,const sigset_t *ss){
 			*e = LIBTORQUE_ERR_RESOURCE;
 			return NULL;
 		}
-		if(libtorque_dns_init(&ret->dnsctx)){
-			destroy_evqueue(&ret->evq);
-			free_etables(&ret->eventtables);
-			free(ret);
-			*e = LIBTORQUE_ERR_RESOURCE;
-			return NULL;
-		}
 		ret->sched_zone = NULL;
 		ret->cpudescs = NULL;
 		ret->manodes = NULL;
@@ -106,7 +99,6 @@ free_libtorque_ctx(libtorque_ctx *ctx){
 	ret |= free_etables(&ctx->eventtables);
 	free_architecture(ctx);
 	ret |= destroy_evqueue(&ctx->evq);
-	libtorque_dns_shutdown(&ctx->dnsctx);
 	free(ctx);
 	return ret;
 }
@@ -301,7 +293,15 @@ libtorque_err libtorque_addssl(libtorque_ctx *ctx __attribute__ ((unused)),
 #ifndef LIBTORQUE_WITHOUT_ADNS
 libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx,const char *owner,
 					libtorquednscb rx,void *state){
-	printf("%p %s %p %p\n",ctx,owner,rx,state); // FIXME
+	adns_query query;
+
+	// FIXME need to lock adns struct...should be one per evqueue
+	// FIXME need allow other than A type!
+	if(adns_submit(ctx->evq.dnsctx,owner,adns_r_a,adns_qf_none,state,&query)){
+		// FIXME break down _submit error cases
+		return LIBTORQUE_ERR_INVAL;
+	}
+	printf("%p\n",rx); // FIXME
 	return 0;
 }
 #else

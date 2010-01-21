@@ -7,6 +7,7 @@ int destroy_evqueue(evqueue *evq){
 
 	ret |= close(evq->efd);
 	evq->efd = -1;
+	libtorque_dns_shutdown(&evq->dnsctx);
 	return ret;
 }
 
@@ -59,11 +60,16 @@ add_evqueue_baseevents(const libtorque_ctx *ctx,evqueue *e){
 }
 
 int init_evqueue(libtorque_ctx *ctx,evqueue *e){
+	if(libtorque_dns_init(&e->dnsctx)){
+		return -1;
+	}
 	if((e->efd = create_efd()) < 0){
+		libtorque_dns_shutdown(&e->dnsctx);
 		return -1;
 	}
 	if(add_evqueue_baseevents(ctx,e)){
 		close(e->efd);
+		libtorque_dns_shutdown(&e->dnsctx);
 		return -1;
 	}
 	return 0;

@@ -92,10 +92,11 @@ typedef struct evtables {
 #endif
 } evtables;
 
+// evqueues are shared among some number (possibly 1) of threads. currently,
+// all threads share a single evqueue, but this will almost certainly change..
 typedef struct evqueue {
-	int efd;
-	/*unsigned refcount;		// refcount and lock are only touched
-	pthread_mutex_t lock;		// at initialization / shutdown*/
+	int efd;			// epoll() or kqueue() file descriptor
+	dns_state dnsctx;		// DNS resolution state
 } evqueue;
 
 // Whenever a field is added to this structure, make sure it's
@@ -112,7 +113,6 @@ typedef struct libtorque_ctx {
 	libtorque_nodet *manodes;	// dynarray of NUMA node descriptors
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
 	evtables eventtables;		// callback state tables
-	dns_state dnsctx;		// DNS resolution state
 	struct evhandler *ev;		// evhandler of list leader FIXME purge
 } libtorque_ctx;
 
