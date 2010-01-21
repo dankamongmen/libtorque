@@ -82,6 +82,13 @@ create_libtorque_ctx(libtorque_err *e,const sigset_t *ss){
 			*e = LIBTORQUE_ERR_RESOURCE;
 			return NULL;
 		}
+		if(libtorque_dns_init(&ret->dnsctx)){
+			destroy_evqueue(&ret->evq);
+			free_etables(&ret->eventtables);
+			free(ret);
+			*e = LIBTORQUE_ERR_RESOURCE;
+			return NULL;
+		}
 		ret->sched_zone = NULL;
 		ret->cpudescs = NULL;
 		ret->manodes = NULL;
@@ -99,6 +106,7 @@ free_libtorque_ctx(libtorque_ctx *ctx){
 	ret |= free_etables(&ctx->eventtables);
 	free_architecture(ctx);
 	ret |= destroy_evqueue(&ctx->evq);
+	libtorque_dns_shutdown(&ctx->dnsctx);
 	free(ctx);
 	return ret;
 }

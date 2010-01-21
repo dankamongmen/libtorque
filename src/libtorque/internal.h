@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <libtorque/dns/dns.h>
 #include <libtorque/schedule.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/events/sysdep.h>
@@ -111,6 +112,7 @@ typedef struct libtorque_ctx {
 	libtorque_nodet *manodes;	// dynarray of NUMA node descriptors
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
 	evtables eventtables;		// callback state tables
+	dns_state dnsctx;		// DNS resolution state
 	struct evhandler *ev;		// evhandler of list leader FIXME purge
 } libtorque_ctx;
 
