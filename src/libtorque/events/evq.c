@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <libtorque/dns/dns.h>
 #include <libtorque/events/evq.h>
 #include <libtorque/events/thread.h>
 
@@ -43,7 +44,10 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 #endif
 
 static inline int
-add_evqueue_baseevents(const libtorque_ctx *ctx,evqueue *e){
+add_evqueue_baseevents(libtorque_ctx *ctx,evqueue *e){
+	if(load_dns_fds(ctx,&e->dnsctx,e)){
+		return -1;
+	}
 #ifdef LIBTORQUE_FREEBSD
 	if(add_signal_to_evhandler(ctx,e,&s,rxcommonsignal,NULL)){
 		return -1;
@@ -51,11 +55,6 @@ add_evqueue_baseevents(const libtorque_ctx *ctx,evqueue *e){
 	return 0;
 #elif defined(LIBTORQUE_LINUX_SIGNALFD)
 	return add_commonfds_to_evhandler(ctx->eventtables.common_signalfd,e);
-#elif defined(LIBTORQUE_LINUX)
-	if(!ctx || !e){ // FIXME just to silence -Wunused warnings, blargh
-		return -1;
-	}
-	return 0;
 #endif
 }
 

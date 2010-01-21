@@ -94,8 +94,14 @@ static char *
 fpgetline(FILE *fp){
 	char line[80],*ret;
 
-	// FIXME
+	// FIXME all broken
 	while(fgets(line,sizeof(line),fp)){
+		char *nl;
+
+		if((nl = strchr(line,'\n')) == NULL){
+			return NULL;
+		}
+		*nl = '\0';
 		ret = strdup(line);
 		return ret;
 	}
