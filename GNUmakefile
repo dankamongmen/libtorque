@@ -1,6 +1,6 @@
 .DELETE_ON_ERROR:
-.PHONY: all test testarchdetect hardtest testssl docs clean mrproper flow \
-	install unsafe-install deinstall
+.PHONY: all test testarchdetect testtorquehost hardtest testssl docs clean \
+	mrproper flow install unsafe-install deinstall
 .DEFAULT_GOAL:=test
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
@@ -242,11 +242,15 @@ all: test docs
 
 docs: $(TAGS) $(DOCS)
 
-test: $(TAGS) $(BINS) $(LIBS) $(TESTBINS) testarchdetect
+test: $(TAGS) $(BINS) $(LIBS) $(TESTBINS) testarchdetect testtorquehost
 
 testarchdetect: $(BINOUT)/$(ARCHDETECT)
 	@echo -n "Testing $(<F): "
 	env LD_LIBRARY_PATH=$(LIBOUT) $<
+
+testtorquehost: $(BINOUT)/$(TORQUEHOST)
+	@echo -n "Testing $(<F): "
+	env LD_LIBRARY_PATH=$(LIBOUT) $< localhost
 
 SSLKEY:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).key
 SSLCERT:=$(TESTOUT)/$(SSLSRV)/$(SSLSRV).cert
@@ -263,6 +267,9 @@ VALGRIND:=valgrind
 VALGRINDOPTS:=--tool=memcheck --leak-check=full --trace-children=yes --show-reachable=yes --error-exitcode=1 -v --track-fds=yes
 hardtest: $(TAGS) $(BINS) $(LIBS) $(TESTBINS)
 	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(ARCHDETECT)
+ifndef LIBTORQUE_WITHOUT_ADNS
+	env LD_LIBRARY_PATH=.out/lib $(VALGRIND) $(VALGRINDOPTS) $(BINOUT)/$(TORQUEHOST) localhost
+endif
 
 $(LIBOUT)/$(TORQUESOL): $(LIBOUT)/$(TORQUEREAL)
 	@mkdir -p $(@D)
