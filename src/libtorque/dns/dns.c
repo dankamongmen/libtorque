@@ -80,6 +80,7 @@ adns_rx_callback(int fd __attribute__ ((unused)),void *state){
 			dnsmarshal *ds = context;
 
 			ds->cb(answer,ds->cbstate);
+			free_dnsmarshal(ds);
 			query = NULL;
 		}
 		if(r != EAGAIN){
