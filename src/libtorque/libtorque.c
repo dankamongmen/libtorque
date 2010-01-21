@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
+#include <sys/poll.h>
 #include <libtorque/buffers.h>
 #include <libtorque/ssl/ssl.h>
 #include <libtorque/internal.h>
@@ -293,8 +295,18 @@ libtorque_err libtorque_addssl(libtorque_ctx *ctx __attribute__ ((unused)),
 #ifndef LIBTORQUE_WITHOUT_ADNS
 libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx,const char *owner,
 					libtorquednscb rx,void *state){
+	struct pollfd pfds[4];
+	int nfds,to = 0,r;
 	adns_query query;
 
+	nfds = sizeof(pfds) / sizeof(*pfds);
+	if( (r = adns_beforepoll(ctx->evq.dnsctx,pfds,&nfds,&to,NULL)) ){
+		if(r == ERANGE){
+			// FIXME go back with more space
+		}
+		return LIBTORQUE_ERR_INVAL;
+	}
+	printf("pfd: %d\n",pfds[0].fd);
 	// FIXME need to lock adns struct...should be one per evqueue
 	// FIXME need allow other than A type!
 	if(adns_submit(ctx->evq.dnsctx,owner,adns_r_a,adns_qf_none,state,&query)){
