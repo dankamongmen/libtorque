@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <getopt.h>
+#include <pthread.h>
 #include <arpa/inet.h>
 #include <libtorque/libtorque.h>
 
@@ -84,23 +85,47 @@ err:
 	return -1;
 }
 
+// Don't allow the resolution callback to terminate us before we've registered
+// all the queries we intend to run.
+static int res_returns = 1;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
 static void
 lookup_callback(const libtorque_dnsret *dnsret,void *state){
 	char ipbuf[INET_ADDRSTRLEN];
+	int returns;
 
 	printf("called back! %p %p type: %d status: %d (%s)\n",dnsret,state,
 			dnsret->type,dnsret->status,adns_strerror(dnsret->status)); // FIXME
-	if(inet_ntop(AF_INET,&dnsret->rrs.inaddr->s_addr,ipbuf,sizeof(ipbuf)) == NULL){
+	if(dnsret->status){
+		fprintf(stderr,"resolution error %d (%s)\n",dnsret->status,
+					adns_strerror(dnsret->status));
+	}else if(inet_ntop(AF_INET,&dnsret->rrs.inaddr->s_addr,ipbuf,sizeof(ipbuf)) == NULL){
 		fprintf(stderr,"inet_ntop(%ju) failed (%s)\n",
 			(uintmax_t)dnsret->rrs.inaddr->s_addr,strerror(errno));
 	}else{
 		printf("%s\n",ipbuf);
 	}
-	// FIXME
+	pthread_mutex_lock(&lock);
+	returns = --res_returns;
+	pthread_mutex_unlock(&lock);
+	if(returns <= 0){
+		if(returns < 0){
+			fprintf(stderr,"got %d extra returns\n",-returns);
+		}else{
+			if(isatty(fileno(stdout))){
+				printf("Got all returns\n");
+			}
+		}
+		pthread_kill(pthread_self(),SIGTERM); // FIXME need this in libtorque
+	}
 }
 
 static int
 add_lookup(struct libtorque_ctx *ctx,const char *host){
+	pthread_mutex_lock(&lock);
+	++res_returns;
+	pthread_mutex_unlock(&lock);
 	if(libtorque_addlookup_dns(ctx,host,lookup_callback,NULL)){
 		return -1;
 	}
@@ -189,6 +214,9 @@ int main(int argc,char **argv){
 	if(isatty(fileno(stdout))){
 		printf("Waiting for resolutions, press Ctrl+c to interrupt...\n");
 	}
+	pthread_mutex_lock(&lock);
+	--res_returns;
+	pthread_mutex_unlock(&lock);
 	if( (err = libtorque_block(ctx)) ){
 		fprintf(stderr,"Couldn't block on libtorque (%s)\n",
 				libtorque_errstr(err));
