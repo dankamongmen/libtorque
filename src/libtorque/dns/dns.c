@@ -64,12 +64,12 @@ adns_rx_callback(int fd __attribute__ ((unused)),void *state){
 		printf("error (%s)\n",strerror(errno));
 		return;
 	}
-	if(adns_check(state,&query,&answer,&context)){
-		printf("error (%s)\n",strerror(errno));
-		return;
+	while(adns_check(state,&query,&answer,&context) == 0){
+		cb = context;
+		cb(answer,NULL);
+		query = NULL;
 	}
-	cb = context;
-	cb(state,NULL);
+	printf("error (%s)\n",strerror(errno));
 	restore_dns_fds(state,get_thread_evh());
 }
 

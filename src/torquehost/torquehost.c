@@ -78,8 +78,10 @@ err:
 }
 
 static void
-lookup_callback(const struct libtorque_dnsret *dnsret,void *state){
-	printf("called back! %p %p\n",dnsret,state); // FIXME
+lookup_callback(const libtorque_dnsret *dnsret,void *state){
+	printf("called back! %p %p type: %d status: %d (%s)\n",dnsret,state,
+			dnsret->type,dnsret->status,""/*adns_strerror(dnsret->status)*/); // FIXME
+	printf("%d %d %d %u\n",adns_s_nomemory,adns_s_unknownrrtype,adns_s_systemfail,dnsret->rrs.inaddr->s_addr);
 	raise(SIGTERM); // FIXME
 }
 

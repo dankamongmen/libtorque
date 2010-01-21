@@ -10,7 +10,6 @@ extern "C" {
 struct itimerspec;
 struct libtorque_ctx;
 struct libtorque_rxbuf;
-struct libtorque_dnsret;
 
 // Errors can be converted to a string via libtorque_errstr().
 typedef enum {
@@ -139,8 +138,13 @@ libtorque_err libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));
 
-typedef void (*libtorquednscb)(const struct libtorque_dnsret *,void *);
-
+#ifndef LIBTORQUE_WITHOUT_ADNS
+#include <adns.h>
+typedef adns_answer libtorque_dnsret;
+#else
+typedef void libtorque_dnsret;
+#endif
+typedef void (*libtorquednscb)(const libtorque_dnsret *,void *);
 // FIXME probably ought take adns_rrtype and adns_queryflags as well...
 libtorque_err libtorque_addlookup_dns(struct libtorque_ctx *,const char *,
 						libtorquednscb,void *)
