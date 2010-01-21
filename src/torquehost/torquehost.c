@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <errno.h>
 #include <locale.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -76,20 +77,55 @@ err:
 }
 
 static int
-spool_targets(FILE *fp,char **argv){
+add_lookup(struct libtorque_ctx *ctx,const char *host){
+	printf("%p %p\n",ctx,host); // FIXME
+	return 0;
+}
+
+static char *
+fpgetline(FILE *fp){
+	char line[80],*ret;
+
+	// FIXME
+	while(fgets(line,sizeof(line),fp)){
+		ret = strdup(line);
+		return ret;
+	}
+	return NULL;
+}
+
+static int
+spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv){
 	if(fp){
+		char *l;
+
 		if(argv[optind] != NULL){
 			fprintf(stderr,"Query arguments provided with -f/--pipe\n");
 			return -1;
 		}
-		// FIXME
+		errno = 0;
+		while( (l = fpgetline(fp)) ){
+			if(add_lookup(ctx,l)){
+				free(l);
+				return -1;
+			}
+			free(l);
+		}
+		if(errno || ferror(fp)){ // errno for ENOMEM check
+			return -1;
+		}
 	}else{
 		if(argv[optind] == NULL){
 			fprintf(stderr,"No query arguments provided, no -f/--pipe\n");
 			return -1;
 		}
 		argv += optind;
-		// FIXME
+		while(*argv){
+			if(add_lookup(ctx,*argv)){
+				return -1;
+			}
+			++argv;
+		}
 	}
 	return 0;
 }
@@ -109,15 +145,17 @@ int main(int argc,char **argv){
 		usage(a0);
 		goto err;
 	}
-	if(spool_targets(fp,argv)){
-		usage(a0);
-		goto err;
-	}
 	if((ctx = libtorque_init(&err,NULL)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
 				libtorque_errstr(err));
 		goto err;
 	}
+	if(spool_targets(ctx,fp,argv)){
+		usage(a0);
+		goto err;
+	}
+	// FIXME only print this if we're interactive
+	printf("Waiting for resolutions, press Ctrl+c to interrupt...\n");
 	if( (err = libtorque_block(ctx)) ){
 		fprintf(stderr,"Couldn't block on libtorque (%s)\n",
 				libtorque_errstr(err));
