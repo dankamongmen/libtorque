@@ -6,7 +6,7 @@
 
 int libtorque_dns_init(dns_state *dctx){
 #ifndef LIBTORQUE_WITHOUT_ADNS
-	adns_initflags flags = adns_if_debug | adns_if_noautosys;
+	adns_initflags flags = adns_if_noautosys/* | adns_if_debug*/;
 
 	if(adns_init(dctx,flags,NULL)){
 		return -1;

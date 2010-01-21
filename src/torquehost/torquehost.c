@@ -10,16 +10,17 @@
 #include <libtorque/libtorque.h>
 
 static void
-print_version(void){
-	fprintf(stderr,"torquehost from libtorque " LIBTORQUE_VERSIONSTR "\n");
+print_version(FILE *fp){
+	fprintf(fp,"torquehost from libtorque " LIBTORQUE_VERSIONSTR "\n");
 }
 
 static void
 usage(const char *argv0){
-	fprintf(stderr,"usage: %s [ options ]\n",argv0);
+	fprintf(stderr,"usage: %s [ options ] -f | queries\n",argv0);
 	fprintf(stderr,"\t-f, --pipe: queries on stdin instead of args\n");
 	fprintf(stderr,"\t-h, --help: print this message\n");
 	fprintf(stderr,"\t-v, --version: print version info\n");
+	print_version(stderr);
 }
 
 static int
@@ -58,7 +59,7 @@ parse_args(int argc,char **argv,FILE **fp){
 					SET_ARG_ONCE('f',fp,stdin);
 					break;
 				case 'v':
-					print_version();
+					print_version(stdout);
 					exit(EXIT_SUCCESS);
 				case 'h':
 					usage(argv0);
