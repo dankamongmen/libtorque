@@ -6,7 +6,7 @@
 #include <libtorque/events/sources.h>
 
 // We do not enforce, but do expect and require:
-//  - EV_ADD/EPOLL_CTL_ADD to be used as the control operation
+//  - EV_ADD/EPOLL_CTL_ADD or EPOLL_CTL_MOD to be used as the control operation
 //  - EPOLLET/EV_CLEAR to be used in the flags
 int add_evector_kevents(const evqueue *evq,struct kevent *k,int kcount){
 	if(kcount <= 0){
@@ -112,8 +112,6 @@ int restorefd(const struct evhandler *evh,int fd,int eflags){
 
 	// eflags should be union over *only* { 0, EPOLLIN, EPOLLOUT }
 	memset(&ee,0,sizeof(ee));
-	// EPOLLRDHUP isn't available prior to kernel 2.6.17 and GNU libc 2.6.
-	// We shouldn't need it, though.
 	ee.events = EVEDGET | EVONESHOT | eflags;
 	ee.data.fd = fd;
 	if(epoll_ctl(evh->evq->efd,EPOLL_CTL_MOD,fd,&ee)){
