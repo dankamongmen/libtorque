@@ -21,6 +21,14 @@ extern "C" {
 #ifdef LIBTORQUE_LINUX
 #include <sys/epoll.h>
 
+#ifdef EPOLLRDHUP
+#define EVREAD (EPOLLIN | EPOLLPRI | EPOLLRDHUP)
+#else
+#define EVREAD (EPOLLIN | EPOLLPRI)
+#endif
+#define EVWRITE EPOLLOUT
+#define EVONESHOT EPOLLONESHOT
+
 #define PTR_TO_EVENTV(ev) (&(ev)->eventv)
 typedef struct epoll_event kevententry;
 #define KEVENTENTRY_FD(k) ((k)->data.fd)
@@ -124,6 +132,10 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/event.h>
+
+#define EVREAD EVFILT_READ
+#define EVWRITE EVFILT_WRITE
+#define EVONESHOT EV_ONESHOT
 
 #define PTR_TO_EVENTV(ev) ((ev)->eventv)
 typedef struct kevent kevententry;
