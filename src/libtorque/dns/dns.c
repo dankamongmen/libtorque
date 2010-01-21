@@ -26,8 +26,11 @@ adns_rx_callback(int fd,void *state){
 		.fd = fd,
 	};
 	struct timeval now;
+	void *context = NULL;
+	adns_query query = NULL;
+	adns_answer *answer = NULL;
+	libtorquednscb cb;
 
-	printf("RX CALLBACK!\n");
 	if(gettimeofday(&now,NULL)){
 		// FIXME what?
 	}
@@ -35,8 +38,14 @@ adns_rx_callback(int fd,void *state){
 		printf("error (%s)\n",strerror(errno));
 		return;
 	}
-	printf("SUCCESS!\n");
 	adns_afterpoll(state,&pfd,1,&now); // FIXME add back?
+	if(adns_check(state,&query,&answer,&context)){
+		printf("error (%s)\n",strerror(errno));
+		return;
+	}
+	printf("done %p %p\n",answer,context);
+	cb = context;
+	cb(state,NULL);
 }
 
 static void
@@ -48,7 +57,6 @@ adns_tx_callback(int fd,void *state){
 	};
 	struct timeval now;
 
-	printf("TX CALLBACK!\n");
 	if(gettimeofday(&now,NULL)){
 		// FIXME what?
 	}

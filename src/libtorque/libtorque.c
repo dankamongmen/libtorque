@@ -296,12 +296,12 @@ libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx,const char *owner,
 					libtorquednscb rx,void *state){
 	adns_query query;
 
-	if(!rx){ // FIXME how to encode this?
+	if(state){ // FIXME how to encode this?
 		return -1;
 	}
 	// FIXME need to lock adns struct...should be one per evqueue
 	// FIXME need allow other than A type!
-	if(adns_submit(ctx->evq.dnsctx,owner,adns_r_a,adns_qf_none,state,&query)){
+	if(adns_submit(ctx->evq.dnsctx,owner,adns_r_a,adns_qf_none,rx,&query)){
 		return LIBTORQUE_ERR_INVAL; // FIXME break down error cases
 	}
 	if(load_dns_fds(ctx,&ctx->evq.dnsctx,&ctx->evq)){

@@ -79,7 +79,8 @@ err:
 
 static void
 lookup_callback(const struct libtorque_dnsret *dnsret,void *state){
-	printf("%p %p\n",dnsret,state); // FIXME
+	printf("called back! %p %p\n",dnsret,state); // FIXME
+	raise(SIGTERM); // FIXME
 }
 
 static int
