@@ -20,7 +20,6 @@ typedef enum {
 	LIBTORQUE_ERR_AFFINITY, // error in the affinity subsystem
 	LIBTORQUE_ERR_RESOURCE,	// insufficient memory or descriptors
 	LIBTORQUE_ERR_INVAL,	// an invalid parameter was passed
-	LIBTORQUE_ERR_SIGMASK,	// invalid signal mask upon entry to libtorque
 	LIBTORQUE_ERR_UNAVAIL,	// functionality unavailable on this platform
 
 	LIBTORQUE_ERR_MAX	// sentinel value, should never be seen
