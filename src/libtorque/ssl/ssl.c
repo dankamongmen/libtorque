@@ -23,7 +23,6 @@ struct CRYPTO_dynlock_value {
 };
 
 typedef struct ssl_cbstate {
-	//struct libtorque_ctx *ctx; // FIXME should be able to be eliminated
 	SSL_CTX *sslctx;
 	SSL *ssl;
 	void *cbstate;
