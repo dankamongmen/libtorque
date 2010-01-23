@@ -58,7 +58,7 @@ void rxcommonsignal(int sig,void *cbstate){
 		// exiting from this thread only. The trigger signal might be
 		// delivered to any one of our threads; if we're here, though,
 		// we cannot be holding the efd. Progress is thus assured.
-		pthread_kill(e->nexttid,EVTHREAD_TERM);
+		pthread_kill(e->nexttid,sig);
 		// We rely on EDEADLK to cut off our circular join()list
 		if((r = pthread_join(e->nexttid,&ret)) && r != EDEADLK){
 			ret = NULL;
