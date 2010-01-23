@@ -214,10 +214,7 @@ libtorque_err libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 
 libtorque_err libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
 			libtorquetimecb fxn,void *state){
-	if(add_timer_to_evhandler(ctx,&ctx->evq,t,fxn,state)){
-		return LIBTORQUE_ERR_UNAVAIL; // FIXME
-	}
-	return 0;
+	return add_timer_to_evhandler(ctx,&ctx->evq,t,fxn,state);
 }
 
 // We only currently provide one buffering scheme. When that changes, we still
