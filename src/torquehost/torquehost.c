@@ -201,7 +201,6 @@ int main(int argc,char **argv){
 	unsigned timeout = DEFAULT_TIMEOUT;
 	struct libtorque_ctx *ctx = NULL;
 	const char *a0 = *argv;
-	struct itimerspec it;
 	libtorque_err err;
 	FILE *fp = NULL;
 	int results;
@@ -229,11 +228,16 @@ int main(int argc,char **argv){
 				libtorque_errstr(err));
 		goto err;
 	}
-	memset(&it,0,sizeof(it)); // FIXME
-	if( (err = libtorque_addtimer(ctx,&it,timeoutcb,NULL)) ){
-		fprintf(stderr,"Couldn't add timer (%s)\n",
-				libtorque_errstr(err));
-		goto err;
+	if(timeout){
+		struct itimerspec it;
+
+		memset(&it,0,sizeof(it)); // FIXME
+		it.it_interval.tv_sec = timeout;
+		if( (err = libtorque_addtimer(ctx,&it,timeoutcb,NULL)) ){
+			fprintf(stderr,"Couldn't add timer (%s)\n",
+					libtorque_errstr(err));
+			goto err;
+		}
 	}
 	if(spool_targets(ctx,fp,argv,&results)){
 		usage(a0);
