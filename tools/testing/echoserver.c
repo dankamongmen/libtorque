@@ -31,6 +31,7 @@ echo_server(int fd,struct libtorque_rxbuf *rxb,void *v __attribute__ ((unused)))
 		r = write(fd,buf + w,len - w);
 		if(r < 0){
 			if(errno == EAGAIN || errno == EWOULDBLOCK){
+				// FIXME register for TX
 				break;
 			}else if(errno != EINTR){
 				fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,

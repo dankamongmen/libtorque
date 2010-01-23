@@ -82,9 +82,16 @@ int restorefd(const struct evhandler *evh,int fd,int eflags){
 	ev.eventv.events[0].data.fd = fd;
 	ev.eventv.ctldata[0].op = EPOLL_CTL_MOD;
 #elif defined(LIBTORQUE_FREEBSD)
-	ev.eventv[0].filter = eflags;
-	ev.eventv[0].flags = EVEDGET | EVONESHOT;
-	ev.eventv[0].ident = fd;
+	{
+		short filter;
+
+		if(!(eflags & (EVREAD | EVWRITE))){
+			errno = EINVAL;
+			return -1;
+		}
+		filter = eflags & EVREAD ? EVREAD : EVWRITE;
+		EV_SET(&ev.eventv[0],fd,filter,EV_ADD | EVEDGET | EVONESHOT | eflags,0,0,NULL);
+	}
 #endif
 	if(Kevent(evh->evq->efd,PTR_TO_EVENTV(&ev),1,NULL,0)){
 		return -1;
