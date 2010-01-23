@@ -78,7 +78,7 @@ int add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ 
 		if((fd = signalfd(-1,sigs,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			return -1;
 		}
-		if(add_fd_to_evhandler(ctx,evq,fd,signalfd_demultiplexer,NULL,NULL,0)){
+		if(add_fd_to_evhandler(ctx,evq,fd,signalfd_demultiplexer,NULL,ctx,0)){
 			close(fd);
 			return -1;
 		}
