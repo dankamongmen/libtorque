@@ -7,7 +7,6 @@ extern "C" {
 
 struct libtorque_cput;
 
-// Remaining declarations are internal to libtorque via -fvisibility=hidden
 int x86cpuid(struct libtorque_cput *,unsigned *,unsigned *,unsigned *);
 
 #ifdef __cplusplus
