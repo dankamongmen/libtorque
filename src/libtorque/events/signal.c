@@ -8,8 +8,12 @@
 
 void signal_demultiplexer(int s){
 	libtorque_ctx *ctx = get_thread_ctx();
+	int errdup;
 
-	// If we're called from another thread (signal handlers are process-wide,
+	// Preserve errno (in case the callback changes it and we're being
+	// handled right before a system call -- this shouldn't happen for us).
+	errdup = errno;
+	// If we're called from another thread (signal handlers are shared,
 	// and it's possible that the client fails to mask one of our signals),
 	// ev will be NULL and we oughtn't process the event. that shouldn't
 	// happen, except due to user error.
@@ -19,6 +23,7 @@ void signal_demultiplexer(int s){
 		++ev->stats.events;
 		handle_evsource_read(ctx->eventtables.sigarray,s);
 	}
+	errno = errdup;
 }
 
 int init_signal_handlers(void){
