@@ -187,21 +187,23 @@ prep_common_sigset(sigset_t *s){
 // signals (on Linux, this is done via a common signalfd()). Either way, we
 // don't want to touch the evsources more than once.
 int initialize_common_sources(libtorque_ctx *ctx,struct evtables *evt,const sigset_t *ss __attribute__ ((unused))){
+	if(EVTHREAD_TERM >= evt->sigarraysize || EVTHREAD_INT >= evt->sigarraysize){
+		return -1;
+	}
+#ifdef LIBTORQUE_LINUX_SIGNALFD
+	{
 	sigset_t s;
 
 	if(prep_common_sigset(&s)){
 		return -1;
 	}
-	if(EVTHREAD_TERM >= evt->sigarraysize || EVTHREAD_INT >= evt->sigarraysize){
-		return -1;
-	}
-#ifdef LIBTORQUE_LINUX_SIGNALFD
 	if((evt->common_signalfd = signalfd(-1,&s,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 		return -1;
 	}
 	setup_evsource(evt->fdarray,evt->common_signalfd,signalfd_demultiplexer,NULL,ctx);
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,ctx);
 	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal,NULL,ctx);
+	}
 #elif defined(LIBTORQUE_LINUX)
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal_handler,NULL,ctx);
 	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal_handler,NULL,ctx);
