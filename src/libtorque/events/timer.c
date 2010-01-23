@@ -68,7 +68,7 @@ libtorque_err add_timer_to_evhandler(struct libtorque_ctx *ctx __attribute__ ((u
 		free(tm);
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if(add_fd_to_evhandler(ctx,evq,fd,timerfd_passthru,NULL,cbstate,0)){
+	if(add_fd_to_evhandler(ctx,evq,fd,timer_passthru,NULL,cbstate,0)){
 		close(fd);
 		free(tm);
 		return LIBTORQUE_ERR_ASSERT;
