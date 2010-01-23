@@ -104,7 +104,6 @@ err:
 int main(int argc,char **argv){
 	struct ev_loop *loop = NULL;
 	int ret = EXIT_FAILURE;
-	sigset_t ss;
 	unsigned z;
 
 	if(parse_args(argc,argv)){
@@ -114,25 +113,20 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't initialize libev\n");
 		goto err;
 	}
-	if(sigemptyset(&ss)){
-		fprintf(stderr,"Couldn't initialize sigset\n");
-		goto err;
-	}
-	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
+	/*for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		int s = signals_watched[z].sig;
 		ev_signal evs;
 
-		if(sigismember(&ss,s)){ // some are duplicates
-			continue;
-		}
-		if(sigaddset(&ss,s)){
-			fprintf(stderr,"Couldn't add signal %d to set\n",s);
-			goto err;
-		}
 		// FIXME libev requires one loop per signal, aieee
 		ev_signal_init(&evs,rxsignal,s);
 		ev_signal_start(loop,&evs);
 		printf("Watching signal %d (%s)\n",s,strsignal(s));
+	}*/
+	{ // FIXME
+	ev_signal evs;
+	ev_signal_init(&evs,rxsignal,SIGINT);
+	ev_signal_start(loop,&evs);
+	printf("Watching signal %d (%s)\n",SIGINT,strsignal(SIGINT));
 	}
 	ev_loop(loop,0);
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
