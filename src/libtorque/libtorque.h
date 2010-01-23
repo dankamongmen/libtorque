@@ -140,6 +140,14 @@ int libtorque_init_ssl(void) __attribute__ ((visibility("default")))
 // Likewise, call this only if we called initialize_ssl().
 int libtorque_stop_ssl(void) __attribute__ ((visibility("default")));
 
+// Create a new SSL context, if one is not being provided to us. We only allow
+// SSLv3/TLSv1, and require full certificate-based authentication, but allow
+// specification of whether or not client authentication is required.
+SSL_CTX *libtorque_ssl_ctx(const char *,const char *,const char *,unsigned)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((malloc));
+
 // The SSL_CTX should be set up with the desired authentication parameters etc
 // already (utility functions are provided to do this). If libtorque was not
 // compiled with SSL support, returns LIBTORQUE_ERR_UNAVAIL.
@@ -148,6 +156,13 @@ libtorque_err libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,3)));
+
+struct ssl_cbstate;
+
+int ssl_tx(int,struct ssl_cbstate *,const void *,int)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(2)));
 
 #ifndef LIBTORQUE_WITHOUT_ADNS
 #include <adns.h>

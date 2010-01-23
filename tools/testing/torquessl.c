@@ -11,7 +11,6 @@
 #include <sys/socket.h>
 #include <libtorque/buffers.h>
 #include <libtorque/libtorque.h>
-#include <libtorque/protos/ssl.h>
 
 static int
 ssl_conn_handler(int fd,struct libtorque_rxbuf *rxbuf,void *cbstate){
