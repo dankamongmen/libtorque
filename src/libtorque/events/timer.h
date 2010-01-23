@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <stdlib.h>
 #include <libtorque/internal.h>
 
 libtorque_err add_timer_to_evhandler(struct libtorque_ctx *,
@@ -13,7 +14,18 @@ libtorque_err add_timer_to_evhandler(struct libtorque_ctx *,
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull (1,2,3,4)));
 
-void timerfd_passthru(int __attribute__ ((unused)),void *);
+typedef struct timerfd_marshal {
+	libtorquetimecb tfxn;
+	void *cbstate;
+} timerfd_marshal;
+
+static inline void
+timer_curry(void *state){
+	timerfd_marshal *marsh = state;
+
+	marsh->tfxn(marsh->cbstate);
+	free(marsh);
+}
 
 #ifdef __cplusplus
 }

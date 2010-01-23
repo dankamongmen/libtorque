@@ -5,6 +5,7 @@
 #include <sys/resource.h>
 #include <libtorque/events/fd.h>
 #include <libtorque/events/evq.h>
+#include <libtorque/events/timer.h>
 #include <libtorque/events/sysdep.h>
 #include <libtorque/events/thread.h>
 #include <libtorque/events/signal.h>
@@ -29,19 +30,21 @@ handle_event(libtorque_ctx *ctx,const kevententry *e){
 #else
 	if(e->filter == EVFILT_READ){
 #endif
-		handle_evsource_read(ctx->eventtables.fdarray,KEVENTENTRY_FD(e));
+		handle_evsource_read(ctx->eventtables.fdarray,KEVENTENTRY_ID(e));
 	}
 #ifdef LIBTORQUE_LINUX
 	if(e->events & EPOLLOUT){
 #else
-	if(e->filter == EVFILT_WRITE){
+	else if(e->filter == EVFILT_WRITE){
 #endif
-		handle_evsource_write(ctx->eventtables.fdarray,KEVENTENTRY_FD(e));
+		handle_evsource_write(ctx->eventtables.fdarray,KEVENTENTRY_ID(e));
 	}
 #ifdef LIBTORQUE_FREEBSD
-	if(e->filter == EVFILT_SIGNAL){
-		handle_evsource_read(ctx->eventtables.sigarray,KEVENTENTRY_SIG(e));
-        }
+	else if(e->filter == EVFILT_SIGNAL){
+		handle_evsource_read(ctx->eventtables.sigarray,KEVENTENTRY_ID(e));
+        }else if(e->filter == EVFILT_TIMER){
+		timer_curry(KEVENTENTRY_IDPTR(e));
+	}
 #endif
 }
 

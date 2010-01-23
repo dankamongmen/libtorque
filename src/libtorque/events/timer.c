@@ -5,11 +5,6 @@
 #include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
 
-typedef struct timerfd_marshal {
-	libtorquetimecb tfxn;
-	void *cbstate;
-} timerfd_marshal;
-
 #if defined(LIBTORQUE_LINUX_TIMERFD) || defined(LIBTORQUE_FREEBSD)
 static inline timerfd_marshal *
 create_timerfd_marshal(libtorquetimecb tfxn,void *cbstate){
@@ -22,11 +17,9 @@ create_timerfd_marshal(libtorquetimecb tfxn,void *cbstate){
 	return ret;
 }
 
-void timerfd_passthru(int fd __attribute__ ((unused)),void *state){
-	timerfd_marshal *marsh = state;
-
-	marsh->tfxn(marsh->cbstate);
-	free(marsh);
+static inline void
+timer_passthru(int fd __attribute__ ((unused)),void *state){
+	timer_curry(state);
 }
 #endif
 

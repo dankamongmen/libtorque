@@ -32,7 +32,7 @@ extern "C" {
 
 #define PTR_TO_EVENTV(ev) (&(ev)->eventv)
 typedef struct epoll_event kevententry;
-#define KEVENTENTRY_FD(k) ((k)->data.fd)
+#define KEVENTENTRY_ID(k) ((k)->data.fd)
 #define EVECTOR_AUTOS(count,name) \
 	struct epoll_ctl_data ctlarr[count]; \
 	kevententry evarr[count]; \
@@ -141,8 +141,8 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 
 #define PTR_TO_EVENTV(ev) ((ev)->eventv)
 typedef struct kevent kevententry;
-#define KEVENTENTRY_FD(k) ((int)(k)->ident)
-#define KEVENTENTRY_SIG(k) ((int)(k)->ident) // Doesn't exist on Linux
+#define KEVENTENTRY_ID(k) ((k)->ident)
+#define KEVENTENTRY_IDPTR(k) ((void *)(k)->ident)
 #define EVECTOR_AUTOS(count,name) struct kevent name##_base[count]; \
 	evectors name = { .eventv = name##_base, .vsizes = (count), }
 
