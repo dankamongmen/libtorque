@@ -95,7 +95,9 @@ int add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ 
 			continue;
 		}
 		EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
-		return Kevent(evq->efd,&k,1,NULL,0);
+		if(Kevent(evq->efd,&k,1,NULL,0)){
+			return -1; // FIXME pull previous out
+		}
 	}
 #else
 #error "No signal event implementation on this OS"
