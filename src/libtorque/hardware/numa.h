@@ -7,7 +7,6 @@ extern "C" {
 
 struct libtorque_ctx;
 
-// Remaining declarations are internal to libtorque via -fvisibility=hidden
 int detect_numa(struct libtorque_ctx *);
 void free_numa(struct libtorque_ctx *);
 
