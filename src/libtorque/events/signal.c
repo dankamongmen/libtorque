@@ -59,7 +59,7 @@ int init_signal_handlers(void){
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 //
-int add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ ((unused)),
+libtorque_err add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ ((unused)),
 			const sigset_t *sigs,libtorquercb rfxn,void *cbstate){
 	unsigned z;
 
@@ -73,19 +73,23 @@ int add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ 
 	{
 		// FIXME we could restrict this all to a single signalfd, since
 		// it takes a sigset_t...less potential parallelism, though
+		libtorque_err ret;
 		int fd;
 
 		if((fd = signalfd(-1,sigs,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
-			return -1;
+			if(errno == ENOSYS){
+				return LIBTORQUE_ERR_UNAVAIL;
+			}
+			return LIBTORQUE_ERR_RESOURCE;
 		}
-		if(add_fd_to_evhandler(ctx,evq,fd,signalfd_demultiplexer,NULL,ctx,0)){
+		if( (ret = add_fd_to_evhandler(ctx,evq,fd,signalfd_demultiplexer,NULL,ctx,0)) ){
 			close(fd);
-			return -1;
+			return ret;
 		}
 	}
 #elif defined(LIBTORQUE_LINUX)
 	if(add_epoll_sigset(sigs,ctx->eventtables.sigarraysize)){
-		return -1;
+		return LIBTORQUE_ERR_ASSERT;
 	}
 #elif defined(LIBTORQUE_FREEBSD)
 	for(z = 1 ; z < ctx->eventtables.sigarraysize ; ++z){
@@ -96,7 +100,7 @@ int add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ 
 		}
 		EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
 		if(Kevent(evq->efd,&k,1,NULL,0)){
-			return -1; // FIXME pull previous out
+			return LIBTORQUE_ERR_ASSERT; // FIXME pull previous out
 		}
 	}
 #else

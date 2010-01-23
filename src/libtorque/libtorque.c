@@ -196,15 +196,19 @@ libtorque_ctx *libtorque_init(libtorque_err *e){
 
 libtorque_err libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 			libtorquercb fxn,void *state){
+	libtorque_err ret;
+	sigset_t old;
+
 	if(sigismember(sigs,EVTHREAD_TERM) || sigismember(sigs,SIGKILL) ||
 			sigismember(sigs,SIGSTOP)){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if(pthread_sigmask(SIG_BLOCK,sigs,NULL)){
+	if(pthread_sigmask(SIG_BLOCK,sigs,&old)){
 		return LIBTORQUE_ERR_ASSERT;
 	}
-	if(add_signal_to_evhandler(ctx,&ctx->evq,sigs,fxn,state)){
-		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
+	if( (ret = add_signal_to_evhandler(ctx,&ctx->evq,sigs,fxn,state)) ){
+		pthread_sigmask(SIG_SETMASK,&old,NULL);
+		return ret;
 	}
 	return 0;
 }
