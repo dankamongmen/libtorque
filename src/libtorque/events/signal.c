@@ -6,8 +6,7 @@
 #include <libtorque/events/signal.h>
 #include <libtorque/events/sources.h>
 
-static void
-signal_demultiplexer(int s){
+void signal_demultiplexer(int s){
 	libtorque_ctx *ctx = get_thread_ctx();
 
 	// If we're called from another thread (signal handlers are process-wide,
