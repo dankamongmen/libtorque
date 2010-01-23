@@ -256,10 +256,10 @@ int block_threads(libtorque_ctx *ctx){
 int get_thread_aid(void){
 	// sched_getcpu() is unsafe on ubuntu 8.04's glibc 2.7 + 2.6.9; it
 	// coredumps on entry, jumping to an invalid address. best avoided.
-	// this might actually be related to valgrind. hrmm.
-#if defined(LIBTORQUE_LINUX) && (__GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 7)
+	// furthermore, valgrind doesn't emulate it properly in 3.5.0.
+/*#if defined(LIBTORQUE_LINUX) && (__GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 7)
 	return sched_getcpu();
-#else
+#else*/
 	cpu_set_t mask;
 	int z;
 
@@ -277,5 +277,5 @@ int get_thread_aid(void){
 		}
 	}
 	return -1;
-#endif
+//#endif
 }
