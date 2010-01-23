@@ -81,6 +81,7 @@ adns_rx_callback(int fd __attribute__ ((unused)),void *state){
 
 			ds->cb(answer,ds->cbstate);
 			free_dnsmarshal(ds);
+			free(answer);
 			query = NULL;
 		}
 		if(r != EAGAIN){
