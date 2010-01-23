@@ -15,12 +15,15 @@ print_version(FILE *fp){
 	fprintf(fp,"torquehost from libtorque " LIBTORQUE_VERSIONSTR "\n");
 }
 
+#define DEFAULT_TIMEOUT 60
+
 static void
 usage(const char *argv0){
 	fprintf(stderr,"usage:\t%s [ global-opts ] [ query-opts ] query\n",argv0);
 	fprintf(stderr,"\t\t\t[ [ query-opts ] query ...]\n");
 	fprintf(stderr,"\t%s [ global-opts ] [ query-opts ] -f|--pipe\n",argv0);
 	fprintf(stderr,"\nglobal options:\n");
+	fprintf(stderr,"\t-t sec: timeout in sec seconds (default: %u, 0 disables)\n",DEFAULT_TIMEOUT);
 	fprintf(stderr,"\t-f, --pipe: queries on stdin instead of args\n");
 	fprintf(stderr,"\t-h, --help: print this message\n");
 	fprintf(stderr,"\t-v, --version: print version info\n");
@@ -30,7 +33,7 @@ usage(const char *argv0){
 }
 
 static int
-parse_args(int argc,char **argv,FILE **fp){
+parse_args(int argc,char **argv,FILE **fp,unsigned *timeout){
 #define SET_ARG_ONCE(opt,arg,val) do{ if(!*(arg)){ *arg = val; }\
 	else{ fprintf(stderr,"Provided '%c' twice\n",(opt)); goto err; }} while(0)
 	int lflag;
@@ -55,8 +58,11 @@ parse_args(int argc,char **argv,FILE **fp){
 	const char *argv0 = *argv;
 	int c;
 
-	while((c = getopt_long(argc,argv,"fhv",opts,NULL)) >= 0){
+	while((c = getopt_long(argc,argv,"fht:v",opts,NULL)) >= 0){
 		switch(c){
+		case 't':
+			*timeout = atoi(optarg); // FIXME robustify
+			break;
 		case 'f': case 'h': case 'v':
 			lflag = c; // intentional fallthrough
 		case 0: // long option
@@ -91,6 +97,12 @@ static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void
+timeoutcb(void *state __attribute__ ((unused))){
+	printf("TIMEOUT!\n");
+	abort();
+}
+
+static void
 lookup_callback(const libtorque_dnsret *dnsret,void *state){
 	char ipbuf[INET_ADDRSTRLEN];
 	int returns,*shared_returns;
@@ -122,10 +134,17 @@ lookup_callback(const libtorque_dnsret *dnsret,void *state){
 
 static int
 add_lookup(struct libtorque_ctx *ctx,const char *host,int *results){
-	pthread_mutex_lock(&lock);
+	libtorque_err err;
+
+	if(pthread_mutex_lock(&lock)){
+		return -1;
+	}
 	++*results;
-	pthread_mutex_unlock(&lock);
-	if(libtorque_addlookup_dns(ctx,host,lookup_callback,results)){
+	if(pthread_mutex_unlock(&lock)){
+		return -1;
+	}
+	if( (err = libtorque_addlookup_dns(ctx,host,lookup_callback,results)) ){
+		fprintf(stderr,"Error adding query (%s)\n",libtorque_errstr(err));
 		return -1;
 	}
 	return 0;
@@ -155,8 +174,7 @@ spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv,int *results){
 	if(fp){
 		char *l;
 
-		errno = 0;
-		while( (l = fpgetline(fp)) ){
+		while(errno = 0, (l = fpgetline(fp)) ){
 			if(add_lookup(ctx,l,results)){
 				free(l);
 				return -1;
@@ -164,6 +182,7 @@ spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv,int *results){
 			free(l);
 		}
 		if(errno || ferror(fp)){ // errno for ENOMEM check
+			fprintf(stderr,"Error reading from input (%s?)\n",strerror(errno));
 			return -1;
 		}
 	}else{
@@ -179,8 +198,10 @@ spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv,int *results){
 }
 
 int main(int argc,char **argv){
+	unsigned timeout = DEFAULT_TIMEOUT;
 	struct libtorque_ctx *ctx = NULL;
 	const char *a0 = *argv;
+	struct itimerspec it;
 	libtorque_err err;
 	FILE *fp = NULL;
 	int results;
@@ -189,7 +210,7 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't set locale\n");
 		goto err;
 	}
-	if(parse_args(argc,argv,&fp)){
+	if(parse_args(argc,argv,&fp,&timeout)){
 		fprintf(stderr,"Error parsing arguments\n");
 		usage(a0);
 		goto err;
@@ -208,12 +229,22 @@ int main(int argc,char **argv){
 				libtorque_errstr(err));
 		goto err;
 	}
+	memset(&it,0,sizeof(it)); // FIXME
+	if( (err = libtorque_addtimer(ctx,&it,timeoutcb,NULL)) ){
+		fprintf(stderr,"Couldn't add timer (%s)\n",
+				libtorque_errstr(err));
+		goto err;
+	}
 	if(spool_targets(ctx,fp,argv,&results)){
 		usage(a0);
 		goto err;
 	}
 	if(isatty(fileno(stdout))){
-		printf("Waiting for resolutions, press Ctrl+c to interrupt...\n");
+		if(timeout){
+			printf("Waiting %us for resolutions...\n",timeout);
+		}else{
+			printf("Waiting for resolutions, timeouts disabled...\n");
+		}
 	}
 	pthread_mutex_lock(&lock);
 	--results;
