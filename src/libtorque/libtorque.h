@@ -73,6 +73,7 @@ struct libtorque_ctx *libtorque_init(libtorque_err *)
 // unbuffered typedefs return void.
 typedef void (*libtorquercb)(int,void *);
 typedef void (*libtorquewcb)(int,void *);
+typedef void (*libtorquetimecb)(void *);
 typedef int (*libtorquebrcb)(int,struct libtorque_rxbuf *,void *);
 typedef int (*libtorquebwcb)(int,struct libtorque_rxbuf *,void *);
 
@@ -86,7 +87,7 @@ libtorque_err libtorque_addsignal(struct libtorque_ctx *,const sigset_t *,
 
 // After a minimum time interval, invoke the callback as soon as possible.
 libtorque_err libtorque_addtimer(struct libtorque_ctx *,
-		const struct itimerspec *,libtorquercb,void *)
+		const struct itimerspec *,libtorquetimecb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2,3)));

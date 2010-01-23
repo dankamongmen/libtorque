@@ -5,6 +5,32 @@
 #include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
 
+#ifdef LIBTORQUE_LINUX_TIMERFD
+typedef struct timerfd_marshal {
+	libtorquetimecb tfxn;
+	void *cbstate;
+} timerfd_marshal;
+
+static inline timerfd_marshal *
+create_timerfd_marshal(libtorquetimecb tfxn,void *cbstate){
+	timerfd_marshal *ret;
+
+	if( (ret = malloc(sizeof(*ret))) ){
+		ret->tfxn = tfxn;
+		ret->cbstate = cbstate;
+	}
+	return ret;
+}
+
+static void
+timerfd_passthru(int fd __attribute__ ((unused)),void *state){
+	timerfd_marshal *marsh = state;
+
+	marsh->tfxn(marsh->cbstate);
+	free(marsh);
+}
+#endif
+
 // from kevent(2) on FreeBSD 6.4:
 // EVFILT_SIGNAL  Takes the signal number to monitor as the identifier and
 // 	returns when the given signal is delivered to the process.
@@ -26,24 +52,31 @@
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 int add_timer_to_evhandler(struct libtorque_ctx *ctx,const struct evqueue *evq,
-		const struct itimerspec *t,libtorquercb rfxn,void *cbstate){
+		const struct itimerspec *t,libtorquetimecb tfxn,void *cbstate){
 #ifdef LIBTORQUE_LINUX_TIMERFD
+	timerfd_marshal *tm;
 	int fd;
 
+	if((tm = create_timerfd_marshal(tfxn,cbstate)) == NULL){
+		return -1;
+	}
 	if((fd = timerfd_create(CLOCK_MONOTONIC,TFD_NONBLOCK | TFD_CLOEXEC)) < 0){
+		free(tm);
 		return -1;
 	}
 	if(timerfd_settime(fd,0,t,NULL)){
 		close(fd);
+		free(tm);
 		return -1;
 	}
-	if(add_fd_to_evhandler(ctx,evq,fd,rfxn,NULL,cbstate,0)){
+	if(add_fd_to_evhandler(ctx,evq,fd,timerfd_passthru,NULL,cbstate,0)){
 		close(fd);
+		free(tm);
 		return -1;
 	}
 #elif defined(LIBTORQUE_LINUX) || defined(LIBTORQUE_FREEBSD)
 //#error "Need Linux 2.6.25 / GNU libc 2.8 for timerfd"
-	if(!ctx || !evq || !t || !rfxn || !cbstate){
+	if(!ctx || !evq || !t || !tfxn || !cbstate){
 		return -1;
 	}
 	return -1; // FIXME working around compile
