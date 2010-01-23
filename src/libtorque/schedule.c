@@ -86,17 +86,8 @@ block_thread(pthread_t tid){
 
 static inline int
 reap_thread(pthread_t tid){
-	sigset_t ss,os;
 	int ret = 0;
 
-	// No need to watch out for EVTHREAD_INT here (the issue is that
-	// EVTHREAD_TERM will be raised freely in a chain reaction).
-	if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM)){
-		return -1;
-	}
-	if(pthread_sigmask(SIG_BLOCK,&ss,&os)){
-		return -1;
-	}
 	// POSIX has a special case for process-autodirected signals; kill(2)
 	// does not return until at least one signal is delivered. This works
 	// around a race condition (see block_thread()) *most* of the time.
@@ -107,7 +98,6 @@ reap_thread(pthread_t tid){
 	// before we return, so we can still hit the block_thread() early).
 	ret |= kill(getpid(),EVTHREAD_TERM);
 	ret |= block_thread(tid);
-	ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	return ret;
 }
 

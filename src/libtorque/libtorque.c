@@ -354,8 +354,17 @@ libtorque_err libtorque_stop(libtorque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx){
+		libtorque_err r;
+		sigset_t os;
+
+		// We ought have already have them blocked on entry, but...this
+		// doesn't help if other threads are unblocked, though.
+		if( (r = libtorque_sigmask(&os)) ){
+			return r;
+		}
 		ret |= reap_threads(ctx);
 		ret |= free_libtorque_ctx(ctx);
+		ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	}
 	return ret ? LIBTORQUE_ERR_ASSERT : 0;
 }
