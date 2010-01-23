@@ -4,7 +4,7 @@
 #include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
 
-static inline int
+static inline libtorque_err
 add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int eflags){
 #ifdef LIBTORQUE_LINUX
 	struct epoll_ctl_data ecd;
@@ -12,7 +12,7 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 	struct kevent k;
 
 	if(eflags & ~(EPOLLONESHOT)){ // enforce allowed eflags
-		return -1;
+		return LIBTORQUE_ERR_INVAL;
 	}
 	memset(&ee.data,0,sizeof(ee.data));
 	k.events = &ee;
@@ -28,7 +28,9 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 	if(tfxn){
 		ee.events |= EPOLLOUT;
 	}
-	return Kevent(evq->efd,&k,1,NULL,0);
+	if(Kevent(evq->efd,&k,1,NULL,0)){
+		return LIBTORQUE_ERR_ASSERT;
+	}
 #elif defined(LIBTORQUE_FREEBSD)
 	struct kevent k[2];
 
@@ -39,22 +41,21 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 	if(tfxn){
 		EV_SET(&k[1],fd,EVFILT_WRITE,EV_ADD | EV_CLEAR | eflags,0,0,NULL);
 	}
-	return Kevent(evq->efd,k,!!tfxn + !!rfxn,NULL,0);
+	if(Kevent(evq->efd,k,!!tfxn + !!rfxn,NULL,1)){
+		return LIBTORQUE_ERR_ASSERT;
+	}
 #else
 #error "No fd event implementation on this OS"
 #endif
 	return 0;
 }
 
-int add_fd_to_evhandler(libtorque_ctx *ctx,const evqueue *evq,int fd,
+libtorque_err add_fd_to_evhandler(libtorque_ctx *ctx,const evqueue *evq,int fd,
 			libtorquercb rfxn,libtorquewcb tfxn,
 			void *cbstate,int eflags){
 	if((unsigned)fd >= ctx->eventtables.fdarraysize){
-		return -1;
+		return LIBTORQUE_ERR_INVAL;
 	}
 	setup_evsource(ctx->eventtables.fdarray,fd,rfxn,tfxn,cbstate);
-	if(add_fd_event(evq,fd,rfxn,tfxn,eflags)){
-		return -1;
-	}
-	return 0;
+	return add_fd_event(evq,fd,rfxn,tfxn,eflags);
 }
