@@ -95,10 +95,10 @@ implementation (NPTL is the default on 2.6 kernels since GNU libc 2.3.2).
 Versions 2.5 through 2.10 have been tested.
 
 On FreeBSD, only the libthr threading implementation is explicitly supported or
-recommended (this is the default in FreeBSD 7). If rebuilding world, ensure
-NO_LIBTHR is not active in make.conf. If using another pthread library as the
-default, bind libpthread references to libthr via the following entries in
-/etc/libmap.conf:
+recommended (this is the default in FreeBSD 7, and the only supported mode in
+FreeBSD 8)). If rebuilding world, ensure NO_LIBTHR is not active in make.conf.
+If using another pthread library as the default, bind libpthread references to
+libthr via the following entries in /etc/libmap.conf:
 
         libpthread.so.2         libthr.so.2
         libpthread.so           libthr.so
