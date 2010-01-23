@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <pthread.h>
 
+// SIGCHLD is associated with the default loop in libev
 static struct {
 	pthread_mutex_t lock;
 	const int sig;
@@ -20,9 +21,7 @@ static struct {
 	{ PTHREAD_MUTEX_INITIALIZER, SIGALRM, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGUSR1, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGUSR2, 0 },
-	{ PTHREAD_MUTEX_INITIALIZER, SIGCHLD, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGTERM, 0 },
-	{ PTHREAD_MUTEX_INITIALIZER, SIGINT, 0 },
 #ifdef SIGPOLL
 	{ PTHREAD_MUTEX_INITIALIZER, SIGPOLL, 0 },
 #endif
@@ -104,6 +103,8 @@ err:
 int main(int argc,char **argv){
 	struct ev_loop *loop = NULL;
 	int ret = EXIT_FAILURE;
+	ev_signal evs;
+	sigset_t ss;
 	unsigned z;
 
 	if(parse_args(argc,argv)){
@@ -113,21 +114,31 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't initialize libev\n");
 		goto err;
 	}
-	/*for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
+	if(sigemptyset(&ss) || sigaddset(&ss,SIGCHLD)){ // see libev(3)
+		fprintf(stderr,"Couldn't initialize sigset\n");
+		goto err;
+	}
+	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		int s = signals_watched[z].sig;
-		ev_signal evs;
+		struct ev_loop *l;
 
-		// FIXME libev requires one loop per signal, aieee
+		if(sigismember(&ss,s)){
+			continue; // eliminate duplicates
+		}
+		if(sigaddset(&ss,s)){
+			fprintf(stderr,"Couldn't manipulate sigset\n");
+			goto err;
+		}
+		if((l = ev_loop_new(0)) == NULL){
+			fprintf(stderr,"Couldn't create libev loop\n");
+			goto err;
+		}
 		ev_signal_init(&evs,rxsignal,s);
-		ev_signal_start(loop,&evs);
+		ev_signal_start(l,&evs);
 		printf("Watching signal %d (%s)\n",s,strsignal(s));
-	}*/
-	{ // FIXME
-	ev_signal evs;
+	}
 	ev_signal_init(&evs,rxsignal,SIGINT);
 	ev_signal_start(loop,&evs);
-	printf("Watching signal %d (%s)\n",SIGINT,strsignal(SIGINT));
-	}
 	ev_loop(loop,0);
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		int s = signals_watched[z].sig;
