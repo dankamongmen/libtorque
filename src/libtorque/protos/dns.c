@@ -1,7 +1,7 @@
 #include <sys/poll.h>
-#include <libtorque/dns/dns.h>
 #include <libtorque/internal.h>
 #include <libtorque/events/fd.h>
+#include <libtorque/protos/dns.h>
 #include <libtorque/events/thread.h>
 
 int libtorque_dns_init(dns_state *dctx){

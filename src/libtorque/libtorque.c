@@ -3,11 +3,11 @@
 #include <unistd.h>
 #include <limits.h>
 #include <libtorque/buffers.h>
-#include <libtorque/ssl/ssl.h>
-#include <libtorque/dns/dns.h>
 #include <libtorque/internal.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/events/fd.h>
+#include <libtorque/protos/ssl.h>
+#include <libtorque/protos/dns.h>
 #include <libtorque/events/evq.h>
 #include <libtorque/events/path.h>
 #include <libtorque/events/timer.h>

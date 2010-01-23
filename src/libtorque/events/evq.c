@@ -1,5 +1,5 @@
 #include <unistd.h>
-#include <libtorque/dns/dns.h>
+#include <libtorque/protos/dns.h>
 #include <libtorque/events/evq.h>
 #include <libtorque/events/thread.h>
 #include <libtorque/events/signal.h>

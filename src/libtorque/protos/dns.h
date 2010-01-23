@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_DNS_DNS
-#define LIBTORQUE_DNS_DNS
+#ifndef LIBTORQUE_PROTOS_DNS
+#define LIBTORQUE_PROTOS_DNS
 
 #ifdef __cplusplus
 extern "C" {

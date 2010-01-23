@@ -11,8 +11,8 @@
 #include <openssl/rand.h>
 #include <openssl/crypto.h>
 #include <libtorque/buffers.h>
-#include <libtorque/ssl/ssl.h>
 #include <libtorque/schedule.h>
+#include <libtorque/protos/ssl.h>
 #include <libtorque/events/thread.h>
 
 static unsigned numlocks;

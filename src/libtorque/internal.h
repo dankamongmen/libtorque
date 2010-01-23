@@ -9,9 +9,9 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <libtorque/dns/dns.h>
 #include <libtorque/schedule.h>
 #include <libtorque/libtorque.h>
+#include <libtorque/protos/dns.h>
 #include <libtorque/events/sysdep.h>
 
 struct evsource;
