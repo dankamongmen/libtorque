@@ -12,15 +12,6 @@ struct ssl_cbstate;
 #include <openssl/ssl.h>
 #include <libtorque/events/sources.h>
 
-// Call this only if OpenSSL hasn't already been properly initialized by some
-// other code. If OpenSSL is elsewhere initialized, ensure the threads(3ssl)
-// directives have been observed!
-int libtorque_init_ssl(void) __attribute__ ((visibility("default")))
-	__attribute__ ((warn_unused_result));
-
-// Likewise, call this only if we called initialize_ssl().
-int libtorque_stop_ssl(void) __attribute__ ((visibility("default")));
-
 // Create a new SSL context, if one is not being provided to us. We only allow
 // SSLv3/TLSv1, and require full certificate-based authentication, but allow
 // specification of whether or not client authentication is required.

@@ -130,6 +130,16 @@ libtorque_err libtorque_addpath(struct libtorque_ctx *,const char *,
 #else
 typedef void SSL_CTX;
 #endif
+
+// Call this only if OpenSSL hasn't already been properly initialized by some
+// other code. If OpenSSL is elsewhere initialized, ensure the threads(3ssl)
+// directives have been observed!
+int libtorque_init_ssl(void) __attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result));
+
+// Likewise, call this only if we called initialize_ssl().
+int libtorque_stop_ssl(void) __attribute__ ((visibility("default")));
+
 // The SSL_CTX should be set up with the desired authentication parameters etc
 // already (utility functions are provided to do this). If libtorque was not
 // compiled with SSL support, returns LIBTORQUE_ERR_UNAVAIL.
