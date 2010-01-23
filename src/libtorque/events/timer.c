@@ -98,7 +98,7 @@ libtorque_err add_timer_to_evhandler(struct libtorque_ctx *ctx __attribute__ ((u
 	if((tm = create_timerfd_marshal(tfxn,cbstate)) == NULL){
 		return LIBTORQUE_ERR_RESOURCE;
 	}
-	EV_SET(tk.eventv,(uintptr_t)tm,EVFILT_TIMER,0,0,ms,NULL);
+	EV_SET(tk.eventv,(uintptr_t)tm,EVFILT_TIMER,EV_ADD | EVONESHOT,0,ms,NULL);
 	if(Kevent(evq->efd,tk.eventv,1,NULL,0)){
 		free(tm);
 		return LIBTORQUE_ERR_RESOURCE;
