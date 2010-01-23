@@ -75,3 +75,9 @@ void *mod_pages(void *map,size_t olds,size_t news){
 void dealloc(void *map,size_t s){
 	munmap(map,s); // FIXME really ought check for error here. but do what?
 }
+
+/* void *hwaligned_alloc_tight(size_t s,size_t *afac){
+}
+
+void *hwaligned_alloc_tight(size_t s,size_t *afac){
+}*/

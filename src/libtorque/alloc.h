@@ -14,6 +14,30 @@ void *get_pages(size_t)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((malloc));
 
+// Aligned to the smallest cacheline length. The alignment factor used is
+// stored into the last parameter, if non-NULL. Good for:
+//
+//  - frequently-accessed, unshared data (to avoid false sharing)
+//  - small truly shared data, such as synchronization variables (to avoid
+//     truly shared line splits)
+void *hwaligned_alloc_tight(size_t,size_t *)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((alloc_size(1)))
+	__attribute__ ((malloc));
+
+// Aligned to the least common multiple of hardware cacheline lengths
+// (hopefully, this is simply the largest cacheline length). The alignment
+// factor used is stored into the last parameter, if non-NULL. Good for:
+//
+//  - bulk data truly shared among multiple threads
+//  - buffers and arenas whose sizes are functions of large caches' size
+//  - data which is randomly accessed in ~cacheline-sized records (an arena
+//     allocator ought request a block, and then parcel it out)
+void *hwaligned_alloc_tight(size_t,size_t *)
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((alloc_size(1)))
+	__attribute__ ((malloc));
+
 // Get a VMA as large as the largest (*architectural*, not necessarily
 // *supported*) TLB. The presumption is that this is a nice, natural size for
 // "something which might get big, but we definitely need a lot of them",
