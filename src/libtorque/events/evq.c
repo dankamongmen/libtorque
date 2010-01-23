@@ -56,7 +56,7 @@ add_evqueue_baseevents(libtorque_ctx *ctx,evqueue *e){
 		if(sigemptyset(&s) || sigaddset(&s,EVTHREAD_TERM) || sigaddset(&s,EVTHREAD_INT)){
 			return -1;
 		}
-		if(add_signal_to_evhandler(ctx,e,&s,rxcommonsignal,NULL)){
+		if(add_signal_to_evhandler(ctx,e,&s,rxcommonsignal,ctx)){
 			return -1;
 		}
 	}
