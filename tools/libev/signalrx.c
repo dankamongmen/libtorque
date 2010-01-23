@@ -22,6 +22,7 @@ static struct {
 	{ PTHREAD_MUTEX_INITIALIZER, SIGUSR2, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGCHLD, 0 },
 	{ PTHREAD_MUTEX_INITIALIZER, SIGTERM, 0 },
+	{ PTHREAD_MUTEX_INITIALIZER, SIGINT, 0 },
 #ifdef SIGPOLL
 	{ PTHREAD_MUTEX_INITIALIZER, SIGPOLL, 0 },
 #endif
@@ -31,12 +32,13 @@ static struct {
 };
 
 static void
-rxsignal(struct ev_loop *loop __attribute__ ((unused)),
-		ev_signal *w __attribute__ ((unused)),
-		int revents __attribute__ ((unused))){
-	int sig = 0; // FIXME extract from *w
+rxsignal(struct ev_loop *loop,ev_signal *w,int revents __attribute__ ((unused))){
+	int sig = w->signum;
 	unsigned z;
 
+	if(sig == SIGINT){
+		ev_unloop(loop,EVUNLOOP_ALL);
+	}
 	for(z = 0 ; z < sizeof(signals_watched) / sizeof(*signals_watched) ; ++z){
 		if(signals_watched[z].sig == sig){
 			pthread_mutex_lock(&signals_watched[z].lock);
@@ -127,6 +129,7 @@ int main(int argc,char **argv){
 			fprintf(stderr,"Couldn't add signal %d to set\n",s);
 			goto err;
 		}
+		// FIXME libev requires one loop per signal, aieee
 		ev_signal_init(&evs,rxsignal,s);
 		ev_signal_start(loop,&evs);
 		printf("Watching signal %d (%s)\n",s,strsignal(s));
