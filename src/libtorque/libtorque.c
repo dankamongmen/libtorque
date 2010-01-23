@@ -223,6 +223,7 @@ libtorque_err libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
 libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
 				libtorquebwcb tx,void *state){
 	libtorque_rxbufcb *cbctx;
+	libtorque_err ret;
 
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
@@ -230,10 +231,10 @@ libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
 	if((cbctx = create_rxbuffercb(ctx,rx,tx,state)) == NULL){
 		return LIBTORQUE_ERR_RESOURCE;
 	}
-	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
-					cbctx,EVONESHOT)){
+	if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
+					cbctx,EVONESHOT)) ){
 		free_rxbuffercb(cbctx);
-		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
+		return ret;
 	}
 	return 0;
 }
@@ -243,10 +244,7 @@ libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb 
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,EVONESHOT)){
-		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
-	}
-	return 0;
+	return add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,EVONESHOT);
 }
 
 libtorque_err libtorque_addfd_concurrent(libtorque_ctx *ctx,int fd,
@@ -254,10 +252,7 @@ libtorque_err libtorque_addfd_concurrent(libtorque_ctx *ctx,int fd,
 	if(fd < 0){
 		return LIBTORQUE_ERR_INVAL;
 	}
-	if(add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,0)){
-		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
-	}
-	return 0;
+	return add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,0);
 }
 
 libtorque_err libtorque_addpath(libtorque_ctx *ctx,const char *path,libtorquercb rx,void *state){
