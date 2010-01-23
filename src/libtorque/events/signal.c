@@ -6,6 +6,34 @@
 #include <libtorque/events/signal.h>
 #include <libtorque/events/sources.h>
 
+static void
+signal_demultiplexer(int s){
+	libtorque_ctx *ctx = get_thread_ctx();
+
+	// If we're called from another thread (signal handlers are process-wide,
+	// and it's possible that the client fails to mask one of our signals),
+	// ev will be NULL and we oughtn't process the event. that shouldn't
+	// happen, except due to user error.
+	if(ctx){
+		evhandler *ev = get_thread_evh();
+
+		++ev->stats.events;
+		handle_evsource_read(ctx->eventtables.sigarray,s);
+	}
+}
+
+int init_signal_handlers(void){
+	struct sigaction act;
+
+	memset(&act,0,sizeof(act));
+	act.sa_handler = signal_demultiplexer;
+	sigfillset(&act.sa_mask);
+	if(sigaction(EVTHREAD_TERM,&act,NULL) || sigaction(EVTHREAD_INT,&act,NULL)){
+		return -1;
+	}
+	return 0;
+}
+
 // from kevent(2) on FreeBSD 6.4:
 // EVFILT_SIGNAL  Takes the signal number to monitor as the identifier and
 // 	returns when the given signal is delivered to the process.

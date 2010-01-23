@@ -16,6 +16,8 @@ int add_signal_to_evhandler(struct libtorque_ctx *,const struct evqueue *,
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull (1,2,3,4)));
 
+int init_signal_handlers(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -212,6 +212,9 @@ int initialize_common_sources(libtorque_ctx *ctx,struct evtables *evt,const sigs
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,ctx);
 	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal,NULL,ctx);
 #endif
+	if(init_signal_handlers()){
+		return -1;
+	}
 	return 0;
 }
 
