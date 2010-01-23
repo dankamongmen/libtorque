@@ -182,6 +182,11 @@ int main(int argc,char **argv){
 	if(parse_args(argc,argv,&sin.sin_port)){
 		return EXIT_FAILURE;
 	}
+	if( (err = libtorque_sigmask(NULL)) ){
+		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
+				libtorque_errstr(err));
+		return EXIT_FAILURE;
+	}
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
