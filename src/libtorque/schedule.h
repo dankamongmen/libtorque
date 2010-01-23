@@ -33,7 +33,6 @@ portable_cpuset_count(const cpu_set_t *mask){
 
 struct libtorque_ctx;
 
-// Remaining declarations are internal to libtorque via -fvisibility=hidden
 int pin_thread(unsigned);
 int spawn_thread(struct libtorque_ctx *);
 int reap_threads(struct libtorque_ctx *);
