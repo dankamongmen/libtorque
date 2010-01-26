@@ -1,3 +1,6 @@
 .out
 .tags
+autom4te.cache
+config.log
+configure
 GNUmakefile.local
