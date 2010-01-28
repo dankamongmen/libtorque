@@ -79,6 +79,9 @@ XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 # This can be a URL; it's the docbook-to-manpage XSL
 #DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
 
+# GraphViz 2.20.2 is known to work
+DOT?=$(shell (which dot) 2> /dev/null)
+
 #
 # USER SPECIFICATION AREA ENDS
 ######################################################################
@@ -115,6 +118,7 @@ OUT:=.out
 SRCDIR:=src
 TOOLDIR:=tools
 MANDIR:=doc/man
+FIGDIR:=doc/figures
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
 ARCHDETECTDIRS:=$(SRCDIR)/$(ARCHDETECT)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
@@ -153,11 +157,14 @@ LIBS:=$(addprefix $(LIBOUT)/,$(TORQUESOL) $(TORQUESOR) $(TORQUESTAT))
 REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 
 # Documentation processing
-MAN1SRC:=$(shell find $(MANDIR)/man1/ -type f -print)
-MAN3SRC:=$(shell find $(MANDIR)/man3/ -type f -print)
+MAN1SRC:=$(wildcard $(MANDIR)/man1/*)
+MAN3SRC:=$(wildcard $(MANDIR)/man3/*)
+FIGSRC:=$(wildcard $(FIGDIR)/*.dot)
 MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1))
 MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3))
-DOCS:=$(MAN1OBJ) $(MAN3OBJ)
+FIGDOC:=$(addprefix $(OUT)/,$(FIGSRC:%.dot=%.svg))
+DOCS:=$(MAN1OBJ) $(MAN3OBJ) $(FIGDOC)
+PRETTYDOT:=$(FIGDIR)/notugly/notugly.xsl
 INCINSTALL:=$(addprefix $(SRCDIR)/lib$(TORQUE)/,lib$(TORQUE).h ssl/ssl.h)
 TAGS:=.tags
 
@@ -352,6 +359,10 @@ $(OUT)/%.3: %.xml $(GLOBOBJDEPS)
 $(OUT)/%.1: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
+
+$(OUT)/%.svg: %.dot $(PRETTYDOT) $(GLOBOBJDEPS)
+	@mkdir -p $(@D)
+	$(DOT) -Tsvg $< | $(XSLTPROC) -o $@ $(PRETTYDOT) -
 
 $(TAGS): $(SRC) $(CINC) $(MAKEFILE_LIST)
 	@mkdir -p $(@D)
