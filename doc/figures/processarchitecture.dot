@@ -1,0 +1,74 @@
+digraph G {
+	nodesep="0.5"
+	subgraph clusterPrime {
+		labelloc="b";
+		compound="true"
+		subgraph clusterKernel {
+			label="Kernelspace (Linux epoll, FreeBSD kqueue, etc...)"
+			style=filled;
+			color=cadetblue;
+			wqueue0 [style=filled fillcolor=steelblue shape=Mdiamond]
+			wqueueN [style=filled fillcolor=steelblue shape=Mdiamond]
+			wqueue0 -> nics [dir=both]
+			nics [style="filled,diagonals" fillcolor=greenyellow label="Devices/IPC"]
+			nics -> wqueueN [dir=both]
+			{ rank=same; wqueue0 wqueueN nics }
+		}
+		subgraph clusterUser {
+			label="Userspace (libtorque-enabled process)";
+			style=filled;
+			color=gold;
+			evqueueN [style="diagonals,filled" fillcolor=mediumpurple shape=invtrapezium group="evq"]
+			evqueue0 [style="diagonals,filled" fillcolor=mediumpurple shape=invtrapezium group="evq"]
+			wqueue0 -> evqueue0 [dir=both style=bold color="blue:purple"]
+			wqueueN -> evqueueN [dir=both style=bold color="blue:purple"]
+			evqueue0 -> evqueueN [label="About sqrt(cpus) evqueues, usually" dir=both style=dotted color=maroon]
+			API -> evqueue0 [style=bold color=purple]
+			API -> evqueueN [style=bold color=purple]
+			API [style=filled fillcolor=green shape=box group="evq"];
+			{ rank=same; evqueue0 evqueueN }
+			node [shape=record];
+				thr0 [label="<t0>T0|<t1>T1|<t2>T2|<tN>TN"];
+				thrN [label="<t0>T0|<t1>T1|<t2>T2|<tN>TN"];
+				color=red;
+			evqueue0 -> thr0:t0 [color=blue]
+			evqueue0 -> thr0:t1 [color=blue]
+			evqueue0 -> thr0:t2 [color=blue]
+			evqueue0 -> thr0:tN [color=blue]
+			evqueueN -> thrN:t0 [color=blue]
+			evqueueN -> thrN:t1 [color=blue]
+			evqueueN -> thrN:t2 [color=blue]
+			evqueueN -> thrN:tN [color=blue]
+			{ rank=same; thr0 thrN }
+			thr0 -> sigtable [color=lightblue style=bold]
+			thr0 -> fdtable [color=lightblue style=bold]
+			thr0 -> twheel [color=lightblue style=bold]
+			thrN -> sigtable [color=lightblue style=bold]
+			thrN -> fdtable [color=lightblue style=bold]
+			thrN -> twheel [color=lightblue style=bold]
+			fdtable [style=filled fillcolor=lightgreen shape=box label="fd monads\n(array)"]
+			twheel [style=filled fillcolor=lightgreen shape=box label="timer monads\n(hwheel or array)"]
+			sigtable [style=filled fillcolor=lightgreen shape=box label="sig monads\n(array)"]
+			sigtable -> fdtable [color=lightblue label="AIO"]
+			fdtable -> buf [color=lightblue]
+			fdtable -> dnsssl [color=lightblue]
+			twheel -> dnsssl [color=lightblue]
+			buf -> API
+			{ rank=same; sigtable fdtable twheel }
+			dnsssl -> API
+			dnsssl [style=filled fillcolor=lightgreen shape=box label="DNS, SSL/TLS\n(adns, OpenSSL)"]
+			buf [style=filled fillcolor=lightgreen shape=box label="Buffering\n(arch-adaptive)"]
+			node [shape=record];
+				appthr [label="<tmain>Main\nthread|<t1>T1|<t2>T2|<tN>TN"];
+			cbs [style=filled fillcolor=orange shape=box label="Registered callbacks"];
+			cbs -> appthr [dir=both color=darkgreen]
+			sigtable -> cbs [color=green]
+			fdtable -> cbs [color=green]
+			twheel -> cbs [color=green]
+			buf -> cbs [color=green]
+			dnsssl -> cbs [color=green]
+			cbs -> API;
+			appthr -> API;
+		}
+	}
+} 

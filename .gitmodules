@@ -1,0 +1,3 @@
+[submodule "doc/figures/notugly"]
+	path = doc/figures/notugly
+	url = git://github.com/vidarh/diagram-tools.git
