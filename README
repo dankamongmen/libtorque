@@ -148,13 +148,19 @@ highly concurrent operation.
 
 --doc requirements----------------------------------------------------------
 
-Building the documentation (distributed in Docbook XML) requires xsltproc
-(part of the GNOME project's libxslt). A network connection is required if
+Building the man pages (distributed in Docbook XML) requires xsltproc (part of
+the GNOME project's libxslt) and DocBook. A network connection is required if
 the Docbook DTD's and XSL stylesheets are not installed; building the
 documentation will be much faster with local copies. Install:
 
  - docbook-xml, docbook-xsl, xsltproc (Debian)
  - textproc/docbook-xml, textproc/docbook-xsl, textproc/xsltproc (FreeBSD)
+
+Building the other documentation (papers, figures, etc) requires GraphViz's
+dot(1) utility. Version 2.20.2--2.26.0 have been tested. Install:
+
+ - graphviz (Debian)
+ - graphics/graphviz (FreeBSD)
 
 --misc requirements---------------------------------------------------------
 
