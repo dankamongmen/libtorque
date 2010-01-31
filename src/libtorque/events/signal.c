@@ -98,7 +98,7 @@ libtorque_err add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __at
 		if(!sigismember(sigs,z)){
 			continue;
 		}
-		EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
+		EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EVEDGET,0,0,NULL);
 		if(Kevent(evq->efd,&k,1,NULL,0)){
 			return LIBTORQUE_ERR_ASSERT; // FIXME pull previous out
 		}

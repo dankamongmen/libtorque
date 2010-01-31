@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all test testarchdetect testtorquehost hardtest testssl docs clean \
+.PHONY: all test testarchdetect testtorquehost hardtest testssl doc clean \
 	mrproper flow install unsafe-install deinstall
 .DEFAULT_GOAL:=test
 
@@ -246,9 +246,9 @@ flow:
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
-all: test docs
+all: test doc
 
-docs: $(TAGS) $(DOCS)
+doc: $(TAGS) $(DOCS)
 
 test: $(TAGS) $(BINS) $(LIBS) $(TESTBINS) testarchdetect testtorquehost
 

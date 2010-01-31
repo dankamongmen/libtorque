@@ -34,10 +34,10 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 
 	// FIXME enforce EPOLLONESHOT equivalent
 	if(rfxn){
-		EV_SET(&k[0],fd,EVFILT_READ,EV_ADD | EV_CLEAR | eflags,0,0,NULL);
+		EV_SET(&k[0],fd,EVFILT_READ,EV_ADD | EVEDGET | eflags,0,0,NULL);
 	}
 	if(tfxn){
-		EV_SET(&k[1],fd,EVFILT_WRITE,EV_ADD | EV_CLEAR | eflags,0,0,NULL);
+		EV_SET(&k[1],fd,EVFILT_WRITE,EV_ADD | EVEDGET | eflags,0,0,NULL);
 	}
 	return Kevent(evq->efd,k,!!tfxn + !!rfxn,NULL,0);
 #else
