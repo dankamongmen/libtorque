@@ -411,7 +411,7 @@ int main(int argc,char **argv){
 		usage(a0);
 		goto done;
 	}
-	if((ctx = libtorque_init(&err)) == NULL){
+	if((ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
 				torque_errstr(err));
 		goto done;

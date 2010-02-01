@@ -106,7 +106,7 @@ free_torque_ctx(torque_ctx *ctx){
 }
 
 static torque_ctx *
-libtorque_init_sigmasked(torque_err *e,const sigset_t *ss){
+torque_init_sigmasked(torque_err *e,const sigset_t *ss){
 	torque_ctx *ctx;
 
 	if((ctx = create_torque_ctx(e,ss)) == NULL){
@@ -162,7 +162,7 @@ torque_err libtorque_sigmask(sigset_t *olds){
 	return 0;
 }
 
-torque_ctx *libtorque_init(torque_err *e){
+torque_ctx *torque_init(torque_err *e){
 	struct sigaction oldact;
 	torque_ctx *ret;
 	sigset_t old,add;
@@ -185,7 +185,7 @@ torque_ctx *libtorque_init(torque_err *e){
 		*e = TORQUE_ERR_ASSERT;
 		return NULL;
 	}
-	ret = libtorque_init_sigmasked(e,&old);
+	ret = torque_init_sigmasked(e,&old);
 	if(pthread_sigmask(SIG_SETMASK,&old,NULL)){
 		libtorque_stop(ret);
 		*e = TORQUE_ERR_ASSERT;

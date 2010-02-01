@@ -156,7 +156,7 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't set signal mask\n");
 		return EXIT_FAILURE;
 	}
-	if((ctx = libtorque_init(&err)) == NULL){
+	if((ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}

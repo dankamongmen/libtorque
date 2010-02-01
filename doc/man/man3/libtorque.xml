@@ -66,7 +66,7 @@
 		<funcsynopsis>
 			<funcsynopsisinfo>#include &lt;libtorque.h&gt;</funcsynopsisinfo>
 			<funcprototype>
-			<funcdef>struct torque_ctx *<function>libtorque_init</function></funcdef>
+			<funcdef>struct torque_ctx *<function>torque_init</function></funcdef>
 			<paramdef>torque_err *<parameter>e</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>

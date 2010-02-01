@@ -57,7 +57,7 @@ torque_err libtorque_sigmask(sigset_t *)
 // If libtorque_block() or libtorque_stop() are to be used, it is imperative
 // that all other threads have libtorque's internally-used signals masked. This
 // is best accomplished by calling libtorque_sigmask() early in the program.
-struct torque_ctx *libtorque_init(torque_err *)
+struct torque_ctx *torque_init(torque_err *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))

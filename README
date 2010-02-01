@@ -290,8 +290,8 @@ which attempts to be authoritative and current regarding technical details.
 Numerous example applications live in tools/testing/ and various src/
 directories. That having been said:
 
- - A libtorque_ctx is required to use any libtorque functionality. A program
-   may use more than one libtorque_ctx, although this constrains event handling
+ - A torque_ctx is required to use any libtorque functionality. A program
+   may use more than one torque_ctx, although this constrains event handling
    and is thus not generally optimal. This support exists because:
 
     - multiple libraries used by an app might each use libtorque
@@ -304,8 +304,8 @@ directories. That having been said:
    operating system containers. Alternatively, use libtorque's priority system
    in conjunction with handrolled stats.
 
- - A libtorque_ctx can be created only via libtorque_init(). It cannot be used
-   after passing it to libtorque_stop(). Side-effects of libtorque_init()
+ - A torque_ctx can be created only via torque_init(). It cannot be used
+   after passing it to libtorque_stop(). Side-effects of torque_init()
    include:
 
    - (re-)detection of system topology and processor details
@@ -420,8 +420,8 @@ A: Yes. Most of the binaries built as part of libtorque don't use -pthread;
 --file descriptors----------------------------------------------------------
 
 Q: Why is libtorque_addfd() failing on very high fds?
-A: Did your file descriptor rlimit change after the relevant libtorque_ctx was
-   created? libtorque_init() detects and uses the file descriptor rlimit to
+A: Did your file descriptor rlimit change after the relevant torque_ctx was
+   created? torque_init() detects and uses the file descriptor rlimit to
    shape some internal arrays, and will reject file descriptors outside this
    range.
 
@@ -444,8 +444,8 @@ A: libtorque uses POSIX threads, and reflects those semantics. An IPC signal
 
    In summary: to ensure delivery to non-libtorque threads, don't register the
    relevant signals with libtorque, and mask them prior to calling
-   libtorque_init(). To ensure handling within libtorque, mask the relevant
-   signals (in all threads) prior to calling libtorque_init(), and register
+   torque_init(). To ensure handling within libtorque, mask the relevant
+   signals (in all threads) prior to calling torque_init(), and register
    them for handling. Always be sure to keep SIGTERM blocked.
 
 Q: Will signal handlers be called if libtorque is listening for that signal?

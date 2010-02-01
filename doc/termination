@@ -61,7 +61,7 @@ thread until all threads in the context have terminated. libtorque_stop() does
 the same, but initiates the shutdown process itself. Server programs ought:
 
  - mask SIGTERM
- - call libtorque_init()
+ - call torque_init()
  - register some events with the context
  - call libtorque_block()
  - perform teardown (no callbacks will occur)

@@ -102,9 +102,9 @@ typedef struct evqueue {
 // Whenever a field is added to this structure, make sure it's
 //  a) initialized in create_torque_ctx(), and
 //  b) free()d (and reset) in the appropriate cleanup
-// A context describes the system state as it was when libtorque_init() was
-// called, and as it was then restricted (ie, only those processing elements in
-// our cpuset, and only those NUMA nodes which we can reach).
+// A context describes the system state as it was when torque_init() was called,
+// and as it was then restricted (ie, only those processing elements in our
+// cpuset, and only those NUMA nodes which we can reach).
 typedef struct torque_ctx {
 	evqueue evq;			// shared evq
 	unsigned nodecount;		// number of NUMA nodes
