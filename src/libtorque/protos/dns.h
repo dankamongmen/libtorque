@@ -8,7 +8,7 @@ extern "C" {
 #include <stdlib.h>
 #include <libtorque/libtorque.h>
 
-#ifndef torque_WITHOUT_ADNS
+#ifndef LIBTORQUE_WITHOUT_ADNS
 #include <adns.h>
 typedef adns_state dns_state;
 #else

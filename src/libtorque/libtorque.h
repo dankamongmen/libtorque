@@ -125,7 +125,7 @@ torque_err torque_addpath(struct torque_ctx *,const char *,
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2,3)));
 
-#ifndef torque_WITHOUT_SSL
+#ifndef LIBTORQUE_WITHOUT_SSL
 #include <openssl/ssl.h>
 #else
 typedef void SSL_CTX;
@@ -164,7 +164,7 @@ int ssl_tx(int,struct ssl_cbstate *,const void *,int)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(2)));
 
-#ifndef torque_WITHOUT_ADNS
+#ifndef LIBTORQUE_WITHOUT_ADNS
 #include <adns.h>
 typedef adns_answer torque_dnsret;
 #else

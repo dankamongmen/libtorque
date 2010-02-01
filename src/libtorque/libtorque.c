@@ -262,7 +262,7 @@ torque_err torque_addpath(torque_ctx *ctx,const char *path,libtorquercb rx,void 
 	return 0;
 }
 
-#ifndef torque_WITHOUT_SSL
+#ifndef LIBTORQUE_WITHOUT_SSL
 torque_err torque_addssl(torque_ctx *ctx,int fd,SSL_CTX *sslctx,
 			libtorquebrcb rx,libtorquebwcb tx,void *state){
 	struct ssl_cbstate *cbs;
@@ -287,7 +287,7 @@ torque_err torque_addssl(torque_ctx *ctx __attribute__ ((unused)),
 }
 #endif
 
-#ifndef torque_WITHOUT_ADNS
+#ifndef LIBTORQUE_WITHOUT_ADNS
 torque_err torque_addlookup_dns(torque_ctx *ctx,const char *owner,
 					libtorquednscb rx,void *state){
 	struct dnsmarshal *dm;
