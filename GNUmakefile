@@ -11,6 +11,9 @@ MINORVER:=0
 RELEASEVER:=1
 DFLAGS+=-DTORQUE_VERSIONSTR="\"$(MAJORVER).$(MINORVER).$(RELEASEVER)\""
 
+# Functions. Invoke with $(call funcname,comma,delimited,args).
+which = $(firstword $(wildcard $(addsuffix /$(1),$(subst :, ,$(PATH)))))
+
 # Don't run shell commands unnecessarily. Cache commonly-used results here.
 UNAME:=$(shell uname)
 
@@ -29,7 +32,7 @@ DOCPREFIX?=$(PREFIX)/share/man
 endif
 
 # Some systems don't install exuberant-ctags as 'ctags'. Some people use etags.
-TAGBIN?=$(shell which exctags 2> /dev/null || echo ctags)
+TAGBIN?=$(firstword $(call which,exctags) $(call which,ctags))
 
 # We want GCC 4.3+ if we can find it. Some systems have install it as gcc-v.v,
 # some as gccv.v, some will have a suitably up-to-date default gcc...bleh.
@@ -101,6 +104,11 @@ MT_DFLAGS:=-D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 MANBIN:=makewhatis
 LDCONFIG:=ldconfig -m
 LFLAGS+=-L/usr/local/lib
+else
+ifeq ($(UNAME),SunOS)
+DFLAGS+=-DTORQUE_SOLARIS
+# FIXME
+endif
 endif
 endif
 
