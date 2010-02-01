@@ -70,15 +70,15 @@ first_aid(cpu_set_t *cs){
 // extra state during initial topology detection, but not later; this is stored
 // in *tm, which must be zeroed out prior to topology detection, and not
 // touched between calls. It must have space for a top_map per invocation.
-libtorque_err topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
+torque_err topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
 		unsigned thread,unsigned core,unsigned pkg,unsigned cputype){
 	libtorque_topt *sg;
 
 	if(aid >= CPU_SETSIZE){
-		return LIBTORQUE_ERR_ASSERT;
+		return TORQUE_ERR_ASSERT;
 	}
 	if((sg = find_sched_group(&ctx->sched_zone,pkg,cputype)) == NULL){
-		return LIBTORQUE_ERR_RESOURCE;
+		return TORQUE_ERR_RESOURCE;
 	}
 	// If we share the package, it mustn't be a new package. Quod, we
 	// needn't worry about free()ing it, and can stroll on down...FIXME
@@ -90,17 +90,17 @@ libtorque_err topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
 			unsigned oid;
 
 			if((oid = first_aid(&sg->schedulable)) >= CPU_SETSIZE){
-				return LIBTORQUE_ERR_ASSERT;
+				return TORQUE_ERR_ASSERT;
 			}
 			sg->sub = create_zone(tm[oid].core,cputype);
 			if(sg->sub == NULL){
-				return LIBTORQUE_ERR_RESOURCE;
+				return TORQUE_ERR_RESOURCE;
 			}
 			CPU_SET(oid,&sg->sub->schedulable);
 			sg->sub->next = NULL;
 		}
 		if((sc = find_sched_group(&sg->sub,core,cputype)) == NULL){
-			return LIBTORQUE_ERR_RESOURCE;
+			return TORQUE_ERR_RESOURCE;
 		}
 		CPU_SET(aid,&sc->schedulable);
 	}

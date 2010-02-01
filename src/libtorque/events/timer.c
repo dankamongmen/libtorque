@@ -43,7 +43,7 @@ timer_passthru(int fd __attribute__ ((unused)),void *state){
 //      handled according to their default dispositions.  It is not possible to
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
-libtorque_err add_timer_to_evhandler(struct libtorque_ctx *ctx __attribute__ ((unused)),
+torque_err add_timer_to_evhandler(struct libtorque_ctx *ctx __attribute__ ((unused)),
 		const struct evqueue *evq,const struct itimerspec *t,
 		libtorquetimecb tfxn,void *cbstate){
 #ifdef LIBTORQUE_LINUX_TIMERFD
@@ -51,34 +51,34 @@ libtorque_err add_timer_to_evhandler(struct libtorque_ctx *ctx __attribute__ ((u
 	int fd;
 
 	if((tm = create_timerfd_marshal(tfxn,cbstate)) == NULL){
-		return LIBTORQUE_ERR_RESOURCE;
+		return TORQUE_ERR_RESOURCE;
 	}
 	if((fd = timerfd_create(CLOCK_MONOTONIC,TFD_NONBLOCK | TFD_CLOEXEC)) < 0){
 		free(tm);
 		if(errno == EINVAL){
-			return LIBTORQUE_ERR_INVAL;
+			return TORQUE_ERR_INVAL;
 		}else if(errno == ENODEV || errno == ENOSYS){
-			return LIBTORQUE_ERR_UNAVAIL;
+			return TORQUE_ERR_UNAVAIL;
 		}
-		return LIBTORQUE_ERR_RESOURCE;
+		return TORQUE_ERR_RESOURCE;
 	}
 	// FIXME need determine whether TFD_TIMER_ABSTIME ought be used
 	if(timerfd_settime(fd,0,t,NULL)){
 		close(fd);
 		free(tm);
-		return LIBTORQUE_ERR_INVAL;
+		return TORQUE_ERR_INVAL;
 	}
 	if(add_fd_to_evhandler(ctx,evq,fd,timer_passthru,NULL,cbstate,0)){
 		close(fd);
 		free(tm);
-		return LIBTORQUE_ERR_ASSERT;
+		return TORQUE_ERR_ASSERT;
 	}
 #elif defined(LIBTORQUE_LINUX)
 //#error "Need Linux 2.6.25 / GNU libc 2.8 for timerfd"
 	if(!ctx || !evq || !t || !tfxn || !cbstate){
-		return LIBTORQUE_ERR_INVAL;
+		return TORQUE_ERR_INVAL;
 	}
-	return LIBTORQUE_ERR_UNAVAIL; // FIXME working around compile
+	return TORQUE_ERR_UNAVAIL; // FIXME working around compile
 #elif defined(LIBTORQUE_FREEBSD)
 	timerfd_marshal *tm;
 	EVECTOR_AUTOS(1,tk);
@@ -86,15 +86,15 @@ libtorque_err add_timer_to_evhandler(struct libtorque_ctx *ctx __attribute__ ((u
 
 	ms = t->it_interval.tv_sec * 1000 + t->it_interval.tv_nsec / 1000000;
 	if(!ms){
-		return LIBTORQUE_ERR_INVAL;
+		return TORQUE_ERR_INVAL;
 	}
 	if((tm = create_timerfd_marshal(tfxn,cbstate)) == NULL){
-		return LIBTORQUE_ERR_RESOURCE;
+		return TORQUE_ERR_RESOURCE;
 	}
 	EV_SET(tk.eventv,(uintptr_t)tm,EVFILT_TIMER,EV_ADD | EVONESHOT,0,ms,NULL);
 	if(Kevent(evq->efd,tk.eventv,1,NULL,0)){
 		free(tm);
-		return LIBTORQUE_ERR_RESOURCE;
+		return TORQUE_ERR_RESOURCE;
 	}
 #else
 #error "No timer event implementation on this OS"

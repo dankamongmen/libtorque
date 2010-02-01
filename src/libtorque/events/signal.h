@@ -9,7 +9,7 @@ extern "C" {
 #include <libtorque/internal.h>
 #include <libtorque/events/sources.h>
 
-libtorque_err add_signal_to_evhandler(struct libtorque_ctx *,
+torque_err add_signal_to_evhandler(struct libtorque_ctx *,
 				const struct evqueue *,const sigset_t *,
 				libtorquercb,void *)
 	__attribute__ ((warn_unused_result))

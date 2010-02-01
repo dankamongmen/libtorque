@@ -11,24 +11,24 @@ struct itimerspec;
 struct libtorque_ctx;
 struct libtorque_rxbuf;
 
-// Errors can be converted to a string via libtorque_errstr().
+// Errors can be converted to a string via torque_errstr().
 typedef enum {
-	LIBTORQUE_ERR_NONE = 0,
-	LIBTORQUE_ERR_ASSERT,	// principal precondition/expectation failure
-	LIBTORQUE_ERR_CPUDETECT,// error detecting available processor units
-	LIBTORQUE_ERR_MEMDETECT,// error detecting available memories
-	LIBTORQUE_ERR_AFFINITY, // error in the affinity subsystem
-	LIBTORQUE_ERR_RESOURCE,	// insufficient memory or descriptors
-	LIBTORQUE_ERR_INVAL,	// an invalid parameter was passed
-	LIBTORQUE_ERR_UNAVAIL,	// functionality unavailable on this platform
+	TORQUE_ERR_NONE = 0,
+	TORQUE_ERR_ASSERT,      // principal precondition/expectation failure
+	TORQUE_ERR_CPUDETECT,   // error detecting available processor units
+	TORQUE_ERR_MEMDETECT,   // error detecting available memories
+	TORQUE_ERR_AFFINITY,    // error in the affinity subsystem
+	TORQUE_ERR_RESOURCE,    // insufficient memory or descriptors
+	TORQUE_ERR_INVAL,       // an invalid parameter was passed
+	TORQUE_ERR_UNAVAIL,     // functionality unavailable on this platform
 
-	LIBTORQUE_ERR_MAX	// sentinel value, should never be seen
-} libtorque_err;
+	TORQUE_ERR_MAX          // sentinel value, should never be seen
+} torque_err;
 
 // Properly mask signals used internally by libtorque. This ought be called
 // prior to creating any threads. If the parameter is not NULL, the current
 // signal mask will be stored there.
-libtorque_err libtorque_sigmask(sigset_t *)
+torque_err libtorque_sigmask(sigset_t *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result));
 
@@ -57,7 +57,7 @@ libtorque_err libtorque_sigmask(sigset_t *)
 // If libtorque_block() or libtorque_stop() are to be used, it is imperative
 // that all other threads have libtorque's internally-used signals masked. This
 // is best accomplished by calling libtorque_sigmask() early in the program.
-struct libtorque_ctx *libtorque_init(libtorque_err *)
+struct libtorque_ctx *libtorque_init(torque_err *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))
@@ -79,14 +79,14 @@ typedef int (*libtorquebwcb)(int,struct libtorque_rxbuf *,void *);
 
 // Invoke the callback upon receipt of any of the specified signals. The signal
 // set may not contain EVTHREAD_TERM (usually SIGTERM), SIGKILL or SIGSTOP.
-libtorque_err libtorque_addsignal(struct libtorque_ctx *,const sigset_t *,
+torque_err libtorque_addsignal(struct libtorque_ctx *,const sigset_t *,
 					libtorquercb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2,3)));
 
 // After a minimum time interval, invoke the callback as soon as possible.
-libtorque_err libtorque_addtimer(struct libtorque_ctx *,
+torque_err libtorque_addtimer(struct libtorque_ctx *,
 		const struct itimerspec *,libtorquetimecb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
@@ -95,7 +95,7 @@ libtorque_err libtorque_addtimer(struct libtorque_ctx *,
 // Watch for events on the specified file descriptor, and invoke the callbacks.
 // Employ libtorque's read buffering. A buffered read callback must return -1
 // if the descriptor has been closed, and 0 otherwise.	
-libtorque_err libtorque_addfd(struct libtorque_ctx *,int,libtorquebrcb,
+torque_err libtorque_addfd(struct libtorque_ctx *,int,libtorquebrcb,
 					libtorquebwcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
@@ -103,7 +103,7 @@ libtorque_err libtorque_addfd(struct libtorque_ctx *,int,libtorquebrcb,
 
 // The same as libtorque_addfd, but manage buffering in the application,
 // calling back immediately on all events (but not in more than one thread).
-libtorque_err libtorque_addfd_unbuffered(struct libtorque_ctx *,int,
+torque_err libtorque_addfd_unbuffered(struct libtorque_ctx *,int,
 				libtorquercb,libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
@@ -112,14 +112,14 @@ libtorque_err libtorque_addfd_unbuffered(struct libtorque_ctx *,int,
 // The same as libtorque_addfd_unbuffered, but allow multiple threads to handle
 // event readiness notifications concurrently. This is (currently) the
 // preferred methodology for accept(2)ing sockets.
-libtorque_err libtorque_addfd_concurrent(struct libtorque_ctx *,int,
+torque_err libtorque_addfd_concurrent(struct libtorque_ctx *,int,
 				libtorquercb,libtorquewcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
 // Watch for events on the specified path, and invoke the callback.
-libtorque_err libtorque_addpath(struct libtorque_ctx *,const char *,
+torque_err libtorque_addpath(struct libtorque_ctx *,const char *,
 					libtorquercb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
@@ -150,8 +150,8 @@ SSL_CTX *libtorque_ssl_ctx(const char *,const char *,const char *,unsigned)
 
 // The SSL_CTX should be set up with the desired authentication parameters etc
 // already (utility functions are provided to do this). If libtorque was not
-// compiled with SSL support, returns LIBTORQUE_ERR_UNAVAIL.
-libtorque_err libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,
+// compiled with SSL support, returns torque_err_UNAVAIL.
+torque_err libtorque_addssl(struct libtorque_ctx *,int,SSL_CTX *,
 				libtorquebrcb,libtorquebwcb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
@@ -172,7 +172,7 @@ typedef void libtorque_dnsret;
 #endif
 typedef void (*libtorquednscb)(const libtorque_dnsret *,void *);
 // FIXME probably ought take adns_rrtype and adns_queryflags as well...
-libtorque_err libtorque_addlookup_dns(struct libtorque_ctx *,const char *,
+torque_err libtorque_addlookup_dns(struct libtorque_ctx *,const char *,
 						libtorquednscb,void *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
@@ -192,17 +192,18 @@ struct libtorque_ctx *libtorque_getcurctx(void)
 // the other method, the threads could die, but your control threads is still
 // running; it's in a sigwait() or something, not a pthread_join() (which would
 // succeed immediately). The context, and all of its data, are destroyed.
-libtorque_err libtorque_block(struct libtorque_ctx *)
+torque_err libtorque_block(struct libtorque_ctx *)
 	__attribute__ ((visibility("default")));
 
 // Signal and reap the running threads, and free the context. No further calls
 // may be made using this context following libtorque_stop().
-libtorque_err libtorque_stop(struct libtorque_ctx *)
+torque_err libtorque_stop(struct libtorque_ctx *)
 	__attribute__ ((visibility("default")));
 
 // Translate the libtorque error code into a human-readable string.
-const char *libtorque_errstr(libtorque_err)
-	__attribute__ ((visibility("default")));
+const char *torque_errstr(torque_err)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result));
 
 #ifdef __cplusplus
 }

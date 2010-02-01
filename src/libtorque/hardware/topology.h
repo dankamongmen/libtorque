@@ -64,7 +64,7 @@ struct top_map {
 };
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-libtorque_err topologize(struct libtorque_ctx *,struct top_map *,unsigned,
+torque_err topologize(struct libtorque_ctx *,struct top_map *,unsigned,
 				unsigned,unsigned,unsigned,unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)));

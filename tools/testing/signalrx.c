@@ -98,7 +98,7 @@ err:
 int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
 	uintmax_t totalsigs;
-	libtorque_err err;
+	torque_err err;
 	sigset_t ss;
 	unsigned z;
 
@@ -107,7 +107,7 @@ int main(int argc,char **argv){
 	}
 	if((ctx = libtorque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		goto err;
 	}
 	if(sigemptyset(&ss)){
@@ -132,7 +132,7 @@ int main(int argc,char **argv){
 	}
 	if( (err = libtorque_block(ctx)) ){
 		fprintf(stderr,"Error blocking on libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		goto err;
 	}
 	totalsigs = 0;
@@ -156,7 +156,7 @@ int main(int argc,char **argv){
 err:
 	if( (err = libtorque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	return EXIT_FAILURE;

@@ -171,7 +171,7 @@ err:
 int main(int argc,char **argv){
 	struct libtorque_ctx *ctx = NULL;
 	struct sockaddr_in sin;
-	libtorque_err err;
+	torque_err err;
 	sigset_t termset;
 	int sig,sd = -1;
 
@@ -184,7 +184,7 @@ int main(int argc,char **argv){
 	}
 	if( (err = libtorque_sigmask(NULL)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	sin.sin_family = AF_INET;
@@ -192,7 +192,7 @@ int main(int argc,char **argv){
 	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
 	if((ctx = libtorque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		goto err;
 	}
 	if((sd = make_echo_fd(AF_INET,(struct sockaddr *)&sin,sizeof(sin))) < 0){
@@ -212,7 +212,7 @@ int main(int argc,char **argv){
 	printf("Got signal %d (%s), closing down...\n",sig,strsignal(sig));
 	if( (err = libtorque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	printf("Successfully cleaned up.\n");
@@ -221,7 +221,7 @@ int main(int argc,char **argv){
 err:
 	if( (err = libtorque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	if((sd >= 0) && close(sd)){
