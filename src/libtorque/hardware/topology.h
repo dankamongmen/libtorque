@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_HARDWARE_TOPOLOGY
-#define LIBTORQUE_HARDWARE_TOPOLOGY
+#ifndef torque_HARDWARE_TOPOLOGY
+#define torque_HARDWARE_TOPOLOGY
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,7 +52,7 @@ extern "C" {
 // different base isomorphism defined upon it...everywhere that we bound
 // together in the first instance, we must now break apart. Or do you simply
 // favor trading events across groups to within groups? Must investigate...
-const struct libtorque_topt *libtorque_get_topology(struct torque_ctx *)
+const struct torque_topt *torque_get_topology(struct torque_ctx *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
@@ -69,7 +69,7 @@ torque_err topologize(struct torque_ctx *,struct top_map *,unsigned,
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)));
 
-const struct libtorque_cput *lookup_aid(const struct torque_ctx *,unsigned)
+const struct torque_cput *lookup_aid(const struct torque_ctx *,unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 

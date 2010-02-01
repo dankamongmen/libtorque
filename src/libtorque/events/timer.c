@@ -5,7 +5,7 @@
 #include <libtorque/events/thread.h>
 #include <libtorque/events/sources.h>
 
-#if defined(LIBTORQUE_LINUX_TIMERFD) || defined(LIBTORQUE_FREEBSD)
+#if defined(TORQUE_LINUX_TIMERFD) || defined(TORQUE_FREEBSD)
 static inline timerfd_marshal *
 create_timerfd_marshal(libtorquetimecb tfxn,void *cbstate){
 	timerfd_marshal *ret;
@@ -46,7 +46,7 @@ timer_passthru(int fd __attribute__ ((unused)),void *state){
 torque_err add_timer_to_evhandler(struct torque_ctx *ctx __attribute__ ((unused)),
 		const struct evqueue *evq,const struct itimerspec *t,
 		libtorquetimecb tfxn,void *cbstate){
-#ifdef LIBTORQUE_LINUX_TIMERFD
+#ifdef TORQUE_LINUX_TIMERFD
 	timerfd_marshal *tm;
 	int fd;
 
@@ -73,13 +73,13 @@ torque_err add_timer_to_evhandler(struct torque_ctx *ctx __attribute__ ((unused)
 		free(tm);
 		return TORQUE_ERR_ASSERT;
 	}
-#elif defined(LIBTORQUE_LINUX)
+#elif defined(TORQUE_LINUX)
 //#error "Need Linux 2.6.25 / GNU libc 2.8 for timerfd"
 	if(!ctx || !evq || !t || !tfxn || !cbstate){
 		return TORQUE_ERR_INVAL;
 	}
 	return TORQUE_ERR_UNAVAIL; // FIXME working around compile
-#elif defined(LIBTORQUE_FREEBSD)
+#elif defined(TORQUE_FREEBSD)
 	timerfd_marshal *tm;
 	EVECTOR_AUTOS(1,tk);
 	uintmax_t ms;

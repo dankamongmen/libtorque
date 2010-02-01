@@ -14,7 +14,7 @@
 #include <libtorque/libtorque.h>
 
 static int
-echo_server(int fd,struct libtorque_rxbuf *rxb,void *v __attribute__ ((unused))){
+echo_server(int fd,struct torque_rxbuf *rxb,void *v __attribute__ ((unused))){
 	const char *buf;
 	size_t len,w;
 
@@ -65,7 +65,7 @@ conn_handler(int fd,void *v){
 			if(((flags = fcntl(sd,F_GETFL)) < 0) ||
 					fcntl(sd,F_SETFL,flags | (long)O_NONBLOCK)){
 				close(sd);
-			}else if(libtorque_addfd(ctx,sd,echo_server,echo_server,NULL)){
+			}else if(torque_addfd(ctx,sd,echo_server,echo_server,NULL)){
 				fprintf(stderr,"Couldn't add client sd %d\n",sd);
 				close(sd);
 			}
@@ -108,7 +108,7 @@ make_echo_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 
 static void
 print_version(void){
-	fprintf(stderr,"echoserver from libtorque " LIBTORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"echoserver from libtorque " TORQUE_VERSIONSTR "\n");
 }
 
 static void
@@ -182,7 +182,7 @@ int main(int argc,char **argv){
 	if(parse_args(argc,argv,&sin.sin_port)){
 		return EXIT_FAILURE;
 	}
-	if( (err = libtorque_sigmask(NULL)) ){
+	if( (err = torque_sigmask(NULL)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
 				torque_errstr(err));
 		return EXIT_FAILURE;
@@ -200,7 +200,7 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	printf("Registering server sd %d, port %hu\n",sd,ntohs(sin.sin_port));
-	if(libtorque_addfd_concurrent(ctx,sd,conn_handler,NULL,ctx)){
+	if(torque_addfd_concurrent(ctx,sd,conn_handler,NULL,ctx)){
 		fprintf(stderr,"Couldn't add server sd %d\n",sd);
 		goto err;
 	}
@@ -210,7 +210,7 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	printf("Got signal %d (%s), closing down...\n",sig,strsignal(sig));
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
 				torque_errstr(err));
 		return EXIT_FAILURE;
@@ -219,7 +219,7 @@ int main(int argc,char **argv){
 	return EXIT_SUCCESS;
 
 err:
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
 				torque_errstr(err));
 		return EXIT_FAILURE;

@@ -6,7 +6,7 @@
 #include <libtorque/events/signal.h>
 #include <libtorque/events/sources.h>
 
-#ifdef LIBTORQUE_LINUX_SIGNALFD
+#ifdef TORQUE_LINUX_SIGNALFD
 void signalfd_demultiplexer(int fd,void *cbstate){
 	const torque_ctx *ctx = cbstate;
 	ssize_t r;
@@ -28,7 +28,7 @@ void signalfd_demultiplexer(int fd,void *cbstate){
 		// FIXME stat on error reading signalfd!
 	}
 }
-#elif defined(LIBTORQUE_LINUX)
+#elif defined(TORQUE_LINUX)
 // FIXME ack, these need to be per-context, not global!
 static sigset_t epoll_sigset_base;
 const sigset_t *epoll_sigset = &epoll_sigset_base;
@@ -77,12 +77,12 @@ int add_epoll_sigset(const sigset_t *s,unsigned maxsignal){
 int restorefd(const struct evhandler *evh,int fd,int eflags){
 	EVECTOR_AUTOS(1,ev);
 
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 	memset(&ev.eventv.events[0],0,sizeof(ev.eventv.events[0]));
 	ev.eventv.events[0].events = EVEDGET | EVONESHOT | eflags;
 	ev.eventv.events[0].data.fd = fd;
 	ev.eventv.ctldata[0].op = EPOLL_CTL_MOD;
-#elif defined(LIBTORQUE_FREEBSD)
+#elif defined(TORQUE_FREEBSD)
 	{
 		short filter;
 

@@ -305,7 +305,7 @@ directories. That having been said:
    in conjunction with handrolled stats.
 
  - A torque_ctx can be created only via torque_init(). It cannot be used
-   after passing it to libtorque_stop(). Side-effects of torque_init()
+   after passing it to torque_stop(). Side-effects of torque_init()
    include:
 
    - (re-)detection of system topology and processor details
@@ -315,10 +315,10 @@ directories. That having been said:
    - SIGPIPE is ignored if it was previously handled via the default action
    - SIGTERM will be intercepted by some instance of libtorque subject to
       operating system-specific rules. See kqueue(7) or signalfd(2) (this also
-      applies to any signals registered via libtorque_addsignal())
+      applies to any signals registered via torque_addsignal())
    - allocation of moderate amounts of memory and a handful of file descriptors
 
- - Add event sources to the libtorque context via libtorque_add*(). Fundamental
+ - Add event sources to the libtorque context via torque_add*(). Fundamental
    event sources include:
 
     - file descriptors (rx / tx)
@@ -379,14 +379,14 @@ directories. That having been said:
    ought be implemented via libtorque's opportunistic or dedicated
    compute-thread infrastructure and more fine-grained continuations.
 
- - Handlers can themselves call libtorque functions (even libtorque_stop()),
+ - Handlers can themselves call libtorque functions (even torque_stop()),
    even on their own contexts (this is of course necessary for any kind of
    accept(2)ing socket).
 
 --common mistakes-----------------------------------------------------------
 
- - Using libtorque_addfd() for a listen(2)ing socket. The proper activation is
-   libtorque_addfd_unbuffered(). The accept(2)ing callback will never be
+ - Using torque_addfd() for a listen(2)ing socket. The proper activation is
+   torque_addfd_unbuffered(). The accept(2)ing callback will never be
    invoked from a default (buffered) fd.
 
  - Failing to account for EINTR or short returns. Whether a system call
@@ -408,7 +408,7 @@ directories. That having been said:
 
 Q: I get errors about NUMA-related functionality.
 A: See the NUMA requirements in section II.6. If you can't provide the
-   required minimum support, build with LIBTORQUE_WITHOUT_NUMA.
+   required minimum support, build with torque_WITHOUT_NUMA.
 
 --general use---------------------------------------------------------------
 
@@ -419,11 +419,10 @@ A: Yes. Most of the binaries built as part of libtorque don't use -pthread;
 
 --file descriptors----------------------------------------------------------
 
-Q: Why is libtorque_addfd() failing on very high fds?
+Q: Why is torque_addfd() failing on very high fds?
 A: Did your file descriptor rlimit change after the relevant torque_ctx was
-   created? torque_init() detects and uses the file descriptor rlimit to
-   shape some internal arrays, and will reject file descriptors outside this
-   range.
+   created? torque_init() detects and uses the file descriptor rlimit to shape
+   some internal arrays, and will reject file descriptors outside this range.
 
 --signals-------------------------------------------------------------------
 

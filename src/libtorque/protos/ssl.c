@@ -1,4 +1,4 @@
-#ifndef LIBTORQUE_WITHOUT_SSL
+#ifndef torque_WITHOUT_SSL
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -28,7 +28,7 @@ typedef struct ssl_cbstate {
 	void *cbstate;
 	libtorquebrcb rxfxn;
 	libtorquebwcb txfxn;
-	libtorque_rxbuf rxb;
+	torque_rxbuf rxb;
 } ssl_cbstate;
 
 struct ssl_cbstate *
@@ -58,7 +58,7 @@ void free_ssl_cbstate(ssl_cbstate *sc){
 	}
 }
 
-int libtorque_stop_ssl(void){
+int torque_stop_ssl(void){
 	int ret = 0;
 	unsigned z;
 
@@ -136,7 +136,7 @@ openssl_verify_callback(int preverify_ok,X509_STORE_CTX *xctx __attribute__ ((un
 }
 
 // This is currently server-oriented. Provide client functionality also FIXME.
-SSL_CTX *libtorque_ssl_ctx(const char *certfile,const char *keyfile,
+SSL_CTX *torque_ssl_ctx(const char *certfile,const char *keyfile,
 			const char *cafile,unsigned cliver){
 	unsigned char sessionid[64 / CHAR_BIT]; // FIXME really...? REALLY?!?
 	SSL_CTX *ret;
@@ -192,7 +192,7 @@ SSL_CTX *libtorque_ssl_ctx(const char *certfile,const char *keyfile,
 	return NULL;
 }
 
-int libtorque_init_ssl(void){
+int torque_init_ssl(void){
 	int nlocks;
 	unsigned z;
 
@@ -469,7 +469,7 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 			free_ssl_cbstate(csc);
 			return -1;
 		}
-		if(libtorque_addfd_unbuffered(ctx,sd,rx,tx,csc)){
+		if(torque_addfd_unbuffered(ctx,sd,rx,tx,csc)){
 			free_ssl_cbstate(csc);
 			return -1;
 		}
@@ -478,12 +478,12 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 
 		err = SSL_get_error(csc->ssl,ret);
 		if(err == SSL_ERROR_WANT_WRITE){
-			if(libtorque_addfd_unbuffered(ctx,sd,NULL,accept_conttxfxn,csc)){
+			if(torque_addfd_unbuffered(ctx,sd,NULL,accept_conttxfxn,csc)){
 				free_ssl_cbstate(csc);
 				return -1;
 			}
 		}else if(err == SSL_ERROR_WANT_READ){
-			if(libtorque_addfd_unbuffered(ctx,sd,accept_contrxfxn,NULL,csc)){
+			if(torque_addfd_unbuffered(ctx,sd,accept_contrxfxn,NULL,csc)){
 				free_ssl_cbstate(csc);
 				return -1;
 			}

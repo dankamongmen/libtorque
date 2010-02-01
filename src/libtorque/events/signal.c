@@ -69,7 +69,7 @@ torque_err add_signal_to_evhandler(torque_ctx *ctx,const evqueue *evq __attribut
 					NULL,cbstate);
 		}
 	}
-#ifdef LIBTORQUE_LINUX_SIGNALFD
+#ifdef TORQUE_LINUX_SIGNALFD
 	{
 		// FIXME we could restrict this all to a single signalfd, since
 		// it takes a sigset_t...less potential parallelism, though
@@ -87,11 +87,11 @@ torque_err add_signal_to_evhandler(torque_ctx *ctx,const evqueue *evq __attribut
 			return ret;
 		}
 	}
-#elif defined(LIBTORQUE_LINUX)
+#elif defined(TORQUE_LINUX)
 	if(add_epoll_sigset(sigs,ctx->eventtables.sigarraysize)){
 		return TORQUE_ERR_ASSERT;
 	}
-#elif defined(LIBTORQUE_FREEBSD)
+#elif defined(TORQUE_FREEBSD)
 	for(z = 1 ; z < ctx->eventtables.sigarraysize ; ++z){
 		struct kevent k;
 

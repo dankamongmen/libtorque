@@ -8,7 +8,7 @@
 #include <libtorque/alloc.h>
 #include <libtorque/hardware/memory.h>
 
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 #define MAP_ANONYMOUS MAP_ANON
 #endif
 
@@ -44,7 +44,7 @@ void *get_stack(size_t *s){
 void *mod_pages(void *map,size_t olds,size_t news){
 	void *ret;
 
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 	if((ret = mremap(map,olds,news,MREMAP_MAYMOVE)) == MAP_FAILED){
 		ret = NULL;
 	}

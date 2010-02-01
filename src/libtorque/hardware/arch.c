@@ -10,9 +10,9 @@
 // Returns the slot we just added to the end, or NULL on failure. Pointers
 // will be shallow-copied; dynamically allocate them, and do not free them
 // explicitly (they'll be handled by free_cpudetails()).
-static inline libtorque_cput *
-add_cputype(unsigned *cputc,libtorque_cput **types,
-		const libtorque_cput *acpu){
+static inline torque_cput *
+add_cputype(unsigned *cputc,torque_cput **types,
+		const torque_cput *acpu){
 	size_t s = (*cputc + 1) * sizeof(**types);
 	typeof(**types) *tmp;
 
@@ -25,7 +25,7 @@ add_cputype(unsigned *cputc,libtorque_cput **types,
 }
 
 static void
-free_cpudetails(libtorque_cput *details){
+free_cpudetails(torque_cput *details){
 	free(details->tlbdescs);
 	details->tlbdescs = NULL;
 	free(details->memdescs);
@@ -45,7 +45,7 @@ free_cpudetails(libtorque_cput *details){
 //  - /proc/cpuinfo (linux only)
 //  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
 static torque_err
-detect_cpudetails(unsigned id,libtorque_cput *details,
+detect_cpudetails(unsigned id,torque_cput *details,
 			unsigned *thread,unsigned *core,unsigned *pkg){
 	if(pin_thread(id)){
 		return TORQUE_ERR_AFFINITY;
@@ -58,8 +58,8 @@ detect_cpudetails(unsigned id,libtorque_cput *details,
 }
 
 static int
-compare_cpudetails(const libtorque_cput * restrict a,
-			const libtorque_cput * restrict b){
+compare_cpudetails(const torque_cput * restrict a,
+			const torque_cput * restrict b){
 	if(a->family != b->family || a->model != b->model ||
 		a->stepping != b->stepping || a->x86type != b->x86type){
 		return -1;
@@ -82,9 +82,9 @@ compare_cpudetails(const libtorque_cput * restrict a,
 	return 0;
 }
 
-static libtorque_cput *
-match_cputype(unsigned cputc,libtorque_cput *types,
-		const libtorque_cput *acpu){
+static torque_cput *
+match_cputype(unsigned cputc,torque_cput *types,
+		const torque_cput *acpu){
 	unsigned n;
 
 	for(n = 0 ; n < cputc ; ++n){
@@ -98,7 +98,7 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 // Revert to the original cpuset mask
 static int
 unpin_thread(const cpu_set_t *cset){
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 	if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,sizeof(*cset),cset)){
 #else
 	if(pthread_setaffinity_np(pthread_self(),sizeof(*cset),cset)){
@@ -139,10 +139,10 @@ unpin_thread(const cpu_set_t *cset){
 // successful return, mask contains the original affinity mask of the process.
 static inline unsigned
 detect_cpucount(cpu_set_t *mask){
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 				sizeof(*mask),mask) == 0){
-#elif defined(LIBTORQUE_LINUX)
+#elif defined(TORQUE_LINUX)
 	// We might be only a subthread of a larger application; use the
 	// affinity mask of the thread which initializes us.
 	if(pthread_getaffinity_np(pthread_self(),sizeof(*mask),mask) == 0){
@@ -161,7 +161,7 @@ detect_cpucount(cpu_set_t *mask){
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
 static torque_err
-detect_cputypes(torque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
+detect_cputypes(torque_ctx *ctx,unsigned *cputc,torque_cput **types){
 	struct top_map *topmap = NULL;
 	unsigned z,aid,cpucount;
 	torque_err ret;
@@ -183,7 +183,7 @@ detect_cputypes(torque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 	// FIXME parallelize this (see bug 24) -- move the code before
 	// spawn_thread() into it, and make it thread safe.
 	for(z = 0, aid = 0 ; z < cpucount ; ++z){
-		libtorque_cput cpudetails;
+		torque_cput cpudetails;
 		unsigned thread,core,pkg;
 		typeof(*types) cputype;
 
@@ -265,12 +265,12 @@ void free_architecture(torque_ctx *ctx){
 	free_memories(ctx);
 }
 
-unsigned libtorque_cpu_typecount(const torque_ctx *ctx){
+unsigned torque_cpu_typecount(const torque_ctx *ctx){
 	return ctx->cpu_typecount;
 }
 
 // Takes a description ID
-const libtorque_cput *libtorque_cpu_getdesc(const torque_ctx *ctx,unsigned n){
+const torque_cput *torque_cpu_getdesc(const torque_ctx *ctx,unsigned n){
 	if(n >= ctx->cpu_typecount){
 		return NULL;
 	}

@@ -6,7 +6,7 @@
 
 static inline int
 add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int eflags){
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 	struct epoll_ctl_data ecd;
 	struct epoll_event ee;
 	struct kevent k;
@@ -29,7 +29,7 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 		ee.events |= EPOLLOUT;
 	}
 	return Kevent(evq->efd,&k,1,NULL,0);
-#elif defined(LIBTORQUE_FREEBSD)
+#elif defined(TORQUE_FREEBSD)
 	struct kevent k[2];
 
 	// FIXME enforce EPOLLONESHOT equivalent

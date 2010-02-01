@@ -9,7 +9,7 @@
 MAJORVER:=0
 MINORVER:=0
 RELEASEVER:=1
-DFLAGS+=-DLIBTORQUE_VERSIONSTR="\"$(MAJORVER).$(MINORVER).$(RELEASEVER)\""
+DFLAGS+=-DTORQUE_VERSIONSTR="\"$(MAJORVER).$(MINORVER).$(RELEASEVER)\""
 
 # Don't run shell commands unnecessarily. Cache commonly-used results here.
 UNAME:=$(shell uname)
@@ -90,13 +90,13 @@ DOT?=$(shell (which dot) 2> /dev/null)
 
 # System-specific variables closed to external specification
 ifeq ($(UNAME),Linux)
-DFLAGS+=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+DFLAGS+=-DTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 LFLAGS+=-Wl,--warn-shared-textrel
 MANBIN:=mandb
 LDCONFIG:=ldconfig
 else
 ifeq ($(UNAME),FreeBSD)
-DFLAGS+=-DLIBTORQUE_FREEBSD
+DFLAGS+=-DTORQUE_FREEBSD
 MT_DFLAGS:=-D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 MANBIN:=makewhatis
 LDCONFIG:=ldconfig -m

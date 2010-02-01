@@ -72,7 +72,7 @@
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>torque_err <function>libtorque_addfd</function></funcdef>
+			<funcdef>torque_err <function>torque_addfd</function></funcdef>
 			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>int <parameter>fd</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>rcbfxn</parameter></paramdef>
@@ -82,7 +82,7 @@
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>torque_err <function>libtorque_addfd_unbuffered</function></funcdef>
+			<funcdef>torque_err <function>torque_addfd_unbuffered</function></funcdef>
 			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>int <parameter>fd</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>rcbfxn</parameter></paramdef>
@@ -92,7 +92,7 @@
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>torque_err <function>libtorque_addsignal</function></funcdef>
+			<funcdef>torque_err <function>torque_addsignal</function></funcdef>
 			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>const sigset_t *<parameter>ss</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>cbfxn</parameter></paramdef>
@@ -101,7 +101,7 @@
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>torque_err <function>libtorque_addpath</function></funcdef>
+			<funcdef>torque_err <function>torque_addpath</function></funcdef>
 			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>const char *<parameter>path</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>cbfxn</parameter></paramdef>
@@ -110,7 +110,7 @@
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>torque_err <function>libtorque_addtimer</function></funcdef>
+			<funcdef>torque_err <function>torque_addtimer</function></funcdef>
 			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>const struct itimerspec *<parameter>it</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>cbfxn</parameter></paramdef>
@@ -119,7 +119,7 @@
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>torque_err <function>libtorque_addssl</function></funcdef>
+			<funcdef>torque_err <function>torque_addssl</function></funcdef>
 			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>int <parameter>sd</parameter></paramdef>
 			<paramdef>SSL_CTX *<parameter>sctx</parameter></paramdef>
@@ -130,13 +130,13 @@
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>torque_err <function>libtorque_block</function></funcdef>
+			<funcdef>torque_err <function>torque_block</function></funcdef>
 			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
-			<funcdef>torque_err <function>libtorque_stop</function></funcdef>
+			<funcdef>torque_err <function>torque_stop</function></funcdef>
 			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>

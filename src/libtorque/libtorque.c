@@ -60,7 +60,7 @@ static int
 free_etables(evtables *e){
 	int ret = 0;
 
-#ifdef LIBTORQUE_LINUX_SIGNALFD
+#ifdef TORQUE_LINUX_SIGNALFD
 	ret |= close(e->common_signalfd);
 #endif
 	ret |= destroy_evsources(e->sigarray);
@@ -149,7 +149,7 @@ makesigmask(sigset_t *s){
 }
 
 // Ought be called by the client application prior to launching any threads.
-torque_err libtorque_sigmask(sigset_t *olds){
+torque_err torque_sigmask(sigset_t *olds){
 	sigset_t ss;
 
 	if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM) ||
@@ -187,14 +187,14 @@ torque_ctx *torque_init(torque_err *e){
 	}
 	ret = torque_init_sigmasked(e,&old);
 	if(pthread_sigmask(SIG_SETMASK,&old,NULL)){
-		libtorque_stop(ret);
+		torque_stop(ret);
 		*e = TORQUE_ERR_ASSERT;
 		return NULL;
 	}
 	return ret;
 }
 
-torque_err libtorque_addsignal(torque_ctx *ctx,const sigset_t *sigs,
+torque_err torque_addsignal(torque_ctx *ctx,const sigset_t *sigs,
 			libtorquercb fxn,void *state){
 	torque_err ret;
 	sigset_t old;
@@ -213,16 +213,16 @@ torque_err libtorque_addsignal(torque_ctx *ctx,const sigset_t *sigs,
 	return 0;
 }
 
-torque_err libtorque_addtimer(torque_ctx *ctx,const struct itimerspec *t,
+torque_err torque_addtimer(torque_ctx *ctx,const struct itimerspec *t,
 			libtorquetimecb fxn,void *state){
 	return add_timer_to_evhandler(ctx,&ctx->evq,t,fxn,state);
 }
 
 // We only currently provide one buffering scheme. When that changes, we still
 // won't want to expose anything more than necessary to applications...
-torque_err libtorque_addfd(torque_ctx *ctx,int fd,libtorquebrcb rx,
+torque_err torque_addfd(torque_ctx *ctx,int fd,libtorquebrcb rx,
 				libtorquebwcb tx,void *state){
-	libtorque_rxbufcb *cbctx;
+	torque_rxbufcb *cbctx;
 	torque_err ret;
 
 	if(fd < 0){
@@ -239,7 +239,7 @@ torque_err libtorque_addfd(torque_ctx *ctx,int fd,libtorquebrcb rx,
 	return 0;
 }
 
-torque_err libtorque_addfd_unbuffered(torque_ctx *ctx,int fd,libtorquercb rx,
+torque_err torque_addfd_unbuffered(torque_ctx *ctx,int fd,libtorquercb rx,
 				libtorquewcb tx,void *state){
 	if(fd < 0){
 		return TORQUE_ERR_INVAL;
@@ -247,7 +247,7 @@ torque_err libtorque_addfd_unbuffered(torque_ctx *ctx,int fd,libtorquercb rx,
 	return add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,EVONESHOT);
 }
 
-torque_err libtorque_addfd_concurrent(torque_ctx *ctx,int fd,
+torque_err torque_addfd_concurrent(torque_ctx *ctx,int fd,
 				libtorquercb rx,libtorquewcb tx,void *state){
 	if(fd < 0){
 		return TORQUE_ERR_INVAL;
@@ -255,29 +255,29 @@ torque_err libtorque_addfd_concurrent(torque_ctx *ctx,int fd,
 	return add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,0);
 }
 
-torque_err libtorque_addpath(torque_ctx *ctx,const char *path,libtorquercb rx,void *state){
+torque_err torque_addpath(torque_ctx *ctx,const char *path,libtorquercb rx,void *state){
 	if(add_fswatch_to_evhandler(&ctx->evq,path,rx,state)){
 		return TORQUE_ERR_UNAVAIL; // FIXME
 	}
 	return 0;
 }
 
-#ifndef LIBTORQUE_WITHOUT_SSL
-torque_err libtorque_addssl(torque_ctx *ctx,int fd,SSL_CTX *sslctx,
+#ifndef torque_WITHOUT_SSL
+torque_err torque_addssl(torque_ctx *ctx,int fd,SSL_CTX *sslctx,
 			libtorquebrcb rx,libtorquebwcb tx,void *state){
 	struct ssl_cbstate *cbs;
 
 	if((cbs = create_ssl_cbstate(ctx,sslctx,state,rx,tx)) == NULL){
 		return TORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
-	if(libtorque_addfd_unbuffered(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){
+	if(torque_addfd_unbuffered(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){
 		free_ssl_cbstate(cbs);
 		return TORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	return 0;
 }
 #else
-torque_err libtorque_addssl(torque_ctx *ctx __attribute__ ((unused)),
+torque_err torque_addssl(torque_ctx *ctx __attribute__ ((unused)),
 				int fd __attribute__ ((unused)),
 				SSL_CTX *sslctx __attribute__ ((unused)),
 				libtorquebrcb rx __attribute__ ((unused)),
@@ -287,8 +287,8 @@ torque_err libtorque_addssl(torque_ctx *ctx __attribute__ ((unused)),
 }
 #endif
 
-#ifndef LIBTORQUE_WITHOUT_ADNS
-torque_err libtorque_addlookup_dns(torque_ctx *ctx,const char *owner,
+#ifndef torque_WITHOUT_ADNS
+torque_err torque_addlookup_dns(torque_ctx *ctx,const char *owner,
 					libtorquednscb rx,void *state){
 	struct dnsmarshal *dm;
 	adns_query query;
@@ -310,7 +310,7 @@ torque_err libtorque_addlookup_dns(torque_ctx *ctx,const char *owner,
 	return 0;
 }
 #else
-torque_err libtorque_addlookup_dns(torque_ctx *ctx __attribute__ ((unused)),
+torque_err torque_addlookup_dns(torque_ctx *ctx __attribute__ ((unused)),
 				const char *owner __attribute__ ((unused)),
 				libtorquednscb rx __attribute__ ((unused)),
 				void *state __attribute__ ((unused))){
@@ -320,11 +320,11 @@ torque_err libtorque_addlookup_dns(torque_ctx *ctx __attribute__ ((unused)),
 
 // Performs a thread-local lookup of the current ctx. This must not be cached
 // beyond the lifetime of the callback instance!
-struct torque_ctx *libtorque_getcurctx(void){
+struct torque_ctx *torque_getcurctx(void){
 	return get_thread_ctx();
 }
 
-torque_err libtorque_block(torque_ctx *ctx){
+torque_err torque_block(torque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx){
@@ -333,7 +333,7 @@ torque_err libtorque_block(torque_ctx *ctx){
 
 		// We ought have already have them blocked on entry, but...this
 		// doesn't help if other threads are unblocked, though.
-		if( (r = libtorque_sigmask(&os)) ){
+		if( (r = torque_sigmask(&os)) ){
 			return r;
 		}
 		ret |= block_threads(ctx);
@@ -343,7 +343,7 @@ torque_err libtorque_block(torque_ctx *ctx){
 	return ret ? TORQUE_ERR_ASSERT : 0;
 }
 
-torque_err libtorque_stop(torque_ctx *ctx){
+torque_err torque_stop(torque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx){
@@ -352,7 +352,7 @@ torque_err libtorque_stop(torque_ctx *ctx){
 
 		// We ought have already have them blocked on entry, but...this
 		// doesn't help if other threads are unblocked, though.
-		if( (r = libtorque_sigmask(&os)) ){
+		if( (r = torque_sigmask(&os)) ){
 			return r;
 		}
 		ret |= reap_threads(ctx);

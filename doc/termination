@@ -56,19 +56,19 @@ for callbacks masked, else externally-generated signals might not be delivered
 to libtorque.
 
 Two functions are provided to block on destruction of a libtorque context,
-including orderly cleanup of all threads. libtorque_block() blocks the calling
-thread until all threads in the context have terminated. libtorque_stop() does
+including orderly cleanup of all threads. torque_block() blocks the calling
+thread until all threads in the context have terminated. torque_stop() does
 the same, but initiates the shutdown process itself. Server programs ought:
 
  - mask SIGTERM
  - call torque_init()
  - register some events with the context
- - call libtorque_block()
+ - call torque_block()
  - perform teardown (no callbacks will occur)
 
 This provides a simple implementation of the UNIX server idiom: the process
 will run until receiving SIGTERM or generating a fatal exception, with the
-former case leading to an orderly shutdown. libtorque_stop() is intended for
+former case leading to an orderly shutdown. torque_stop() is intended for
 easily adapting legacy code, and implementation of non-server programs.
 
 -----------------------------------------------------------------------------

@@ -4,8 +4,8 @@
 #include <libtorque/protos/dns.h>
 #include <libtorque/events/thread.h>
 
-int libtorque_dns_init(dns_state *dctx){
-#ifndef LIBTORQUE_WITHOUT_ADNS
+int torque_dns_init(dns_state *dctx){
+#ifndef torque_WITHOUT_ADNS
 	adns_initflags flags = adns_if_noautosys/* | adns_if_debug*/;
 
 	if(adns_init(dctx,flags,NULL)){
@@ -20,7 +20,7 @@ int libtorque_dns_init(dns_state *dctx){
 }
 
 int restore_dns_fds(dns_state dctx __attribute__ ((unused)),const evhandler *evh){
-#ifndef LIBTORQUE_WITHOUT_ADNS
+#ifndef torque_WITHOUT_ADNS
 	int nfds,to = 0,r,ret = 0;
 	struct pollfd pfds[4];
 
@@ -64,7 +64,7 @@ dnsmarshal *create_dnsmarshal(libtorquednscb cb,void *cbstate){
 	return ret;
 }
 
-#ifndef LIBTORQUE_WITHOUT_ADNS
+#ifndef torque_WITHOUT_ADNS
 static void
 adns_rx_callback(int fd __attribute__ ((unused)),void *state){
 	int r;
@@ -108,7 +108,7 @@ adns_tx_callback(int fd,void *state){
 #endif
 
 int load_dns_fds(torque_ctx *ctx,dns_state *dctx,const evqueue *evq){
-#ifndef LIBTORQUE_WITHOUT_ADNS
+#ifndef torque_WITHOUT_ADNS
 	struct pollfd pfds[4];
 	int nfds,to = 0,r;
 
@@ -137,8 +137,8 @@ int load_dns_fds(torque_ctx *ctx,dns_state *dctx,const evqueue *evq){
 	return 0;
 }
 
-void libtorque_dns_shutdown(dns_state *dctx){
-#ifndef LIBTORQUE_WITHOUT_ADNS
+void torque_dns_shutdown(dns_state *dctx){
+#ifndef torque_WITHOUT_ADNS
 	adns_finish(*dctx);
 #else
 	memset(dctx,0,sizeof(*dctx));

@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_PROTOS_DNS
-#define LIBTORQUE_PROTOS_DNS
+#ifndef torque_PROTOS_DNS
+#define torque_PROTOS_DNS
 
 #ifdef __cplusplus
 extern "C" {
@@ -8,7 +8,7 @@ extern "C" {
 #include <stdlib.h>
 #include <libtorque/libtorque.h>
 
-#ifndef LIBTORQUE_WITHOUT_ADNS
+#ifndef torque_WITHOUT_ADNS
 #include <adns.h>
 typedef adns_state dns_state;
 #else
@@ -22,7 +22,7 @@ struct evhandler;
 struct dnsmarshal;
 struct torque_ctx;
 
-int libtorque_dns_init(dns_state *)
+int torque_dns_init(dns_state *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
@@ -32,7 +32,7 @@ int load_dns_fds(struct torque_ctx *,dns_state *,const struct evqueue *)
 
 int restore_dns_fds(dns_state,const struct evhandler *);
 
-void libtorque_dns_shutdown(dns_state *);
+void torque_dns_shutdown(dns_state *);
 
 struct dnsmarshal *create_dnsmarshal(libtorquednscb,void *)
 	__attribute__ ((warn_unused_result))

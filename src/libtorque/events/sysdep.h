@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_EVENTS_SYSDEP
-#define LIBTORQUE_EVENTS_SYSDEP
+#ifndef torque_EVENTS_SYSDEP
+#define torque_EVENTS_SYSDEP
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +18,7 @@ extern "C" {
 // may (but needn't) alias.
 //
 // See kevent(7) on FreeBSD.
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 #include <sys/epoll.h>
 
 #ifdef EPOLLRDHUP
@@ -52,16 +52,16 @@ struct kevent { // each element an array, each array the same number of members
 // pass (t ? (t->tv_sec * 1000 + t->tv_nsec / 1000000) : -1) to epoll_wait().
 // signalfd was introduced to glibc in 2.8
 #if __GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 8
-#define LIBTORQUE_LINUX_TIMERFD
+#define TORQUE_LINUX_TIMERFD
 #include <sys/timerfd.h>
-#define LIBTORQUE_LINUX_SIGNALFD
+#define TORQUE_LINUX_SIGNALFD
 #include <sys/signalfd.h>
-struct libtorque_cbctx;
+struct torque_cbctx;
 
 void signalfd_demultiplexer(int,void *);
 #else
 #if __GLIBC__ == 2 && __GLIBC_MINOR__ > 5
-#define LIBTORQUE_LINUX_PWAIT
+#define TORQUE_LINUX_PWAIT
 #endif
 extern const sigset_t *epoll_sigset;
 
@@ -72,7 +72,7 @@ static inline int
 kevent_retrieve(int epfd,struct kevent *eventlist,int nevents){
 	int ret;
 
-#if defined(LIBTORQUE_LINUX_SIGNALFD)
+#if defined(TORQUE_LINUX_SIGNALFD)
 	do{
 #else
 	sigset_t tmp;
@@ -82,7 +82,7 @@ kevent_retrieve(int epfd,struct kevent *eventlist,int nevents){
 	}
 #endif
 		ret = epoll_wait(epfd,eventlist->events,nevents,-1);
-#if defined(LIBTORQUE_LINUX_SIGNALFD)
+#if defined(TORQUE_LINUX_SIGNALFD)
 	}while(ret < 0 || errno == EINTR);
 #else
 	pthread_sigmask(SIG_SETMASK,&tmp,NULL);
@@ -117,7 +117,7 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 	// it as an event), and thus we ought do per-round things (such as
 	// checking for termination). Furthermore, we can't do most processing
 	// inside an actual signal handler, so we must do it outside.
-#ifdef LIBTORQUE_LINUX_PWAIT
+#ifdef TORQUE_LINUX_PWAIT
 	// The kernel might not provide epoll_pwait() despite glibc having
 	// support for it. In that case, fall back to epoll_wait(). We will
 	// waste the overhead calling into glibc each time, but this ought be a
@@ -129,7 +129,7 @@ Kevent(int epfd,struct kevent *changelist,int nchanges,
 	return ret;
 }
 
-#elif defined(LIBTORQUE_FREEBSD)
+#elif defined(TORQUE_FREEBSD)
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/event.h>
@@ -168,9 +168,9 @@ Kevent(int kq,struct kevent *changelist,int nchanges,
 typedef struct evectors {
 	// compat-<OS>.h provides a kqueue-like interface (in terms of change
 	// vectorization, which linux doesn't support) for non-BSD's
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 	struct kevent eventv;
-#elif defined(LIBTORQUE_FREEBSD)
+#elif defined(TORQUE_FREEBSD)
 	struct kevent *eventv;
 #else
 #error "No operating system support for event notification"

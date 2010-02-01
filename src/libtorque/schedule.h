@@ -7,9 +7,9 @@ extern "C" {
 
 #include <pthread.h>
 
-#if defined(LIBTORQUE_LINUX)
+#if defined(TORQUE_LINUX)
 #include <sched.h>
-#elif defined(LIBTORQUE_FREEBSD)
+#elif defined(TORQUE_FREEBSD)
 #include <sys/param.h>
 #include <sys/cpuset.h>
 typedef cpuset_t cpu_set_t;
@@ -39,9 +39,9 @@ int reap_threads(struct torque_ctx *);
 int block_threads(struct torque_ctx *);
 int get_thread_aid(void);
 
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 unsigned long pthread_self_getnumeric(void);
-#elif defined(LIBTORQUE_LINUX)
+#elif defined(TORQUE_LINUX)
 static inline unsigned long
 pthread_self_getnumeric(void){
 	return pthread_self(); // lol
