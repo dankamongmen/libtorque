@@ -49,7 +49,7 @@ echo_server(int fd,struct libtorque_rxbuf *rxb,void *v __attribute__ ((unused)))
 
 static void
 conn_handler(int fd,void *v){
-	struct libtorque_ctx *ctx = v;
+	struct torque_ctx *ctx = v;
 
 	fprintf(stdout,"Got a connection on %d\n",fd);
 	do{
@@ -169,7 +169,7 @@ err:
 }
 
 int main(int argc,char **argv){
-	struct libtorque_ctx *ctx = NULL;
+	struct torque_ctx *ctx = NULL;
 	struct sockaddr_in sin;
 	torque_err err;
 	sigset_t termset;

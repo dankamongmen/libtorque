@@ -96,7 +96,7 @@ err:
 }
 
 int main(int argc,char **argv){
-	struct libtorque_ctx *ctx = NULL;
+	struct torque_ctx *ctx = NULL;
 	uintmax_t totalsigs;
 	torque_err err;
 	sigset_t ss;

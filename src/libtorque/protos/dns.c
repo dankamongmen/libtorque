@@ -107,7 +107,7 @@ adns_tx_callback(int fd,void *state){
 }
 #endif
 
-int load_dns_fds(libtorque_ctx *ctx,dns_state *dctx,const evqueue *evq){
+int load_dns_fds(torque_ctx *ctx,dns_state *dctx,const evqueue *evq){
 #ifndef LIBTORQUE_WITHOUT_ADNS
 	struct pollfd pfds[4];
 	int nfds,to = 0,r;

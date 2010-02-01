@@ -12,19 +12,19 @@
 #include <libtorque/events/sources.h>
 #include <libtorque/hardware/topology.h>
 
-static __thread libtorque_ctx *tsd_ctx;
+static __thread torque_ctx *tsd_ctx;
 static __thread evhandler *tsd_evhandler;
 
 evhandler *get_thread_evh(void){
 	return tsd_evhandler;
 }
 
-libtorque_ctx *get_thread_ctx(void){
+torque_ctx *get_thread_ctx(void){
 	return tsd_ctx;
 }
 
 static inline void
-handle_event(libtorque_ctx *ctx,const kevententry *e){
+handle_event(torque_ctx *ctx,const kevententry *e){
 #ifdef LIBTORQUE_LINUX
 	if(e->events & EPOLLIN){
 #else
@@ -50,7 +50,7 @@ handle_event(libtorque_ctx *ctx,const kevententry *e){
 
 void rxcommonsignal(int sig,void *cbstate){
 	if(sig == EVTHREAD_TERM || sig == EVTHREAD_INT){
-		const libtorque_ctx *ctx = cbstate;
+		const torque_ctx *ctx = cbstate;
 		void *ret = PTHREAD_CANCELED;
 		evhandler *e = get_thread_evh();
 		struct rusage ru;
@@ -106,7 +106,7 @@ rxcommonsignal_handler(int sig,void *cbstate __attribute__ ((unused))){
 #define check_for_termination(...)
 #endif
 
-void event_thread(libtorque_ctx *ctx,evhandler *e){
+void event_thread(torque_ctx *ctx,evhandler *e){
 	tsd_evhandler = e;
 	tsd_ctx = ctx;
 	while(1){
@@ -189,7 +189,7 @@ prep_common_sigset(sigset_t *s){
 // All event queues (evqueues) will need to register events on the common
 // signals (on Linux, this is done via a common signalfd()). Either way, we
 // don't want to touch the evsources more than once.
-int initialize_common_sources(libtorque_ctx *ctx,struct evtables *evt,const sigset_t *ss __attribute__ ((unused))){
+int initialize_common_sources(torque_ctx *ctx,struct evtables *evt,const sigset_t *ss __attribute__ ((unused))){
 	if(EVTHREAD_TERM >= evt->sigarraysize || EVTHREAD_INT >= evt->sigarraysize){
 		return -1;
 	}
@@ -281,7 +281,7 @@ evhandler *create_evhandler(const evqueue *evq,const stack_t *stack){
 }
 
 static inline int
-print_evthread(FILE *fp,const libtorque_ctx *ctx){
+print_evthread(FILE *fp,const torque_ctx *ctx){
 	const libtorque_cput *cpu;
 	int aid;
 
@@ -298,7 +298,7 @@ print_evthread(FILE *fp,const libtorque_ctx *ctx){
 }
 
 static inline int
-print_evstats(const libtorque_ctx *ctx,const evthreadstats *stats){
+print_evstats(const torque_ctx *ctx,const evthreadstats *stats){
 	if(printf("<thread ") < 0){
 		return -1;
 	}
@@ -322,7 +322,7 @@ print_evstats(const libtorque_ctx *ctx,const evthreadstats *stats){
 	return 0;
 }
 
-void destroy_evhandler(const libtorque_ctx *ctx,evhandler *e){
+void destroy_evhandler(const torque_ctx *ctx,evhandler *e){
 	if(e){
 		print_evstats(ctx,&e->stats);
 		destroy_evectors(&e->evec);

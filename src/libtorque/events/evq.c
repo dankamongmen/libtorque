@@ -45,7 +45,7 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 #endif
 
 static inline int
-add_evqueue_baseevents(libtorque_ctx *ctx,evqueue *e){
+add_evqueue_baseevents(torque_ctx *ctx,evqueue *e){
 	if(load_dns_fds(ctx,&e->dnsctx,e)){
 		return -1;
 	}
@@ -68,7 +68,7 @@ add_evqueue_baseevents(libtorque_ctx *ctx,evqueue *e){
 #endif
 }
 
-int init_evqueue(libtorque_ctx *ctx,evqueue *e){
+int init_evqueue(torque_ctx *ctx,evqueue *e){
 	if(libtorque_dns_init(&e->dnsctx)){
 		return -1;
 	}

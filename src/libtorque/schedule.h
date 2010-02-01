@@ -31,12 +31,12 @@ portable_cpuset_count(const cpu_set_t *mask){
 	return count;
 }
 
-struct libtorque_ctx;
+struct torque_ctx;
 
 int pin_thread(unsigned);
-int spawn_thread(struct libtorque_ctx *);
-int reap_threads(struct libtorque_ctx *);
-int block_threads(struct libtorque_ctx *);
+int spawn_thread(struct torque_ctx *);
+int reap_threads(struct torque_ctx *);
+int block_threads(struct torque_ctx *);
 int get_thread_aid(void);
 
 #ifdef LIBTORQUE_FREEBSD

@@ -43,7 +43,7 @@ timer_passthru(int fd __attribute__ ((unused)),void *state){
 //      handled according to their default dispositions.  It is not possible to
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
-torque_err add_timer_to_evhandler(struct libtorque_ctx *ctx __attribute__ ((unused)),
+torque_err add_timer_to_evhandler(struct torque_ctx *ctx __attribute__ ((unused)),
 		const struct evqueue *evq,const struct itimerspec *t,
 		libtorquetimecb tfxn,void *cbstate){
 #ifdef LIBTORQUE_LINUX_TIMERFD

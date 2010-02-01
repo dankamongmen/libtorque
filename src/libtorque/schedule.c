@@ -102,7 +102,7 @@ reap_thread(pthread_t tid){
 }
 
 typedef struct tguard {
-	libtorque_ctx *ctx;
+	torque_ctx *ctx;
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
 	stack_t stack;
@@ -119,7 +119,7 @@ static void *
 thread(void *void_marshal){
 	tguard *marshal = void_marshal;
 	evhandler *ev = NULL;
-	libtorque_ctx *ctx;
+	torque_ctx *ctx;
 
 	ctx = marshal->ctx;
 	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
@@ -176,7 +176,7 @@ int setup_thread_stack(stack_t *s,pthread_attr_t *attr){
 }
 
 // Must be pinned to the desired CPU upon entry! // FIXME verify?
-int spawn_thread(libtorque_ctx *ctx){
+int spawn_thread(torque_ctx *ctx){
 	pthread_attr_t attr;
 	tguard tidguard = {
 		.ctx = ctx,
@@ -222,7 +222,7 @@ int spawn_thread(libtorque_ctx *ctx){
 	return ret;
 }
 
-int reap_threads(libtorque_ctx *ctx){
+int reap_threads(torque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx->ev){
@@ -231,7 +231,7 @@ int reap_threads(libtorque_ctx *ctx){
 	return ret;
 }
 
-int block_threads(libtorque_ctx *ctx){
+int block_threads(torque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx->ev){

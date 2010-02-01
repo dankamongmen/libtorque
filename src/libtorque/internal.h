@@ -100,12 +100,12 @@ typedef struct evqueue {
 } evqueue;
 
 // Whenever a field is added to this structure, make sure it's
-//  a) initialized in create_libtorque_ctx(), and
+//  a) initialized in create_torque_ctx(), and
 //  b) free()d (and reset) in the appropriate cleanup
 // A context describes the system state as it was when libtorque_init() was
 // called, and as it was then restricted (ie, only those processing elements in
 // our cpuset, and only those NUMA nodes which we can reach).
-typedef struct libtorque_ctx {
+typedef struct torque_ctx {
 	evqueue evq;			// shared evq
 	unsigned nodecount;		// number of NUMA nodes
 	unsigned cpu_typecount;		// number of processing element types
@@ -114,6 +114,6 @@ typedef struct libtorque_ctx {
 	libtorque_topt *sched_zone;	// interconnection DAG (see topology.h)
 	evtables eventtables;		// callback state tables
 	struct evhandler *ev;		// evhandler of list leader FIXME purge
-} libtorque_ctx;
+} torque_ctx;
 
 #endif

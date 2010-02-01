@@ -5,7 +5,7 @@
 #include <libtorque/hardware/x86cpuid.h>
 #include <libtorque/hardware/topology.h>
 
-const libtorque_topt *libtorque_get_topology(libtorque_ctx *ctx){
+const libtorque_topt *libtorque_get_topology(torque_ctx *ctx){
 	return ctx->sched_zone;
 }
 
@@ -70,7 +70,7 @@ first_aid(cpu_set_t *cs){
 // extra state during initial topology detection, but not later; this is stored
 // in *tm, which must be zeroed out prior to topology detection, and not
 // touched between calls. It must have space for a top_map per invocation.
-torque_err topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
+torque_err topologize(torque_ctx *ctx,struct top_map *tm,unsigned aid,
 		unsigned thread,unsigned core,unsigned pkg,unsigned cputype){
 	libtorque_topt *sg;
 
@@ -123,17 +123,17 @@ free_topology(libtorque_topt *top){
 	}
 }
 
-void reset_topology(libtorque_ctx *ctx){
+void reset_topology(torque_ctx *ctx){
 	free_topology(ctx->sched_zone);
 	ctx->sched_zone = NULL;
 }
 
-static const libtorque_cput *lookup_aid_intop(const libtorque_ctx *,const libtorque_topt *,unsigned)
+static const libtorque_cput *lookup_aid_intop(const torque_ctx *,const libtorque_topt *,unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)));
 
 static const libtorque_cput *
-lookup_aid_intop(const libtorque_ctx *ctx,const libtorque_topt *top,unsigned aid){
+lookup_aid_intop(const torque_ctx *ctx,const libtorque_topt *top,unsigned aid){
 	do{
 		if(CPU_ISSET(aid,&top->schedulable)){
 			if(top->sub){
@@ -145,6 +145,6 @@ lookup_aid_intop(const libtorque_ctx *ctx,const libtorque_topt *top,unsigned aid
 	return NULL;
 }
 
-const libtorque_cput *lookup_aid(const libtorque_ctx *ctx,unsigned aid){
+const libtorque_cput *lookup_aid(const torque_ctx *ctx,unsigned aid){
 	return lookup_aid_intop(ctx,ctx->sched_zone,aid);
 }

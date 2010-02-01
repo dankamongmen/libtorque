@@ -161,7 +161,7 @@ detect_cpucount(cpu_set_t *mask){
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
 static torque_err
-detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
+detect_cputypes(torque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 	struct top_map *topmap = NULL;
 	unsigned z,aid,cpucount;
 	torque_err ret;
@@ -237,7 +237,7 @@ err:
 	return ret;
 }
 
-torque_err detect_architecture(libtorque_ctx *ctx){
+torque_err detect_architecture(torque_ctx *ctx){
 	torque_err ret;
 
 	if( (ret = detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)) ){
@@ -254,7 +254,7 @@ err:
 	return ret;
 }
 
-void free_architecture(libtorque_ctx *ctx){
+void free_architecture(torque_ctx *ctx){
 	reset_topology(ctx);
 	while(ctx->cpu_typecount--){
 		free_cpudetails(&ctx->cpudescs[ctx->cpu_typecount]);
@@ -265,12 +265,12 @@ void free_architecture(libtorque_ctx *ctx){
 	free_memories(ctx);
 }
 
-unsigned libtorque_cpu_typecount(const libtorque_ctx *ctx){
+unsigned libtorque_cpu_typecount(const torque_ctx *ctx){
 	return ctx->cpu_typecount;
 }
 
 // Takes a description ID
-const libtorque_cput *libtorque_cpu_getdesc(const libtorque_ctx *ctx,unsigned n){
+const libtorque_cput *libtorque_cpu_getdesc(const torque_ctx *ctx,unsigned n){
 	if(n >= ctx->cpu_typecount){
 		return NULL;
 	}

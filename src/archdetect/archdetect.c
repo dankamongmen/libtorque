@@ -221,7 +221,7 @@ detail_processing_unit(const libtorque_cput *pudesc){
 }
 
 static int
-detail_processing_units(const libtorque_ctx *ctx,unsigned cpu_typecount){
+detail_processing_units(const torque_ctx *ctx,unsigned cpu_typecount){
 	unsigned n;
 
 	for(n = 0 ; n < cpu_typecount ; ++n){
@@ -245,7 +245,7 @@ detail_processing_units(const libtorque_ctx *ctx,unsigned cpu_typecount){
 }
 
 static int
-detail_memory_nodes(const libtorque_ctx *ctx,unsigned mem_nodecount){
+detail_memory_nodes(const torque_ctx *ctx,unsigned mem_nodecount){
 	unsigned n;
 
 	for(n = 0 ; n < mem_nodecount ; ++n){
@@ -282,7 +282,7 @@ detail_memory_nodes(const libtorque_ctx *ctx,unsigned mem_nodecount){
 static const char *depth_terms[] = { "Package", "Core", "Thread", NULL };
 
 static int
-print_cpuset(const libtorque_ctx *ctx,const libtorque_topt *s,unsigned depth){
+print_cpuset(const torque_ctx *ctx,const libtorque_topt *s,unsigned depth){
 	unsigned z;
 	int r = 0;
 
@@ -341,7 +341,7 @@ print_cpuset(const libtorque_ctx *ctx,const libtorque_topt *s,unsigned depth){
 }
 
 static inline int
-print_topology(const libtorque_ctx *ctx,const libtorque_topt *t){
+print_topology(const torque_ctx *ctx,const libtorque_topt *t){
 	if(print_cpuset(ctx,t,0) < 0){
 		return -1;
 	}
@@ -396,7 +396,7 @@ parse_args(int argc,char **argv){
 
 int main(int argc,char **argv){
 	unsigned cpu_typecount,mem_nodecount;
-	struct libtorque_ctx *ctx = NULL;
+	struct torque_ctx *ctx = NULL;
 	const libtorque_topt *t;
 	int ret = EXIT_FAILURE;
 	const char *a0 = *argv;

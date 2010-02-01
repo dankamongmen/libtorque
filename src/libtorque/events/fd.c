@@ -46,7 +46,7 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 	return 0;
 }
 
-int add_fd_to_evhandler(libtorque_ctx *ctx,const evqueue *evq,int fd,
+int add_fd_to_evhandler(torque_ctx *ctx,const evqueue *evq,int fd,
 			libtorquercb rfxn,libtorquewcb tfxn,
 			void *cbstate,int eflags){
 	if((unsigned)fd >= ctx->eventtables.fdarraysize){

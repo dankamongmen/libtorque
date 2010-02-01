@@ -39,12 +39,12 @@ rxbuffer_advance(libtorque_rxbuf *rxb,size_t s){
 	} // FIXME very slow, doesn't reclaim memory, sucky in general
 }
 
-static inline int initialize_rxbuffer(const struct libtorque_ctx *,libtorque_rxbuf *)
+static inline int initialize_rxbuffer(const struct torque_ctx *,libtorque_rxbuf *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)));
 
 static inline int
-initialize_rxbuffer(const struct libtorque_ctx *ctx,libtorque_rxbuf *rxb){
+initialize_rxbuffer(const struct torque_ctx *ctx,libtorque_rxbuf *rxb){
 	if( (rxb->buffer = get_big_page(ctx,&rxb->buftot)) ){
 		rxb->bufoff = rxb->bufate = 0;
 		return 0;
@@ -52,14 +52,14 @@ initialize_rxbuffer(const struct libtorque_ctx *ctx,libtorque_rxbuf *rxb){
 	return -1;
 }
 
-static inline libtorque_rxbufcb *create_rxbuffercb(struct libtorque_ctx *,
+static inline libtorque_rxbufcb *create_rxbuffercb(struct torque_ctx *,
 				libtorquebrcb,libtorquebwcb,void *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));
 
 static inline libtorque_rxbufcb *
-create_rxbuffercb(struct libtorque_ctx *ctx,libtorquebrcb rx,libtorquebwcb tx,
+create_rxbuffercb(struct torque_ctx *ctx,libtorquebrcb rx,libtorquebwcb tx,
 					void *cbstate){
 	libtorque_rxbufcb *ret;
 

@@ -135,7 +135,7 @@ err:
 
 int main(int argc,char **argv){
 	const char *certfile = NULL,*keyfile = NULL,*cafile = NULL;
-	struct libtorque_ctx *ctx = NULL;
+	struct torque_ctx *ctx = NULL;
 	SSL_CTX *sslctx = NULL;
 	struct sockaddr_in sin;
 	torque_err err;

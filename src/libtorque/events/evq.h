@@ -6,9 +6,9 @@ extern "C" {
 #endif
 
 struct evqueue;
-struct libtorque_ctx;
+struct torque_ctx;
 
-int init_evqueue(struct libtorque_ctx *,struct evqueue *)
+int init_evqueue(struct torque_ctx *,struct evqueue *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 

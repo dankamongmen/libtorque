@@ -8,7 +8,7 @@
 
 #ifdef LIBTORQUE_LINUX_SIGNALFD
 void signalfd_demultiplexer(int fd,void *cbstate){
-	const libtorque_ctx *ctx = cbstate;
+	const torque_ctx *ctx = cbstate;
 	ssize_t r;
 
 	do{

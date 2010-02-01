@@ -7,7 +7,7 @@
 #include <libtorque/events/sources.h>
 
 void signal_demultiplexer(int s){
-	libtorque_ctx *ctx = get_thread_ctx();
+	torque_ctx *ctx = get_thread_ctx();
 	int errdup;
 
 	// Preserve errno (in case the callback changes it and we're being
@@ -59,7 +59,7 @@ int init_signal_handlers(void){
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 //
-torque_err add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ ((unused)),
+torque_err add_signal_to_evhandler(torque_ctx *ctx,const evqueue *evq __attribute__ ((unused)),
 			const sigset_t *sigs,libtorquercb rfxn,void *cbstate){
 	unsigned z;
 

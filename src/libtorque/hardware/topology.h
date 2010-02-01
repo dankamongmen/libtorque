@@ -52,7 +52,7 @@ extern "C" {
 // different base isomorphism defined upon it...everywhere that we bound
 // together in the first instance, we must now break apart. Or do you simply
 // favor trading events across groups to within groups? Must investigate...
-const struct libtorque_topt *libtorque_get_topology(struct libtorque_ctx *)
+const struct libtorque_topt *libtorque_get_topology(struct torque_ctx *)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
@@ -64,16 +64,16 @@ struct top_map {
 };
 
 // Remaining declarations are internal to libtorque via -fvisibility=hidden
-torque_err topologize(struct libtorque_ctx *,struct top_map *,unsigned,
+torque_err topologize(struct torque_ctx *,struct top_map *,unsigned,
 				unsigned,unsigned,unsigned,unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)));
 
-const struct libtorque_cput *lookup_aid(const struct libtorque_ctx *,unsigned)
+const struct libtorque_cput *lookup_aid(const struct torque_ctx *,unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
-void reset_topology(struct libtorque_ctx *);
+void reset_topology(struct torque_ctx *);
 
 #ifdef __cplusplus
 }

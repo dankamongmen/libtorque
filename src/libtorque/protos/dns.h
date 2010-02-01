@@ -20,13 +20,13 @@ typedef struct {
 struct evqueue;
 struct evhandler;
 struct dnsmarshal;
-struct libtorque_ctx;
+struct torque_ctx;
 
 int libtorque_dns_init(dns_state *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
 
-int load_dns_fds(struct libtorque_ctx *,dns_state *,const struct evqueue *)
+int load_dns_fds(struct torque_ctx *,dns_state *,const struct evqueue *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2,3)));
 

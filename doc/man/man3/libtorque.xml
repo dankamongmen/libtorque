@@ -66,14 +66,14 @@
 		<funcsynopsis>
 			<funcsynopsisinfo>#include &lt;libtorque.h&gt;</funcsynopsisinfo>
 			<funcprototype>
-			<funcdef>struct libtorque_ctx *<function>libtorque_init</function></funcdef>
+			<funcdef>struct torque_ctx *<function>libtorque_init</function></funcdef>
 			<paramdef>torque_err *<parameter>e</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
 			<funcdef>torque_err <function>libtorque_addfd</function></funcdef>
-			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>int <parameter>fd</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>rcbfxn</parameter></paramdef>
 			<paramdef>libtorquewcb <parameter>wcbfxn</parameter></paramdef>
@@ -83,7 +83,7 @@
 		<funcsynopsis>
 			<funcprototype>
 			<funcdef>torque_err <function>libtorque_addfd_unbuffered</function></funcdef>
-			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>int <parameter>fd</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>rcbfxn</parameter></paramdef>
 			<paramdef>libtorquewcb <parameter>wcbfxn</parameter></paramdef>
@@ -93,7 +93,7 @@
 		<funcsynopsis>
 			<funcprototype>
 			<funcdef>torque_err <function>libtorque_addsignal</function></funcdef>
-			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>const sigset_t *<parameter>ss</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>cbfxn</parameter></paramdef>
 			<paramdef>void *<parameter>cbstate</parameter></paramdef>
@@ -102,7 +102,7 @@
 		<funcsynopsis>
 			<funcprototype>
 			<funcdef>torque_err <function>libtorque_addpath</function></funcdef>
-			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>const char *<parameter>path</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>cbfxn</parameter></paramdef>
 			<paramdef>void *<parameter>cbstate</parameter></paramdef>
@@ -111,7 +111,7 @@
 		<funcsynopsis>
 			<funcprototype>
 			<funcdef>torque_err <function>libtorque_addtimer</function></funcdef>
-			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>const struct itimerspec *<parameter>it</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>cbfxn</parameter></paramdef>
 			<paramdef>void *<parameter>cbstate</parameter></paramdef>
@@ -120,7 +120,7 @@
 		<funcsynopsis>
 			<funcprototype>
 			<funcdef>torque_err <function>libtorque_addssl</function></funcdef>
-			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>int <parameter>sd</parameter></paramdef>
 			<paramdef>SSL_CTX *<parameter>sctx</parameter></paramdef>
 			<paramdef>libtorquercb <parameter>rcbfxn</parameter></paramdef>
@@ -131,13 +131,13 @@
 		<funcsynopsis>
 			<funcprototype>
 			<funcdef>torque_err <function>libtorque_block</function></funcdef>
-			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
 			<funcdef>torque_err <function>libtorque_stop</function></funcdef>
-			<paramdef>struct libtorque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>
 		<funcsynopsis>

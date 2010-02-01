@@ -22,7 +22,7 @@ void *get_pages(size_t s){
 	return ret;
 }
 
-void *get_big_page(const struct libtorque_ctx *ctx,size_t *s){
+void *get_big_page(const struct torque_ctx *ctx,size_t *s){
 	if((*s = large_system_pagesize(ctx)) == 0){
 		return NULL;
 	}

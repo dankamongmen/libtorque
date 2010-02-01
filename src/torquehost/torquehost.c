@@ -133,7 +133,7 @@ lookup_callback(const libtorque_dnsret *dnsret,void *state){
 }
 
 static int
-add_lookup(struct libtorque_ctx *ctx,const char *host,int *results){
+add_lookup(struct torque_ctx *ctx,const char *host,int *results){
 	torque_err err;
 
 	if(pthread_mutex_lock(&lock)){
@@ -169,7 +169,7 @@ fpgetline(FILE *fp){
 }
 
 static int
-spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv,int *results){
+spool_targets(struct torque_ctx *ctx,FILE *fp,char **argv,int *results){
 	*results = 1;
 	if(fp){
 		char *l;
@@ -199,7 +199,7 @@ spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv,int *results){
 
 int main(int argc,char **argv){
 	unsigned timeout = DEFAULT_TIMEOUT;
-	struct libtorque_ctx *ctx = NULL;
+	struct torque_ctx *ctx = NULL;
 	const char *a0 = *argv;
 	torque_err err;
 	FILE *fp = NULL;
