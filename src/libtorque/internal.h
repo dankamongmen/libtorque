@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <sys/time.h>
 #include <libtorque/schedule.h>
 #include <libtorque/libtorque.h>
 #include <libtorque/protos/dns.h>
@@ -89,6 +90,10 @@ typedef struct evtables {
 	unsigned sigarraysize,fdarraysize;
 #ifdef TORQUE_LINUX_SIGNALFD
 	int common_signalfd;
+#endif
+#if defined(TORQUE_LINUX) && !defined(TORQUE_LINUX_TIMERFD)
+	struct itimerval itimer;
+	struct evsource *timerev;
 #endif
 } evtables;
 
