@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <libtorque/conn.h>
 #include <libtorque/buffers.h>
 #include <libtorque/internal.h>
 #include <libtorque/events/fd.h>
@@ -233,9 +234,8 @@ torque_err torque_addfd(torque_ctx *ctx,int fd,libtorquebrcb rx,
 	if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
 					cbctx,EVONESHOT)) ){
 		free_rxbuffercb(cbctx);
-		return ret;
 	}
-	return 0;
+	return ret;
 }
 
 torque_err torque_addfd_unbuffered(torque_ctx *ctx,int fd,libtorquercb rx,
@@ -252,6 +252,60 @@ torque_err torque_addfd_concurrent(torque_ctx *ctx,int fd,
 		return TORQUE_ERR_INVAL;
 	}
 	return add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,0);
+}
+
+torque_err torque_addconnector(torque_ctx *ctx,int fd,const struct sockaddr *addr,
+				socklen_t socklen,libtorquebrcb rx,
+				libtorquebwcb tx,void *state){
+	torque_err ret;
+
+	if(fd < 0){
+		return TORQUE_ERR_INVAL;
+	}
+	if(connect(fd,addr,socklen)){
+		if(errno == EINPROGRESS){
+			torque_conncb *connctx;
+
+			if((connctx = create_conncb(rx,tx,state)) == NULL){
+				ret = TORQUE_ERR_SYSCALL + errno;
+			}else if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,NULL,
+					conn_unbuffered_txfxn,connctx,EVONESHOT)) ){
+				free_conncb(connctx);
+			}
+		}else{
+			ret = TORQUE_ERR_SYSCALL + errno;
+		}
+	}else{
+		ret = torque_addfd(ctx,fd,rx,tx,state);
+	}
+	return ret;
+}
+
+torque_err torque_addconnector_unbuffered(torque_ctx *ctx,int fd,const struct sockaddr *addr,
+				socklen_t socklen,libtorquercb rx,
+				libtorquewcb tx,void *state){
+	torque_err ret;
+
+	if(fd < 0){
+		return TORQUE_ERR_INVAL;
+	}
+	if(connect(fd,addr,socklen)){
+		if(errno == EINPROGRESS){
+			torque_conncb *connctx;
+
+			if((connctx = create_conncb(rx,tx,state)) == NULL){
+				ret = TORQUE_ERR_SYSCALL + errno;
+			}else if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,NULL,
+					conn_unbuffered_txfxn,connctx,EVONESHOT)) ){
+				free_conncb(connctx);
+			}
+		}else{
+			ret = TORQUE_ERR_SYSCALL + errno;
+		}
+	}else{
+		ret = torque_addfd_unbuffered(ctx,fd,rx,tx,state);
+	}
+	return ret;
 }
 
 torque_err torque_addpath(torque_ctx *ctx,const char *path,libtorquercb rx,void *state){
