@@ -64,7 +64,7 @@
 	</refnamediv>
 	<refsynopsisdiv>
 		<funcsynopsis>
-			<funcsynopsisinfo>#include &lt;libtorque.h&gt;</funcsynopsisinfo>
+			<funcsynopsisinfo>#include &lt;libtorque/torque.h&gt;</funcsynopsisinfo>
 			<funcprototype>
 			<funcdef>struct torque_ctx *<function>torque_init</function></funcdef>
 			<paramdef>torque_err *<parameter>e</parameter></paramdef>
