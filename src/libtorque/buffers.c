@@ -60,8 +60,8 @@ void buffered_rxfxn(int fd,void *cbstate){
 		if(rxb->buftot - rxb->bufoff == 0){
 			int cb;
 
-			if((cb = rxback(rxb,fd,cbstate)) < 0){
-				break;
+			if( (cb = rxback(rxb,fd,cbstate)) ){
+				return;
 			}
 			if(rxb->buftot - rxb->bufoff == 0){
 				if(growrxbuf(rxb)){
@@ -74,9 +74,8 @@ void buffered_rxfxn(int fd,void *cbstate){
 		}else if(r == 0){
 			int cb;
 
-			// must close, *unless* TX indicated FIXME
-			if((cb = rxback(rxb,fd,cbstate)) <= 0){
-				break;
+			if( (cb = rxback(rxb,fd,cbstate)) ){
+				return;
 			}
 			if(restorefd(get_thread_evh(),fd,EVWRITE)){
 				break;
@@ -85,10 +84,11 @@ void buffered_rxfxn(int fd,void *cbstate){
 		}else if(errno == EAGAIN || errno == EWOULDBLOCK){
 			int cb;
 
-			if((cb = rxback(rxb,fd,cbstate)) < 0){
-				break;
+			if( (cb = rxback(rxb,fd,cbstate)) ){
+				return;
 			}
-			if(restorefd(get_thread_evh(),fd,EVREAD | (cb ? EVWRITE : 0))){
+			// FIXME sometimes we'll need EVWRITE as well!
+			if(restorefd(get_thread_evh(),fd,EVREAD)){
 				break;
 			}
 			return;
@@ -96,5 +96,6 @@ void buffered_rxfxn(int fd,void *cbstate){
 			break;
 		}
 	}
+	// On any internal error, we're responsible for closing the fd.
 	close(fd);
 }
