@@ -205,6 +205,11 @@ const char *torque_errstr(torque_err)
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result));
 
+// Get the human-readable version string of the loaded library.
+const char *torque_version(void)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result));
+
 #ifdef __cplusplus
 }
 #endif

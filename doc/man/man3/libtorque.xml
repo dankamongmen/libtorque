@@ -146,6 +146,12 @@
 			<paramdef>torque_err <parameter>e</parameter></paramdef>
 			</funcprototype>
 		</funcsynopsis>
+		<funcsynopsis>
+			<funcprototype>
+			<funcdef>const char *<function>torque_version</function></funcdef>
+			<void/>
+			</funcprototype>
+		</funcsynopsis>
 	</refsynopsisdiv>
 	<refsect1 id="description">
 		<title>DESCRIPTION</title>
