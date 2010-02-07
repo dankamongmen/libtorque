@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libtorque/internal.h>
+#include <libtorque/hardware/cuda.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/memory.h>
 #include <libtorque/hardware/x86cpuid.h>
@@ -235,10 +236,23 @@ err:
 	return ret;
 }
 
+static torque_err
+detect_cuda(void){
+	int devs;
+
+	if((devs = detect_cudadevcount()) < 0){
+		return TORQUE_ERR_GPUDETECT;
+	}
+	return 0;
+}
+
 torque_err detect_architecture(torque_ctx *ctx){
 	torque_err ret;
 
 	if( (ret = detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)) ){
+		goto err;
+	}
+	if( (ret = detect_cuda()) ){
 		goto err;
 	}
 	if(detect_memories(ctx)){
