@@ -44,7 +44,7 @@ udpmaker(void){
 
 static int
 tcpmaker(void){
-	return -1;
+	return socket(AF_INET,SOCK_STREAM,0);
 }
 
 static int
@@ -127,6 +127,8 @@ parse_args(int argc,char **argv,uint16_t *port,fdmaker *fdfxn){
 			goto err;
 		}
 	}
+	*port = htons(*port ? *port : DEFAULT_PORT);
+	*fdfxn = *fdfxn ? *fdfxn : tcpmaker;
 	return 0;
 
 err:
@@ -135,21 +137,42 @@ err:
 #undef SET_ARG_ONCE
 }
 
+typedef struct spinconnctx {
+	struct torque_ctx *ctx;
+	struct sockaddr_in sin;
+	fdmaker fdfxn;
+} spinconnctx;
+
 static void
 conn_complete_cb(int fd,void *state){
-	// FIXME
-	printf("%d %p\n",fd,state);
+	spinconnctx *ctx = state;
+	int sd;
+
+	close(fd);
+	while((sd = ctx->fdfxn()) >= 0){
+		torque_err err;
+
+		if( (err = torque_addconnector_unbuffered(ctx->ctx,sd,
+				(const struct sockaddr *)&ctx->sin,sizeof(ctx->sin),
+				NULL,conn_complete_cb,ctx)) ){
+			fprintf(stderr,"Couldn't add descriptor %d (%s)\n",sd,
+					torque_errstr(err));
+			close(sd);
+			break;
+		}
+	}
 }
  
 int main(int argc,char **argv){
-	struct torque_ctx *ctx = NULL;
-	struct sockaddr_in sin;
-	fdmaker fdfxn = NULL;
+	spinconnctx ctx = {
+		.ctx = NULL,
+		.fdfxn = NULL,
+	};
 	torque_err err;
 	int sd = -1;
 
-	memset(&sin,0,sizeof(sin));
-	if(parse_args(argc,argv,&sin.sin_port,&fdfxn)){
+	memset(&ctx.sin,0,sizeof(ctx.sin));
+	if(parse_args(argc,argv,&ctx.sin.sin_port,&ctx.fdfxn)){
 		return EXIT_FAILURE;
 	}
 	if( (err = torque_sigmask(NULL)) ){
@@ -157,28 +180,26 @@ int main(int argc,char **argv){
 				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
-	if((ctx = torque_init(&err)) == NULL){
+	if((ctx.ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
 				torque_errstr(err));
 		goto err;
 	}
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
-	// FIXME support -u! requires SOCK_DATAGRAM
-	if((sd = socket(sin.sin_family,SOCK_STREAM,0)) < 0){
+	ctx.sin.sin_family = AF_INET;
+	ctx.sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	if((sd = ctx.fdfxn()) < 0){
 		fprintf(stderr,"Couldn't get socket (%s)\n",
 				strerror(errno));
 		goto err;
 	}
-	printf("Spinning connections to port %hu...\n",ntohs(sin.sin_port));
-	if( (err = torque_addconnector_unbuffered(ctx,sd,(const struct sockaddr *)&sin,
-				sizeof(sin),NULL,conn_complete_cb,NULL)) ){
+	printf("Spinning connections to port %hu...\n",ntohs(ctx.sin.sin_port));
+	if( (err = torque_addconnector_unbuffered(ctx.ctx,sd,(const struct sockaddr *)&ctx.sin,
+				sizeof(ctx.sin),NULL,conn_complete_cb,&ctx)) ){
 		fprintf(stderr,"Couldn't add descriptor %d (%s)\n",sd,
 				torque_errstr(err));
 		goto err;
 	}
-	if( (err = torque_block(ctx)) ){
+	if( (err = torque_block(ctx.ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
 				torque_errstr(err));
 		return EXIT_FAILURE;
@@ -187,7 +208,7 @@ int main(int argc,char **argv){
 	return EXIT_SUCCESS;
 
 err:
-	if( (err = torque_stop(ctx)) ){
+	if( (err = torque_stop(ctx.ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
 				torque_errstr(err));
 		return EXIT_FAILURE;
