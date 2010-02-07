@@ -55,7 +55,6 @@ static void
 conn_handler(int fd,void *v){
 	struct torque_ctx *ctx = v;
 
-	fprintf(stdout,"Got a connection on %d\n",fd);
 	do{
 		struct sockaddr_in sina;
 		socklen_t slen;
