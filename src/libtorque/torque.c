@@ -231,7 +231,9 @@ torque_err torque_addfd(torque_ctx *ctx,int fd,libtorquebrcb rx,
 	if((cbctx = create_rxbuffercb(ctx,rx,tx,state)) == NULL){
 		return TORQUE_ERR_RESOURCE;
 	}
-	if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
+	if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,
+					rx ? buffered_rxfxn : NULL,
+					tx ? buffered_txfxn : NULL,
 					cbctx,EVONESHOT)) ){
 		free_rxbuffercb(cbctx);
 	}
