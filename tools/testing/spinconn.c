@@ -30,8 +30,25 @@ usage(const char *argv0){
 	fprintf(stderr,"\t-h, --help: print this message\n");
 }
 
+typedef int (*fdmaker)(void);
+
 static int
-parse_args(int argc,char **argv,uint16_t *port){
+sslmaker(void){
+	return -1;
+}
+
+static int
+udpmaker(void){
+	return -1;
+}
+
+static int
+tcpmaker(void){
+	return -1;
+}
+
+static int
+parse_args(int argc,char **argv,uint16_t *port,fdmaker *fdfxn){
 #define SET_ARG_ONCE(opt,arg,val) do{ if(!*(arg)){ *arg = val; }\
 	else{ fprintf(stderr,"Provided '%c' twice\n",(opt)); goto err; }} while(0)
 	int lflag;
@@ -81,6 +98,7 @@ parse_args(int argc,char **argv,uint16_t *port){
 						goto err;
 					}
 					SET_ARG_ONCE('s',port,p);
+					*fdfxn = sslmaker;
 					break;
 				}
 				case 't': { int p = atoi(optarg);
@@ -88,6 +106,7 @@ parse_args(int argc,char **argv,uint16_t *port){
 						goto err;
 					}
 					SET_ARG_ONCE('t',port,p);
+					*fdfxn = tcpmaker;
 					break;
 				}
 				case 'u': { int p = atoi(optarg);
@@ -95,6 +114,7 @@ parse_args(int argc,char **argv,uint16_t *port){
 						goto err;
 					}
 					SET_ARG_ONCE('u',port,p);
+					*fdfxn = udpmaker;
 					break;
 				}
 				case 'v':
@@ -118,11 +138,12 @@ err:
 int main(int argc,char **argv){
 	struct torque_ctx *ctx = NULL;
 	struct sockaddr_in sin;
+	fdmaker fdfxn = NULL;
 	torque_err err;
 	int sd = -1;
 
 	memset(&sin,0,sizeof(sin));
-	if(parse_args(argc,argv,&sin.sin_port)){
+	if(parse_args(argc,argv,&sin.sin_port,&fdfxn)){
 		return EXIT_FAILURE;
 	}
 	if( (err = torque_sigmask(NULL)) ){
