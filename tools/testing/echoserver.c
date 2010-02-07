@@ -68,7 +68,7 @@ conn_handler(int fd,void *v){
 			if(((flags = fcntl(sd,F_GETFL)) < 0) ||
 					fcntl(sd,F_SETFL,flags | (long)O_NONBLOCK)){
 				close(sd);
-			}else if(torque_addfd(ctx,sd,echo_server,echo_server,NULL)){
+			}else if(torque_addfd(ctx,sd,echo_server,NULL,NULL)){
 				fprintf(stderr,"Couldn't add client sd %d\n",sd);
 				close(sd);
 			}
