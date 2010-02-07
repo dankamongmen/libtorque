@@ -32,10 +32,9 @@ free_cpudetails(torque_cput *details){
 	details->memdescs = NULL;
 	free(details->strdescription);
 	details->strdescription = NULL;
-	details->stepping = details->model = details->family = 0;
+	memset(&details->spec,0,sizeof(details->spec));
 	details->tlbs = details->elements = details->memories = 0;
 	details->coresperpackage = details->threadspercore = 0;
-	details->x86type = PROCESSOR_X86_UNKNOWN;
 }
 
 // Methods to discover processor and cache details include:
@@ -60,8 +59,7 @@ detect_cpudetails(unsigned id,torque_cput *details,
 static int
 compare_cpudetails(const torque_cput * restrict a,
 			const torque_cput * restrict b){
-	if(a->family != b->family || a->model != b->model ||
-		a->stepping != b->stepping || a->x86type != b->x86type){
+	if(memcmp(&a->spec,&b->spec,sizeof(a->spec))){
 		return -1;
 	}
 	if(a->memories != b->memories || a->tlbs != b->tlbs){

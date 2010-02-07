@@ -50,13 +50,6 @@ typedef enum {
 	MEMTYPE_UNIFIED
 } torque_memtypet;
 
-typedef enum {
-	PROCESSOR_X86_OEM = 0,
-	PROCESSOR_X86_OVERDRIVE = 1,
-	PROCESSOR_X86_DUAL = 2,
-	PROCESSOR_X86_UNKNOWN
-} torque_x86typet;
-
 typedef struct torque_tlbt {
 	unsigned entries,pagesize,associativity,sharedways;
 	torque_memtypet tlbtype;
@@ -70,19 +63,37 @@ typedef struct torque_memt {
 	unsigned level;
 } torque_memt;
 
-typedef struct torque_cput {
-	unsigned elements;		// Usable processors of this type
-	unsigned memories;		// Number of memories for this type
+typedef enum {
+	PROCESSOR_X86_OEM = 0,
+	PROCESSOR_X86_OVERDRIVE = 1,
+	PROCESSOR_X86_DUAL = 2,
+	PROCESSOR_X86_UNKNOWN
+} torque_x86typet;
+
+typedef struct x86_details {
 	unsigned family,model,stepping;	// x86-specific; perhaps use a union?
 					// family and model include the
 					// extended family and model bits
 	torque_x86typet x86type;	// stupid bullshit
+} x86_details;
+
+typedef struct cuda_details {
+	unsigned major,minor;		// compute capability
+} cuda_details;
+
+typedef struct torque_cput {
+	unsigned elements;		// Usable processors of this type
+	unsigned memories;		// Number of memories for this type
 	unsigned tlbs;			// Number of TLBs (per-mem?)
 	unsigned threadspercore;	// Number of ways our core is shared
 	unsigned coresperpackage;	// Number of cores sharing our die
 	torque_tlbt *tlbdescs;		// TLB descriptors, NULL if tlbs == 0
 	char *strdescription;		// Vender-specific string description
 	torque_memt *memdescs;		// Memory descriptors, never NULL
+	union {
+		x86_details x86;
+		cuda_details cuda;
+	} spec;
 } torque_cput;
 
 typedef struct evtables {

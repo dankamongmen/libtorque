@@ -1,5 +1,5 @@
-#ifndef torque_HARDWARE_TOPOLOGY
-#define torque_HARDWARE_TOPOLOGY
+#ifndef TORQUE_HARDWARE_TOPOLOGY
+#define TORQUE_HARDWARE_TOPOLOGY
 
 #ifdef __cplusplus
 extern "C" {

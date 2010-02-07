@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_HARDWARE_NUMA
-#define LIBTORQUE_HARDWARE_NUMA
+#ifndef TORQUE_HARDWARE_NUMA
+#define TORQUE_HARDWARE_NUMA
 
 #ifdef __cplusplus
 extern "C" {

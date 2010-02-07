@@ -1572,7 +1572,7 @@ id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *c
 #define FFLAG_HT		0x10000000u
 
 static int
-x86_getprocsig(uint32_t maxfunc,torque_cput *cpu,struct feature_flags *ff){
+x86_getprocsig(uint32_t maxfunc,x86_details *cpu,struct feature_flags *ff){
 	uint32_t gpregs[4],maxex;
 
 	if(maxfunc < CPUID_CPU_VERSION){
@@ -1689,9 +1689,9 @@ int x86cpuid(torque_cput *cpudesc,unsigned *thread,unsigned *core,
 	cpudesc->memdescs = NULL;
 	cpudesc->strdescription = NULL;
 	cpudesc->tlbs = cpudesc->memories = 0;
-	cpudesc->x86type = PROCESSOR_X86_UNKNOWN;
+	memset(&cpudesc->spec,0,sizeof(cpudesc->spec));
+	cpudesc->spec.x86.x86type = PROCESSOR_X86_UNKNOWN;
 	cpudesc->threadspercore = cpudesc->coresperpackage = 0;
-	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
 	if(!cpuid_available()){
 		return -1;
 	}
@@ -1700,7 +1700,7 @@ int x86cpuid(torque_cput *cpudesc,unsigned *thread,unsigned *core,
 	if((vendor = lookup_vendor(gpregs + 1)) == NULL){
 		return -1;
 	}
-	if(x86_getprocsig(maxlevel,cpudesc,&ff)){
+	if(x86_getprocsig(maxlevel,&cpudesc->spec.x86,&ff)){
 		return -1;
 	}
 	if(vendor->topfxn && vendor->topfxn(maxlevel,&ff,cpudesc)){
