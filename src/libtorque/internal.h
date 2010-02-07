@@ -40,7 +40,6 @@ typedef struct torque_nodet {
 	size_t *psizevals;		// number of page sizes
 	unsigned psizes;		// architecturally-supported pagesizes
 	unsigned count;			// how many of these nodes do we have
-	unsigned nodeid;		// libNUMA node id
 } torque_nodet;
 
 typedef enum {
@@ -78,7 +77,7 @@ typedef struct x86_details {
 } x86_details;
 
 typedef struct cuda_details {
-	unsigned major,minor;		// compute capability
+	int major,minor;		// compute capability
 } cuda_details;
 
 typedef struct torque_cput {

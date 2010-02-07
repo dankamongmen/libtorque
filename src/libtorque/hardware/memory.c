@@ -125,7 +125,6 @@ int detect_memories(torque_ctx *ctx){
 	if((umamem.size = determine_sysmem()) <= 0){
 		goto err;
 	}
-	umamem.nodeid = 0;
 	if(add_node(&ctx->nodecount,&ctx->manodes,&umamem) == NULL){
 		goto err;
 	}
