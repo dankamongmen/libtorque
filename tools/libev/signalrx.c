@@ -51,7 +51,8 @@ rxsignal(struct ev_loop *loop,ev_signal *w,int revents __attribute__ ((unused)))
 
 static void
 print_version(void){
-	fprintf(stderr,"libev-signalrx from libtorque " TORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"libev-signalrx using libev %d.%d\n",
+			ev_version_major(),ev_version_minor());
 }
 
 static void

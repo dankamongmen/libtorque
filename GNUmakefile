@@ -9,7 +9,6 @@
 MAJORVER:=0
 MINORVER:=0
 RELEASEVER:=1
-DFLAGS+=-DTORQUE_VERSIONSTR="\"$(MAJORVER).$(MINORVER).$(RELEASEVER)\""
 
 # Functions. Invoke with $(call funcname,comma,delimited,args).
 which = $(firstword $(wildcard $(addsuffix /$(1),$(subst :, ,$(PATH)))))
@@ -355,9 +354,10 @@ $(OUT)/tools/libev/signalrx.o: tools/libev/signalrx.c $(GLOBOBJDEPS)
 ######################################################################
 
 # Generic rules
+VFLAGS:=-DTORQUE_VERSIONSTR="\"$(MAJORVER).$(MINORVER).$(RELEASEVER)\""
 $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(VFLAGS) $(CFLAGS) -c $< -o $@
 
 # Assemble only, sometimes useful for close-in optimization
 $(OUT)/%.s: %.c $(GLOBOBJDEPS)

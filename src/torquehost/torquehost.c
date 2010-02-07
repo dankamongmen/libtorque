@@ -12,7 +12,7 @@
 
 static void
 print_version(FILE *fp){
-	fprintf(fp,"torquehost from libtorque " TORQUE_VERSIONSTR "\n");
+	fprintf(fp,"torquehost from libtorque %s\n",torque_version());
 }
 
 #define DEFAULT_TIMEOUT 60

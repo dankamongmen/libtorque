@@ -108,7 +108,7 @@ make_echo_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 
 static void
 print_version(void){
-	fprintf(stderr,"echoserver from libtorque " TORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"echoserver from libtorque %s\n",torque_version());
 }
 
 static void

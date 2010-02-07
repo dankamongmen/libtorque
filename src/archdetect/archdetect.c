@@ -361,7 +361,7 @@ print_topology(const torque_ctx *ctx,const torque_topt *t){
 
 static void
 print_version(void){
-	fprintf(stderr,"archdetect from libtorque " TORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"archdetect from libtorque %s\n",torque_version());
 }
 
 static void

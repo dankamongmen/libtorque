@@ -61,7 +61,7 @@ make_ssl_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 
 static void
 print_version(void){
-	fprintf(stderr,"torquessl from libtorque " TORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"torquessl from libtorque %s\n",torque_version());
 }
 
 static void

@@ -46,7 +46,7 @@ signalrx(int sig,void *v __attribute__ ((unused))){
 
 static void
 print_version(void){
-	fprintf(stderr,"signalrx from libtorque " TORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"signalrx from libtorque %s\n",torque_version());
 }
 
 static void

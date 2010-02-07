@@ -361,3 +361,7 @@ torque_err torque_stop(torque_ctx *ctx){
 	}
 	return ret ? TORQUE_ERR_ASSERT : 0;
 }
+
+const char *torque_version(void){
+	return TORQUE_VERSIONSTR;
+}
