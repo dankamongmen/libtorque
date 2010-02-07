@@ -23,6 +23,7 @@ int detect_cudadevcount(void){
 #define CUDASTRLEN 80
 torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	CUresult cerr;
+	unsigned mem;
 	CUdevprop p;
 	CUdevice c;
 	char *str;
@@ -34,6 +35,10 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	if((cerr = cuDeviceGetProperties(&p,c)) != CUDA_SUCCESS){
 		return TORQUE_ERR_ASSERT;
 	}
+	if((cerr = cuDeviceTotalMem(&mem,c)) != CUDA_SUCCESS){
+		return TORQUE_ERR_ASSERT;
+	}
+	// FIXME do something with mem -- new NUMA node?
 	if((str = malloc(CUDASTRLEN)) == NULL){
 		return TORQUE_ERR_RESOURCE;
 	}
