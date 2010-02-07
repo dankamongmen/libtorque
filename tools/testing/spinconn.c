@@ -135,6 +135,12 @@ err:
 #undef SET_ARG_ONCE
 }
 
+static void
+conn_complete_cb(int fd,void *state){
+	// FIXME
+	printf("%d %p\n",fd,state);
+}
+ 
 int main(int argc,char **argv){
 	struct torque_ctx *ctx = NULL;
 	struct sockaddr_in sin;
@@ -166,8 +172,8 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	printf("Spinning connections to port %hu...\n",ntohs(sin.sin_port));
-	if( (err = torque_addconnector(ctx,sd,(const struct sockaddr *)&sin,sizeof(sin),
-				NULL,NULL,NULL)) ){
+	if( (err = torque_addconnector_unbuffered(ctx,sd,(const struct sockaddr *)&sin,
+				sizeof(sin),NULL,conn_complete_cb,NULL)) ){
 		fprintf(stderr,"Couldn't add descriptor %d (%s)\n",sd,
 				torque_errstr(err));
 		goto err;
