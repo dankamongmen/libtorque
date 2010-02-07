@@ -26,14 +26,14 @@ torque_ctx *get_thread_ctx(void){
 static inline void
 handle_event(torque_ctx *ctx,const kevententry *e){
 #ifdef TORQUE_LINUX
-	if(e->events & EPOLLIN){
+	if(e->events & EVREAD){
 #else
 	if(e->filter == EVFILT_READ){
 #endif
 		handle_evsource_read(ctx->eventtables.fdarray,KEVENTENTRY_ID(e));
 	}
 #ifdef TORQUE_LINUX
-	if(e->events & EPOLLOUT){
+	if(e->events & EVWRITE){
 #else
 	else if(e->filter == EVFILT_WRITE){
 #endif
