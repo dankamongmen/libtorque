@@ -21,7 +21,7 @@ echo_server(int fd,struct torque_rxbuf *rxb,void *v __attribute__ ((unused))){
 	buf = rxbuffer_valid(rxb,&len);
 	if(len == 0){
 		fprintf(stdout,"[%4d] closed\n",fd);
-		return -1; // FIXME could still need to transmit
+		goto err; // FIXME could still need to transmit
 	}
 	fprintf(stdout,"[%4d] Read %zub\n",fd,len);
 	w = 0;
@@ -36,7 +36,7 @@ echo_server(int fd,struct torque_rxbuf *rxb,void *v __attribute__ ((unused))){
 			}else if(errno != EINTR){
 				fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,
 						errno,strerror(errno),len);
-				return -1;
+				goto err;
 			}
 		}else{
 			w += r;
@@ -45,6 +45,10 @@ echo_server(int fd,struct torque_rxbuf *rxb,void *v __attribute__ ((unused))){
 	printf("wrote %zu/%zu\n",w,len);
 	rxbuffer_advance(rxb,w);
 	return 0;
+
+err:
+	close(fd);
+	return -1;
 }
 
 static void
