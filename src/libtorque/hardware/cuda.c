@@ -22,9 +22,13 @@ int detect_cudadevcount(void){
 // CUDA must already have been initialized before calling cudaid().
 torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	CUresult cerr;
+	CUdevprop p;
 	CUdevice c;
 
 	if((cerr = cuDeviceGet(&c,devno)) != CUDA_SUCCESS){
+		return TORQUE_ERR_INVAL;
+	}
+	if((cerr = cuDeviceGetProperties(&p,c)) != CUDA_SUCCESS){
 		return TORQUE_ERR_INVAL;
 	}
 	// FIXME work it
