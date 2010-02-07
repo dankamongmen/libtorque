@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <signal.h>
+#include <sys/socket.h>
 
 struct itimerspec;
 struct torque_ctx;
@@ -95,7 +96,7 @@ torque_err torque_addtimer(struct torque_ctx *,
 
 // Watch for events on the specified file descriptor, and invoke the callbacks.
 // Employ libtorque's read buffering. A buffered read callback must return -1
-// if the descriptor has been closed, and 0 otherwise.	
+// if the descriptor has been closed, and 0 otherwise.
 torque_err torque_addfd(struct torque_ctx *,int,libtorquebrcb,
 					libtorquebwcb,void *)
 	__attribute__ ((visibility("default")))
@@ -109,6 +110,24 @@ torque_err torque_addfd_unbuffered(struct torque_ctx *,int,
 	__attribute__ ((visibility("default")))
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
+
+// Connect to the specified address, and watch for events on the resulting file
+// descriptor, invoking the specified callbacks. Employ libtorque's read
+// buffering. A buffered read callback must return -1 if the descriptor has
+// been closed, and 0 otherwise.
+torque_err torque_addconnector(struct torque_ctx *,int,const struct sockaddr *,
+				socklen_t,libtorquebrcb,libtorquebwcb,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1,3)));
+
+// The same as torque_addconnector, but manage buffering in the application,
+// calling back immediately on all events (but not in more than one thread).
+torque_err torque_addconnector_unbuffered(struct torque_ctx *,int,const struct sockaddr *,
+				socklen_t,libtorquercb,libtorquewcb,void *)
+	__attribute__ ((visibility("default")))
+	__attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull(1,3)));
 
 // The same as torque_addfd_unbuffered, but allow multiple threads to handle
 // event readiness notifications concurrently. This is (currently) the
