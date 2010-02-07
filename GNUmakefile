@@ -162,7 +162,7 @@ TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 TORQUEHOSTSRC:=$(foreach dir, $(TORQUEHOSTDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEHOSTOBJ:=$(addprefix $(OUT)/,$(TORQUEHOSTSRC:%.c=%.o))
 SRC:=$(CSRC)
-TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx signaltx torquessl) # FIXME autodiscover
+TESTBINS:=$(addprefix $(BINOUT)/,$(notdir $(basename $(wildcard $(TOOLDIR)/testing/*))))
 ifndef LIBTORQUE_WITHOUT_EV
 TESTBINS+=$(addprefix $(BINOUT)/libev-,signalrx)
 endif
@@ -325,20 +325,20 @@ $(BINOUT)/$(TORQUEHOST): $(TORQUEHOSTOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(TORQUEHOSTCFLAGS) -o $@ $(TORQUEHOSTOBJ) $(TORQUEHOSTLFLAGS)
 
-$(BINOUT)/$(SSLSRV): $(OUT)/tools/testing/$(SSLSRV).o $(LIBS)
+$(BINOUT)/$(SSLSRV): $(OUT)/$(TOOLDIR)/testing/$(SSLSRV).o $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(TESTBINCFLAGS) -o $@ $< $(TESTBINLFLAGS)
 
 # The .o files generated for $(TESTBINS) get removed post-build due to their
 # status as "intermediate files". The following directive precludes said
 # operation, should it be necessary or desirable:
-#.SECONDARY: $(addsuffix .o,$(addprefix $(OUT)/tools/testing/,$(TESTBINS)))
+#.SECONDARY: $(addsuffix .o,$(addprefix $(OUT)/$(TOOLDIR)/testing/,$(TESTBINS)))
 
-$(BINOUT)/libev-%: $(OUT)/tools/libev/%.o
+$(BINOUT)/libev-%: $(OUT)/$(TOOLDIR)/libev/%.o
 	@mkdir -p $(@D)
 	$(CC) $(TESTBINCFLAGS) -o $@ $< $(EVTESTBINLFLAGS)
 
-$(BINOUT)/%: $(OUT)/tools/testing/%.o $(LIBS)
+$(BINOUT)/%: $(OUT)/$(TOOLDIR)/testing/%.o $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(TESTBINCFLAGS) -o $@ $< $(TESTBINLFLAGS)
 
