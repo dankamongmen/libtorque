@@ -70,7 +70,7 @@ void buffered_rxfxn(int fd,void *cbstate){
 		}else if(r == 0){
 			int cb;
 
-			if( (cb = rxback(rxb,fd,cbstate)) ){
+			if( (cb = rxb->rx(fd,rxb,cbstate)) ){
 				return;
 			}
 			if(restorefd(get_thread_evh(),fd,EVWRITE)){
