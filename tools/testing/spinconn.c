@@ -157,8 +157,14 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = htonl(INADDR_ANY);
+	sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
+	// FIXME support -u! requires SOCK_DATAGRAM
+	if((sd = socket(sin.sin_family,SOCK_STREAM,0)) < 0){
+		fprintf(stderr,"Couldn't get socket (%s)\n",
+				strerror(errno));
+		goto err;
+	}
 	printf("Spinning connections to port %hu...\n",ntohs(sin.sin_port));
 	if( (err = torque_addconnector(ctx,sd,(const struct sockaddr *)&sin,sizeof(sin),
 				NULL,NULL,NULL)) ){
