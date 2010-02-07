@@ -14,7 +14,10 @@ rxback(torque_rxbuf *rxb,int fd,void *cbstate){
 static inline int
 txback(torque_rxbuf *rxb,int fd,void *cbstate){
 	if(rxb->bufoff - rxb->bufate){
-		return rxb->tx(fd,rxb,cbstate);
+		if(rxb->tx(fd,rxb,cbstate) == 0){
+			return restorefd(get_thread_evh(),fd,EVREAD);
+		}
+		return -1;
 	}
 	return 0;
 }
@@ -36,19 +39,12 @@ growrxbuf(torque_rxbuf *rxb){
 void buffered_txfxn(int fd,void *cbstate){
 	torque_rxbufcb *cbctx = cbstate;
 	torque_rxbuf *rxb = &cbctx->rxbuf;
-	int cb;
 
 	// FIXME very likely incomplete
-	if((cb = txback(rxb,fd,cbstate)) < 0){
-		goto err;
-	}
-	if(restorefd(get_thread_evh(),fd,EVREAD)){
-		goto err;
+	if(txback(rxb,fd,cbstate)){
+		close(fd);
 	}
 	return;
-
-err:
-	close(fd);
 }
 
 void buffered_rxfxn(int fd,void *cbstate){
