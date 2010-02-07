@@ -23,10 +23,10 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 	// epoll_ctl(2), "it is not necessary to add set [these] in ->events"
 	ee.events = EPOLLET | EPOLLPRI | eflags;
 	if(rfxn){
-		ee.events |= EPOLLIN;
+		ee.events |= EVREAD;
 	}
 	if(tfxn){
-		ee.events |= EPOLLOUT;
+		ee.events |= EVWRITE;
 	}
 	return Kevent(evq->efd,&k,1,NULL,0);
 #elif defined(TORQUE_FREEBSD)
@@ -34,10 +34,10 @@ add_fd_event(const evqueue *evq,int fd,libtorquercb rfxn,libtorquewcb tfxn,int e
 
 	// FIXME enforce EPOLLONESHOT equivalent
 	if(rfxn){
-		EV_SET(&k[0],fd,EVFILT_READ,EV_ADD | EVEDGET | eflags,0,0,NULL);
+		EV_SET(&k[0],fd,EVREAD,EV_ADD | EVEDGET | eflags,0,0,NULL);
 	}
 	if(tfxn){
-		EV_SET(&k[1],fd,EVFILT_WRITE,EV_ADD | EVEDGET | eflags,0,0,NULL);
+		EV_SET(&k[1],fd,EVWRITE,EV_ADD | EVEDGET | eflags,0,0,NULL);
 	}
 	return Kevent(evq->efd,k,!!tfxn + !!rfxn,NULL,0);
 #else

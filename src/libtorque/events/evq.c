@@ -33,7 +33,7 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 	// the pending signal queue, at least not without reading everything
 	// else, putting it on an event queue, and then swapping the exit back
 	// in from some other queue). So no EPOLLET.
-	ee.events = EPOLLIN;
+	ee.events = EVREAD;
 	k.events = &ee;
 	k.ctldata = &ecd;
 	ecd.op = EPOLL_CTL_ADD;
