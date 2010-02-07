@@ -151,14 +151,15 @@ int main(int argc,char **argv){
 				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = htonl(INADDR_ANY);
-	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
 	if((ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
 				torque_errstr(err));
 		goto err;
 	}
+	sin.sin_family = AF_INET;
+	sin.sin_addr.s_addr = htonl(INADDR_ANY);
+	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
+	printf("Spinning connections to port %hu...\n",ntohs(sin.sin_port));
 	if( (err = torque_block(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
 				torque_errstr(err));
