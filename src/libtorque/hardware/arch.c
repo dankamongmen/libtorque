@@ -28,14 +28,9 @@ add_cputype(unsigned *cputc,torque_cput **types,
 static void
 free_cpudetails(torque_cput *details){
 	free(details->tlbdescs);
-	details->tlbdescs = NULL;
 	free(details->memdescs);
-	details->memdescs = NULL;
 	free(details->strdescription);
-	details->strdescription = NULL;
-	memset(&details->spec,0,sizeof(details->spec));
-	details->tlbs = details->elements = details->memories = 0;
-	details->coresperpackage = details->threadspercore = 0;
+	memset(details,0,sizeof(*details));
 }
 
 // Methods to discover processor and cache details include:

@@ -20,23 +20,31 @@ int detect_cudadevcount(void){
 }
 
 // CUDA must already have been initialized before calling cudaid().
+#define CUDASTRLEN 80
 torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	CUresult cerr;
 	CUdevprop p;
 	CUdevice c;
+	char *str;
 
+	memset(cpudesc,0,sizeof(*cpudesc));
 	if((cerr = cuDeviceGet(&c,devno)) != CUDA_SUCCESS){
 		return TORQUE_ERR_INVAL;
 	}
 	if((cerr = cuDeviceGetProperties(&p,c)) != CUDA_SUCCESS){
-		return TORQUE_ERR_INVAL;
+		return TORQUE_ERR_ASSERT;
 	}
-	// FIXME work it
-	if(cpudesc == NULL){
-		return -1;
+	if((str = malloc(CUDASTRLEN)) == NULL){
+		return TORQUE_ERR_RESOURCE;
 	}
+	if((cerr = cuDeviceGetName(str,CUDASTRLEN,c)) != CUDA_SUCCESS){
+		free(str);
+		return TORQUE_ERR_ASSERT;
+	}
+	cpudesc->strdescription = str;
 	return 0;
 }
+#undef CUDASTRLEN
 #else
 int detect_cudadevcount(void){
 	return 0;
