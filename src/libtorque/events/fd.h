@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include <libtorque/libtorque.h>
+#include <libtorque/torque.h>
 #include <libtorque/events/sources.h>
 
 struct evectors;

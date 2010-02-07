@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include <libtorque/libtorque.h>
+#include <libtorque/torque.h>
 
 struct torque_cput;
 

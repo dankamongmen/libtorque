@@ -9,8 +9,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <libtorque/torque.h>
 #include <libtorque/buffers.h>
-#include <libtorque/libtorque.h>
 
 static int
 ssl_conn_handler(int fd,struct torque_rxbuf *rxbuf,void *cbstate){

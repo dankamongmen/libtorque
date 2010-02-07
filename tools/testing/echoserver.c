@@ -10,8 +10,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <libtorque/torque.h>
 #include <libtorque/buffers.h>
-#include <libtorque/libtorque.h>
 
 static int
 echo_server(int fd,struct torque_rxbuf *rxb,void *v __attribute__ ((unused))){

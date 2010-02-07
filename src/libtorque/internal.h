@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <libtorque/torque.h>
 #include <libtorque/schedule.h>
-#include <libtorque/libtorque.h>
 #include <libtorque/protos/dns.h>
 #include <libtorque/events/sysdep.h>
 

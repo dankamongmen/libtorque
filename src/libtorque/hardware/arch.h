@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include <libtorque/libtorque.h>
+#include <libtorque/torque.h>
 
 struct torque_ctx;
 

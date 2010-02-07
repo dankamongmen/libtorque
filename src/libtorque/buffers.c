@@ -1,7 +1,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <libtorque/buffers.h>
-#include <libtorque/libtorque.h>
 #include <libtorque/events/thread.h>
 
 static inline int

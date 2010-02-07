@@ -4,7 +4,6 @@
 #include <limits.h>
 #include <libtorque/buffers.h>
 #include <libtorque/internal.h>
-#include <libtorque/libtorque.h>
 #include <libtorque/events/fd.h>
 #include <libtorque/protos/ssl.h>
 #include <libtorque/protos/dns.h>

@@ -8,8 +8,8 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <libtorque/torque.h>
 #include <libtorque/buffers.h>
-#include <libtorque/libtorque.h>
 
 static struct {
 	pthread_mutex_t lock;

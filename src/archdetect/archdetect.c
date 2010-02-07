@@ -5,7 +5,6 @@
 #include <string.h>
 #include <getopt.h>
 #include <libtorque/internal.h>
-#include <libtorque/libtorque.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/memory.h>
 #include <libtorque/hardware/topology.h>

@@ -1,4 +1,4 @@
-#include <libtorque/libtorque.h>
+#include <libtorque/torque.h>
 
 // Ugh, must be kept up-to-date viz error enumerate by hand FIXME
 static const char * const errstrs[TORQUE_ERR_MAX + 1] = {

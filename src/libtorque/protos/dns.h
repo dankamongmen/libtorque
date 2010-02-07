@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
-#include <libtorque/libtorque.h>
+#include <libtorque/torque.h>
 
 #ifndef LIBTORQUE_WITHOUT_ADNS
 #include <adns.h>

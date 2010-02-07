@@ -8,7 +8,7 @@
 #include <getopt.h>
 #include <pthread.h>
 #include <arpa/inet.h>
-#include <libtorque/libtorque.h>
+#include <libtorque/torque.h>
 
 static void
 print_version(FILE *fp){
