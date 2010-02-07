@@ -9,6 +9,9 @@ extern "C" {
 
 struct torque_cput;
 
+int detect_cudadevcount(void)
+	__attribute__ ((warn_unused_result));
+
 torque_err cudaid(struct torque_cput *,unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)));
