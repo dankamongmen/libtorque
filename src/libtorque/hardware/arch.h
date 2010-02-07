@@ -1,5 +1,5 @@
-#ifndef torque_HARDWARE_ARCH
-#define torque_HARDWARE_ARCH
+#ifndef TORQUE_HARDWARE_ARCH
+#define TORQUE_HARDWARE_ARCH
 
 #ifdef __cplusplus
 extern "C" {

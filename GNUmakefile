@@ -73,6 +73,16 @@ DFLAGS+=-DLIBTORQUE_WITHOUT_NUMA
 endif
 endif
 
+ifeq ($(UNAME),FreeBSD)
+DFLAGS+=-DLIBTORQUE_WITHOUT_CUDA
+else
+ifndef LIBTORQUE_WITHOUT_CUDA
+LIBFLAGS+=-lcuda
+else
+DFLAGS+=-DLIBTORQUE_WITHOUT_CUDA
+endif
+endif
+
 ifndef LIBTORQUE_WITHOUT_WERROR
 WFLAGS+=-Werror
 endif
@@ -231,7 +241,8 @@ WFLAGS+=-Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # -ftree-parallelize-loops
 OFLAGS+=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
 	-fvisibility=hidden -fipa-cp -ftree-loop-linear -ftree-loop-im \
-	-ftree-loop-ivcanon -fno-common
+	-ftree-loop-ivcanon -fno-common -ftree-vectorizer-verbose=5
+#OFLAGS+=-fdump-tree-all
 CFLAGS+=-pipe -std=gnu99 $(DFLAGS)
 MT_CFLAGS:=$(CFLAGS) -pthread $(MT_DFLAGS)
 CFLAGS+=$(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)

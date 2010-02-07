@@ -1,5 +1,5 @@
-#ifndef torque_HARDWARE_MEMORY
-#define torque_HARDWARE_MEMORY
+#ifndef TORQUE_HARDWARE_MEMORY
+#define TORQUE_HARDWARE_MEMORY
 
 #ifdef __cplusplus
 extern "C" {

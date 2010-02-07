@@ -163,29 +163,40 @@ detail_tlb(const torque_tlbt *tlb){
 }
 
 static int
-detail_processing_unit(const torque_cput *pudesc){
+detail_x86(const x86_details *x86){
 	const char *x86type;
+
+	if((x86type = x86_type(x86->x86type)) == NULL){
+		fprintf(stderr,"Error: invalid x86 type information\n");
+		return -1;
+	}
+	if(x86->family == 0){
+		fprintf(stderr,"Error: invalid processor family\n");
+		return -1;
+	}
+	printf("\tFamily: 0x%03x (%d) Model: 0x%02x (%d) Stepping: %d (%s)\n",
+		x86->family,x86->family,x86->model,x86->model,x86->stepping,
+		x86type);
+	return 0;
+}
+
+static int
+detail_processing_unit(const torque_cput *pudesc){
 	unsigned n;
 
 	if(pudesc->strdescription == NULL){
 		fprintf(stderr,"Error: no string description\n");
 		return -1;
 	}
-	if((x86type = x86_type(pudesc->x86type)) == NULL){
-		fprintf(stderr,"Error: invalid x86 type information\n");
+	// FIXME this is x86-specific. check for x86ness!
+	if(detail_x86(&pudesc->spec.x86)){
 		return -1;
 	}
 	if(pudesc->threadspercore <= 0){
 		fprintf(stderr,"Error: invalid SMT information\n");
 		return -1;
 	}
-	printf("\tBrand name: %s (%s)\n",pudesc->strdescription,x86type);
-	if(pudesc->family == 0){
-		fprintf(stderr,"Error: invalid processor family\n");
-		return -1;
-	}
-	printf("\tFamily: 0x%03x (%d) Model: 0x%02x (%d) Stepping: %d\n",
-		pudesc->family,pudesc->family,pudesc->model,pudesc->model,pudesc->stepping);
+	printf("\tBrand name: %s\n",pudesc->strdescription);
 	if(pudesc->threadspercore == 1){
 		printf("\t1 thread per processing core, %u core%s per package\n",
 				pudesc->coresperpackage,

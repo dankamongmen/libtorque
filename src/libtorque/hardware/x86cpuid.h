@@ -1,5 +1,5 @@
-#ifndef torque_HARDWARE_X86CPUID
-#define torque_HARDWARE_X86CPUID
+#ifndef TORQUE_HARDWARE_X86CPUID
+#define TORQUE_HARDWARE_X86CPUID
 
 #ifdef __cplusplus
 extern "C" {
