@@ -26,10 +26,11 @@ Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
   4. libc/pthreads
   5. cpuset
   6. numa
-  7. ssl
-  8. dns
-  9. doc
-  A. misc
+  7. cuda
+  8. ssl
+  9. dns
+  A. doc
+  B. misc
  III. Building libtorque
  IV. Design issues
   1. design docs
@@ -133,6 +134,12 @@ NUMA is properly supported, devices/system/node* directories will be
 present in mounted sysfs filesystems. FreeBSD does not, to my knowledge, expose
 NUMA details as of 7.2.
 
+--cuda requirements---------------------------------------------------------
+
+On Linux, the "Driver API" libcuda library
+(http://www.nvidia.com/object/cuda_get.html) is used. Version 2.3 has been
+tested.
+
 --ssl requirements----------------------------------------------------------
 
 OpenSSL is supported. Version 0.9.8 has been tested.
@@ -189,6 +196,7 @@ Environment variables can affect the build by overriding defaults:
 Build policy can be modified by defining certain variables:
 
  LIBTORQUE_WITHOUT_ADNS (do not build in GNU adns support)
+ LIBTORQUE_WITHOUT_CUDA (do not build in NVIDIA CUDA support)
  LIBTORQUE_WITHOUT_OPENSSL (do not build in OpenSSL support)
  LIBTORQUE_WITHOUT_NUMA (do not build in libNUMA support)
  LIBTORQUE_WITHOUT_EV (do not build libev-based testing binaries)
@@ -408,7 +416,7 @@ directories. That having been said:
 
 Q: I get errors about NUMA-related functionality.
 A: See the NUMA requirements in section II.6. If you can't provide the
-   required minimum support, build with torque_WITHOUT_NUMA.
+   required minimum support, build with LIBTORQUE_WITHOUT_NUMA.
 
 --general use---------------------------------------------------------------
 
