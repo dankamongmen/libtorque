@@ -92,6 +92,30 @@
 		</funcsynopsis>
 		<funcsynopsis>
 			<funcprototype>
+			<funcdef>torque_err <function>torque_addconnector</function></funcdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>int <parameter>fd</parameter></paramdef>
+			<paramdef>const struct sockaddr *<parameter>addr</parameter></paramdef>
+			<paramdef>socklen_t <parameter>sockaddr</parameter></paramdef>
+			<paramdef>libtorquercb <parameter>rcbfxn</parameter></paramdef>
+			<paramdef>libtorquewcb <parameter>wcbfxn</parameter></paramdef>
+			<paramdef>void *<parameter>cbstate</parameter></paramdef>
+			</funcprototype>
+		</funcsynopsis>
+		<funcsynopsis>
+			<funcprototype>
+			<funcdef>torque_err <function>torque_addconnector_unbuffered</function></funcdef>
+			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
+			<paramdef>int <parameter>fd</parameter></paramdef>
+			<paramdef>const struct sockaddr *<parameter>addr</parameter></paramdef>
+			<paramdef>socklen_t <parameter>sockaddr</parameter></paramdef>
+			<paramdef>libtorquercb <parameter>rcbfxn</parameter></paramdef>
+			<paramdef>libtorquewcb <parameter>wcbfxn</parameter></paramdef>
+			<paramdef>void *<parameter>cbstate</parameter></paramdef>
+			</funcprototype>
+		</funcsynopsis>
+		<funcsynopsis>
+			<funcprototype>
 			<funcdef>torque_err <function>torque_addsignal</function></funcdef>
 			<paramdef>struct torque_ctx *<parameter>ctx</parameter></paramdef>
 			<paramdef>const sigset_t *<parameter>ss</parameter></paramdef>
