@@ -1,8 +1,8 @@
-#ifndef LIBTORQUE_WITHOUT_CUDA
-#include <cuda/cuda.h>
 #include <libtorque/internal.h>
 #include <libtorque/hardware/cuda.h>
 
+#ifndef LIBTORQUE_WITHOUT_CUDA
+#include <cuda/cuda.h>
 int detect_cudadevcount(void){
 	CUresult cerr;
 	int count;
@@ -32,5 +32,14 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 		return -1;
 	}
 	return 0;
+}
+#else
+int detect_cudadevcount(void){
+	return 0;
+}
+
+torque_err cudaid(torque_cput *cpudesc __attribute__ ((unused)),
+			unsigned devno __attribute__ ((unused))){
+	return TORQUE_ERR_UNAVAIL;
 }
 #endif
