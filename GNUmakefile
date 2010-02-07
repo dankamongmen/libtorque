@@ -231,7 +231,8 @@ WFLAGS+=-Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # -ftree-parallelize-loops
 OFLAGS+=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
 	-fvisibility=hidden -fipa-cp -ftree-loop-linear -ftree-loop-im \
-	-ftree-loop-ivcanon -fno-common
+	-ftree-loop-ivcanon -fno-common -ftree-vectorizer-verbose=5
+#OFLAGS+=-fdump-tree-all
 CFLAGS+=-pipe -std=gnu99 $(DFLAGS)
 MT_CFLAGS:=$(CFLAGS) -pthread $(MT_DFLAGS)
 CFLAGS+=$(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
