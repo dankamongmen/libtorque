@@ -32,19 +32,34 @@ usage(const char *argv0){
 
 typedef int (*fdmaker)(void);
 
+static inline int
+nb_socket(int domain,int type){
+	int fd;
+
+	if((fd = socket(domain,type,0)) >= 0){
+		int flags;
+
+		if((flags = fcntl(fd,F_GETFL)) < 0 || fcntl(fd,F_SETFL,flags | O_NONBLOCK)){
+			close(fd);
+			fd = -1;
+		}
+	}
+	return fd;
+}
+
 static int
 sslmaker(void){
-	return -1;
+	return -1; // FIXME
 }
 
 static int
 udpmaker(void){
-	return -1;
+	return nb_socket(AF_INET,SOCK_DGRAM);
 }
 
 static int
 tcpmaker(void){
-	return socket(AF_INET,SOCK_STREAM,0);
+	return nb_socket(AF_INET,SOCK_STREAM);
 }
 
 static int
