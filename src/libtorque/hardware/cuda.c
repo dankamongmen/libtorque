@@ -1,3 +1,4 @@
+#ifndef LIBTORQUE_WITHOUT_CUDA
 #include <cuda/cuda.h>
 #include <libtorque/internal.h>
 #include <libtorque/hardware/cuda.h>
@@ -16,3 +17,4 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	}
 	return 0;
 }
+#endif
