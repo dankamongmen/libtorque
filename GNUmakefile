@@ -325,10 +325,6 @@ $(BINOUT)/$(TORQUEHOST): $(TORQUEHOSTOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(TORQUEHOSTCFLAGS) -o $@ $(TORQUEHOSTOBJ) $(TORQUEHOSTLFLAGS)
 
-$(BINOUT)/$(SSLSRV): $(OUT)/$(TOOLDIR)/testing/$(SSLSRV).o $(LIBS)
-	@mkdir -p $(@D)
-	$(CC) $(TESTBINCFLAGS) -o $@ $< $(TESTBINLFLAGS)
-
 # The .o files generated for $(TESTBINS) get removed post-build due to their
 # status as "intermediate files". The following directive precludes said
 # operation, should it be necessary or desirable:
