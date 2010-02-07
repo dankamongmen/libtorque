@@ -5,6 +5,7 @@ static const char * const errstrs[TORQUE_ERR_MAX + 1] = {
 	"Unknown error",			// TORQUE_ERR_NONE
 	"Assertion failure",			// TORQUE_ERR_ASSERT
 	"Processor detection failure",		// TORQUE_ERR_CPUDETECT
+	"Graphic processor detection failure",	// TORQUE_ERR_GPUDETECT
 	"Memory detection failure",		// TORQUE_ERR_MEMDETECT
 	"Affinity subsystem failure",		// TORQUE_ERR_AFFINITY
 	"Insufficient system resources",	// TORQUE_ERR_RESOURCE

@@ -15,7 +15,8 @@ struct torque_rxbuf;
 typedef enum {
 	TORQUE_ERR_NONE = 0,
 	TORQUE_ERR_ASSERT,      // principal precondition/expectation failure
-	TORQUE_ERR_CPUDETECT,   // error detecting available processor units
+	TORQUE_ERR_CPUDETECT,   // error detecting available central processors
+	TORQUE_ERR_GPUDETECT,   // error detecting available graphic processors
 	TORQUE_ERR_MEMDETECT,   // error detecting available memories
 	TORQUE_ERR_AFFINITY,    // error in the affinity subsystem
 	TORQUE_ERR_RESOURCE,    // insufficient memory or descriptors
