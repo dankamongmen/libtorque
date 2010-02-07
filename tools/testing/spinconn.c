@@ -160,8 +160,8 @@ int main(int argc,char **argv){
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
 	printf("Spinning connections to port %hu...\n",ntohs(sin.sin_port));
-	if(torque_addconnector(ctx,sd,(const struct sockaddr *)&sin,sizeof(sin),
-				NULL,NULL,NULL)){
+	if( (err = torque_addconnector(ctx,sd,(const struct sockaddr *)&sin,sizeof(sin),
+				NULL,NULL,NULL)) ){
 		fprintf(stderr,"Couldn't add descriptor %d (%s)\n",sd,
 				torque_errstr(err));
 		goto err;
