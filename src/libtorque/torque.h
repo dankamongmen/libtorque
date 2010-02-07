@@ -24,7 +24,9 @@ typedef enum {
 	TORQUE_ERR_INVAL,       // an invalid parameter was passed
 	TORQUE_ERR_UNAVAIL,     // functionality unavailable on this platform
 
-	TORQUE_ERR_MAX          // sentinel value, should never be seen
+	TORQUE_ERR_SYSCALL      // sentinel. this precise value ought never be
+				// returned; on system call failure, we add
+				// errno to TORQUE_ERR_SYSCALL and return that.
 } torque_err;
 
 // Properly mask signals used internally by libtorque. This ought be called
