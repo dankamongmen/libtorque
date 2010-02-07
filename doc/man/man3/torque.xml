@@ -198,7 +198,7 @@
 	</refsect1>
 	<refsect1 id="see_also">
 		<title>SEE ALSO</title>
-		<para> <!-- In alpabetical order. -->
+		<para> <!-- In alphabetical order. -->
 			<citerefentry>
 				<refentrytitle>madvise</refentrytitle>
 				<manvolnum>2</manvolnum>
