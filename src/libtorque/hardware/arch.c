@@ -61,6 +61,16 @@ compare_cpudetails(const torque_cput * restrict a,
 	if(a->memories != b->memories || a->tlbs != b->tlbs){
 		return -1;
 	}
+	if(a->tlbs){
+		if(memcmp(a->tlbdescs,b->tlbdescs,a->tlbs * sizeof(*a->tlbdescs))){
+			return -1;
+		}
+	}
+	if(a->memories){
+		if(memcmp(a->memdescs,b->memdescs,a->memories * sizeof(*a->memdescs))){
+			return -1;
+		}
+	}
 	if(a->threadspercore != b->threadspercore || a->coresperpackage != b->coresperpackage){
 		return -1;
 	}
@@ -68,12 +78,6 @@ compare_cpudetails(const torque_cput * restrict a,
 		return -1;
 	}
 	if(strcmp(a->strdescription,b->strdescription)){
-		return -1;
-	}
-	if(memcmp(a->tlbdescs,b->tlbdescs,a->tlbs * sizeof(*a->tlbdescs))){
-		return -1;
-	}
-	if(memcmp(a->memdescs,b->memdescs,a->memories * sizeof(*a->memdescs))){
 		return -1;
 	}
 	return 0;
@@ -180,8 +184,8 @@ detect_cputypes(torque_ctx *ctx,unsigned *cputc,torque_cput **types){
 	// FIXME parallelize this (see bug 24) -- move the code before
 	// spawn_thread() into it, and make it thread safe.
 	for(z = 0, aid = 0 ; z < cpucount ; ++z){
-		torque_cput cpudetails;
 		unsigned thread,core,pkg;
+		torque_cput cpudetails;
 		typeof(*types) cputype;
 
 		while(aid < CPU_SETSIZE && !CPU_ISSET(aid,&mask)){
@@ -235,11 +239,29 @@ err:
 }
 
 static torque_err
-detect_cuda(void){
-	int devs;
+detect_cuda(unsigned *cputc,torque_cput **types){
+	int devs,i;
 
 	if((devs = detect_cudadevcount()) < 0){
 		return TORQUE_ERR_GPUDETECT;
+	}
+	for(i = 0 ; i < devs ; ++i){
+		torque_cput cpudetails;
+		typeof(*types) cputype;
+
+		if(cudaid(&cpudetails,i)){
+			return -1;
+		}
+		if( (cputype = match_cputype(*cputc,*types,&cpudetails)) ){
+			++cputype->elements;
+			free_cpudetails(&cpudetails);
+		}else{
+			cpudetails.elements = 1;
+			if((cputype = add_cputype(cputc,types,&cpudetails)) == NULL){
+				free_cpudetails(&cpudetails);
+				return TORQUE_ERR_RESOURCE;
+			}
+		}
 	}
 	return 0;
 }
@@ -250,7 +272,7 @@ torque_err detect_architecture(torque_ctx *ctx){
 	if( (ret = detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)) ){
 		goto err;
 	}
-	if( (ret = detect_cuda()) ){
+	if( (ret = detect_cuda(&ctx->cpu_typecount,&ctx->cpudescs)) ){
 		goto err;
 	}
 	if(detect_memories(ctx)){
