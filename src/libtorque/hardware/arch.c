@@ -64,6 +64,9 @@ compare_cpudetails(const torque_cput * restrict a,
 	if(a->threadspercore != b->threadspercore || a->coresperpackage != b->coresperpackage){
 		return -1;
 	}
+	if(a->isa != b->isa){
+		return -1;
+	}
 	if(strcmp(a->strdescription,b->strdescription)){
 		return -1;
 	}

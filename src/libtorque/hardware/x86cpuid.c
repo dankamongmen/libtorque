@@ -1715,5 +1715,6 @@ int x86cpuid(torque_cput *cpudesc,unsigned *thread,unsigned *core,
 	if(x86topology(maxlevel,cpudesc,thread,core,pkg)){
 		return -1;
 	}
+	cpudesc->isa = TORQUE_ISA_I386;
 	return 0;
 }

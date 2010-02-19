@@ -80,6 +80,11 @@ typedef struct cuda_details {
 	int major,minor;		// compute capability
 } cuda_details;
 
+typedef enum { // FIXME pretty fishy...
+	TORQUE_ISA_I386,
+	TORQUE_ISA_NVIDIA,
+} torque_isat;
+
 typedef struct torque_cput {
 	unsigned elements;		// Usable processors of this type
 	unsigned memories;		// Number of memories for this type
@@ -89,9 +94,10 @@ typedef struct torque_cput {
 	torque_tlbt *tlbdescs;		// TLB descriptors, NULL if tlbs == 0
 	char *strdescription;		// Vender-specific string description
 	torque_memt *memdescs;		// Memory descriptors, never NULL
+	torque_isat isa;		// instruction set architecture
 	union {
-		x86_details x86;
-		cuda_details cuda;
+		x86_details x86;	// TORQUE_ISA_I386
+		cuda_details cuda;	// TORQUE_ISA_NVIDIA
 	} spec;
 } torque_cput;
 

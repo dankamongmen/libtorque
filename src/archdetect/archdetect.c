@@ -180,6 +180,12 @@ detail_x86(const x86_details *x86){
 }
 
 static int
+detail_nvidia(const cuda_details *nv){
+	printf("\tCUDA compute capabilities: %u.%u\n",nv->major,nv->minor);
+	return 0;
+}
+
+static int
 detail_processing_unit(const torque_cput *pudesc){
 	unsigned n;
 
@@ -188,7 +194,18 @@ detail_processing_unit(const torque_cput *pudesc){
 		return -1;
 	}
 	// FIXME this is x86-specific. check for x86ness!
-	if(detail_x86(&pudesc->spec.x86)){
+	switch(pudesc->isa){
+	case TORQUE_ISA_I386:
+		if(detail_x86(&pudesc->spec.x86)){
+			return -1;
+		}
+		break;
+	case TORQUE_ISA_NVIDIA:
+		if(detail_nvidia(&pudesc->spec.cuda)){
+			return -1;
+		}
+	default:
+		fprintf(stderr,"Error: invalid ISA information\n");
 		return -1;
 	}
 	if(pudesc->threadspercore <= 0){
