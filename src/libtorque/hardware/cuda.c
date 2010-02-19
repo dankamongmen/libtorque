@@ -51,6 +51,8 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 		return TORQUE_ERR_ASSERT;
 	}
 	cpudesc->strdescription = str;
+	cpudesc->isa = TORQUE_ISA_NVIDIA;
+	cpudesc->threadspercore = 768; // FIXME can we look this up?
 	return 0;
 }
 #undef CUDASTRLEN
