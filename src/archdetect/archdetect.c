@@ -174,6 +174,12 @@ static int
 detail_x86(const x86_details *x86){
 	const char *x86type;
 
+	if(x86->features.mmx){ printf("+MMX"); }
+	if(x86->features.sse){ printf("+SSE"); }
+	if(x86->features.sse2){ printf("+SSE2"); }
+	if(x86->features.sse3){ printf("+SSE3"); }
+	if(x86->features.ssse3){ printf("+SSSE3"); }
+	printf("\n");
 	if((x86type = x86_type(x86->x86type)) == NULL){
 		fprintf(stderr,"Error: invalid x86 type information\n");
 		return -1;
@@ -190,6 +196,7 @@ detail_x86(const x86_details *x86){
 
 static int
 detail_nvidia(const cuda_details *nv){
+	printf("\n");
 	printf("\tCUDA compute capabilities: %u.%u\n",nv->major,nv->minor);
 	return 0;
 }
@@ -203,7 +210,7 @@ detail_processing_unit(const torque_cput *pudesc){
 		fprintf(stderr,"Error: invalid ISA information\n");
 		return -1;
 	}
-	printf("%s\n",isa);
+	printf("%s",isa);
 	switch(pudesc->isa){
 	case TORQUE_ISA_X86:
 		if(detail_x86(&pudesc->spec.x86)){
