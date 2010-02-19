@@ -204,6 +204,7 @@ detail_processing_unit(const torque_cput *pudesc){
 		if(detail_nvidia(&pudesc->spec.cuda)){
 			return -1;
 		}
+		break;
 	default:
 		fprintf(stderr,"Error: invalid ISA information\n");
 		return -1;
