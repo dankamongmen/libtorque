@@ -73,7 +73,37 @@ typedef struct x86_details {
 	unsigned family,model,stepping;	// x86-specific; perhaps use a union?
 					// family and model include the
 					// extended family and model bits
-	torque_x86typet x86type;	// stupid bullshit
+	torque_x86typet x86type;	// ...unsure (see cpuid docs and enum)
+	struct features {		// details from the feature flags
+		// Introduced on the Pentium w/ MMX. Adds MMX registers.
+		unsigned mmx : 1;
+		// Introduced on the P3 Katmai, and supported on Athlon XP's
+		// and Duron Morgans. 70 instructions. Adds XMM registers.
+		unsigned sse : 1;
+		// Introduced on the P4 Willamette, and supported on Opterons
+		// and Athlon 64's. 144 new instructions. Extends MMX to XMM's.
+		unsigned sse2 : 1;
+		// SSE3 is Intel's successor to SSE2, introduced on the P4
+		// Prescott. Also known as "Prescott New Instructions" (PNI).
+		// 13 new instructions.
+		unsigned sse3 : 1;
+		// SSSE3 is Intel's successor to SSE3, introduced on Core Tejas
+		// and Merom. Also known as "Tejas New Instructions" (TNI) and
+		// "Merom New Instructions" (MNI). 16 new instructions.
+		unsigned ssse3 : 1;
+		// Introduced on Penryn Core 2. Also known as "Penryn New
+		// Instructions" (PNI). 47 new instructions.
+		unsigned sse41 : 1;
+		// Introduced on Core i7 Nehalem. 7 new instructions.
+		unsigned sse42 : 1;
+		// Introduced on AMD Barcelona. 6 new instructions.
+		unsigned sse4a : 1;
+		// Introduces the VEX encoding scheme, 256-bit YMM registers.
+		unsigned avx : 1;
+		unsigned xop : 1;
+		unsigned fma4 : 1;
+		unsigned cvt16 : 1;
+	} features;
 } x86_details;
 
 typedef struct cuda_details {
@@ -81,7 +111,7 @@ typedef struct cuda_details {
 } cuda_details;
 
 typedef enum { // FIXME pretty fishy...
-	TORQUE_ISA_I386,
+	TORQUE_ISA_X86,
 	TORQUE_ISA_NVIDIA,
 } torque_isat;
 
@@ -96,7 +126,7 @@ typedef struct torque_cput {
 	torque_memt *memdescs;		// Memory descriptors
 	torque_isat isa;		// instruction set architecture
 	union {
-		x86_details x86;	// TORQUE_ISA_I386
+		x86_details x86;	// TORQUE_ISA_X86
 		cuda_details cuda;	// TORQUE_ISA_NVIDIA
 	} spec;
 } torque_cput;

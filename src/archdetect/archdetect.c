@@ -195,7 +195,7 @@ detail_processing_unit(const torque_cput *pudesc){
 	}
 	// FIXME this is x86-specific. check for x86ness!
 	switch(pudesc->isa){
-	case TORQUE_ISA_I386:
+	case TORQUE_ISA_X86:
 		if(detail_x86(&pudesc->spec.x86)){
 			return -1;
 		}
