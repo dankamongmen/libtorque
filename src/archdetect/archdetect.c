@@ -225,10 +225,6 @@ detail_processing_unit(const torque_cput *pudesc){
 				pudesc->coresperpackage != 1 ? "s" : "",
 				pudesc->coresperpackage - pudesc->coresperpackage / pudesc->threadspercore);
 	}
-	if(pudesc->memories <= 0){
-		fprintf(stderr,"Error: memory count of 0\n");
-		return -1;
-	}
 	for(n = 0 ; n < pudesc->memories ; ++n){
 		const torque_memt *mem = pudesc->memdescs + n;
 
