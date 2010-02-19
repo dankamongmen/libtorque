@@ -71,6 +71,15 @@ x86_type(torque_x86typet x86type){
 	}
 }
 
+static const char *
+isa_type(torque_isat isa){
+	switch(isa){
+		case TORQUE_ISA_X86: return "x86";
+		case TORQUE_ISA_NVIDIA: return "CUDA";
+		default: return NULL;
+	}
+}
+
 static int
 detail_memory(const torque_memt *mem){
 	const char *memt;
@@ -187,13 +196,14 @@ detail_nvidia(const cuda_details *nv){
 
 static int
 detail_processing_unit(const torque_cput *pudesc){
+	const char *isa;
 	unsigned n;
 
-	if(pudesc->strdescription == NULL){
-		fprintf(stderr,"Error: no string description\n");
+	if((isa = isa_type(pudesc->isa)) == NULL){
+		fprintf(stderr,"Error: invalid ISA information\n");
 		return -1;
 	}
-	// FIXME this is x86-specific. check for x86ness!
+	printf("%s\n",isa);
 	switch(pudesc->isa){
 	case TORQUE_ISA_X86:
 		if(detail_x86(&pudesc->spec.x86)){
@@ -211,6 +221,10 @@ detail_processing_unit(const torque_cput *pudesc){
 	}
 	if(pudesc->threadspercore <= 0){
 		fprintf(stderr,"Error: invalid SMT information\n");
+		return -1;
+	}
+	if(pudesc->strdescription == NULL){
+		fprintf(stderr,"Error: no string description\n");
 		return -1;
 	}
 	printf("\tBrand name: %s\n",pudesc->strdescription);
@@ -259,7 +273,7 @@ detail_processing_units(const torque_ctx *ctx,unsigned cpu_typecount){
 			fprintf(stderr,"Error: element count of %u\n",pudesc->elements);
 			return -1;
 		}
-		printf("(%4ux) Processing unit type %u of %u:\n",
+		printf("(%4ux) Processing unit type %u of %u: ",
 				pudesc->elements,n + 1,cpu_typecount);
 		if(detail_processing_unit(pudesc)){
 			return -1;
