@@ -83,11 +83,7 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 // These are largely taken from the Intel document; need check AMD's FIXME
 struct feature_flags {
 	// CPUID 00000001
-	int sse3;	// sse 3 (0)
-	int ssse3;	// ssse 3 (9)
 	int dca;	// direct cache access (18)
-	int sse41;	// sse 4.1 (19)
-	int sse42;	// sse 4.2 (20)
 	int x2apic;	// x2apic (21)
 	int pse;	// page size extension (3)
 	int pae;	// physical address extension (6)
@@ -1558,18 +1554,18 @@ id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *c
 
 // CPUID function 00000001 feature flags
 // ECX feature flags
-#define FFLAG_SSE3		0x00000001u
-#define FFLAG_SSSE3		0x00000200u
-#define FFLAG_DCA		0x00040000u
-#define FFLAG_SSE41		0x00080000u
-#define FFLAG_SSE42		0x00100000u
-#define FFLAG_X2APIC		0x00200000u
+#define FFLAG_SSE3		0x00000001u // bit 0
+#define FFLAG_SSSE3		0x00000200u // bit 8
+#define FFLAG_DCA		0x00040000u // bit 18
+#define FFLAG_SSE41		0x00080000u // bit 19
+#define FFLAG_SSE42		0x00100000u // bit 20
+#define FFLAG_X2APIC		0x00200000u // bit 21
 
 // EDX feature flags
-#define FFLAG_PSE		0x00000008u
-#define FFLAG_PAE		0x00000040u
-#define FFLAG_PSE36		0x00020000u
-#define FFLAG_HT		0x10000000u
+#define FFLAG_PSE		0x00000008u // bit 3
+#define FFLAG_PAE		0x00000040u // bit 6
+#define FFLAG_PSE36		0x00020000u // bit 17
+#define FFLAG_HT		0x10000000u // bit 28
 
 static int
 x86_getprocsig(uint32_t maxfunc,x86_details *cpu,struct feature_flags *ff){
@@ -1586,11 +1582,11 @@ x86_getprocsig(uint32_t maxfunc,x86_details *cpu,struct feature_flags *ff){
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
 	cpu->family = ((gpregs[0] >> 17u) & 0x7f8u) | ((gpregs[0] >> 8u) & 0xfu);
 	memset(ff,0,sizeof(*ff));
-	ff->sse3 = !!(gpregs[2] & FFLAG_SSE3);
-	ff->ssse3 = !!(gpregs[2] & FFLAG_SSSE3);
+	cpu->features.sse3 = !!(gpregs[2] & FFLAG_SSE3);
+	cpu->features.ssse3 = !!(gpregs[2] & FFLAG_SSSE3);
+	cpu->features.sse41 = !!(gpregs[2] & FFLAG_SSE41);
+	cpu->features.sse42 = !!(gpregs[2] & FFLAG_SSE42);
 	ff->dca = !!(gpregs[2] & FFLAG_DCA);
-	ff->sse41 = !!(gpregs[2] & FFLAG_SSE41);
-	ff->sse42 = !!(gpregs[2] & FFLAG_SSE42);
 	ff->x2apic = !!(gpregs[2] & FFLAG_X2APIC);
 	ff->pse = !!(gpregs[3] & FFLAG_PSE);
 	ff->pae = !!(gpregs[3] & FFLAG_PAE);
