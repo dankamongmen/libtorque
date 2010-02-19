@@ -30,10 +30,15 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	int attr;
 
 	memset(cpudesc,0,sizeof(*cpudesc));
+	if((cerr = cuDriverGetVersion(&attr)) != CUDA_SUCCESS){
+		return TORQUE_ERR_ASSERT;
+	}
+	cpudesc->spec.cuda.drvmajor = attr / 1000;
+	cpudesc->spec.cuda.drvminor = attr % 1000;
 	if((cerr = cuDeviceGet(&c,devno)) != CUDA_SUCCESS){
 		return TORQUE_ERR_INVAL;
 	}
-	cerr =  cuDeviceGetAttribute(&attr,CU_DEVICE_ATTRIBUTE_WARP_SIZE,c);
+	cerr = cuDeviceGetAttribute(&attr,CU_DEVICE_ATTRIBUTE_WARP_SIZE,c);
 	if(cerr != CUDA_SUCCESS || attr <= 0){
 		return TORQUE_ERR_ASSERT;
 	}

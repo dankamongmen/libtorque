@@ -196,7 +196,11 @@ detail_x86(const x86_details *x86){
 
 static int
 detail_nvidia(const cuda_details *nv){
-	printf("\n");
+	if(nv->drvmajor <= 0 || nv->drvminor < 0){
+		fprintf(stderr,"Error: invalid CUDA version information\n");
+		return -1;
+	}
+	printf(" version %d.%d\n",nv->drvmajor,nv->drvminor);
 	printf("\tCUDA compute capabilities: %u.%u\n",nv->major,nv->minor);
 	return 0;
 }

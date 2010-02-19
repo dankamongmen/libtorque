@@ -108,6 +108,7 @@ typedef struct x86_details {
 
 typedef struct cuda_details {
 	int major,minor;		// compute capability
+	int drvmajor,drvminor;		// CUDA software release
 } cuda_details;
 
 typedef enum { // FIXME pretty fishy...
