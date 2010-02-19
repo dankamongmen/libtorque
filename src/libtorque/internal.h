@@ -93,7 +93,7 @@ typedef struct torque_cput {
 	unsigned coresperpackage;	// Number of cores sharing our die
 	torque_tlbt *tlbdescs;		// TLB descriptors, NULL if tlbs == 0
 	char *strdescription;		// Vender-specific string description
-	torque_memt *memdescs;		// Memory descriptors, never NULL
+	torque_memt *memdescs;		// Memory descriptors
 	torque_isat isa;		// instruction set architecture
 	union {
 		x86_details x86;	// TORQUE_ISA_I386
