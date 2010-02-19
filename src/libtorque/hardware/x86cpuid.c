@@ -1555,7 +1555,8 @@ id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *c
 // CPUID function 00000001 feature flags
 // ECX feature flags
 #define FFLAG_SSE3		0x00000001u // bit 0
-#define FFLAG_SSSE3		0x00000200u // bit 8
+#define FFLAG_SSE4A		0x00000040u // bit 6
+#define FFLAG_SSSE3		0x00000200u // bit 9
 #define FFLAG_DCA		0x00040000u // bit 18
 #define FFLAG_SSE41		0x00080000u // bit 19
 #define FFLAG_SSE42		0x00100000u // bit 20
@@ -1565,6 +1566,9 @@ id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *c
 #define FFLAG_PSE		0x00000008u // bit 3
 #define FFLAG_PAE		0x00000040u // bit 6
 #define FFLAG_PSE36		0x00020000u // bit 17
+#define FFLAG_MMX		0x00800000u // bit 23
+#define FFLAG_SSE		0x02000000u // bit 25
+#define FFLAG_SSE2		0x04000000u // bit 26
 #define FFLAG_HT		0x10000000u // bit 28
 
 static int
@@ -1586,21 +1590,28 @@ x86_getprocsig(uint32_t maxfunc,x86_details *cpu,struct feature_flags *ff){
 	cpu->features.ssse3 = !!(gpregs[2] & FFLAG_SSSE3);
 	cpu->features.sse41 = !!(gpregs[2] & FFLAG_SSE41);
 	cpu->features.sse42 = !!(gpregs[2] & FFLAG_SSE42);
+	cpu->features.sse4a = !!(gpregs[2] & FFLAG_SSE4A);
 	ff->dca = !!(gpregs[2] & FFLAG_DCA);
 	ff->x2apic = !!(gpregs[2] & FFLAG_X2APIC);
 	ff->pse = !!(gpregs[3] & FFLAG_PSE);
 	ff->pae = !!(gpregs[3] & FFLAG_PAE);
 	ff->pse36 = !!(gpregs[3] & FFLAG_PSE36);
 	ff->ht = !!(gpregs[3] & FFLAG_HT);
+	cpu->features.mmx = !!(gpregs[3] & FFLAG_MMX);
+	cpu->features.sse = !!(gpregs[3] & FFLAG_SSE);
+	cpu->features.sse2 = !!(gpregs[3] & FFLAG_SSE2);
 	if((maxex = identify_extended_cpuid()) >= CPUID_EXTENDED_CPU_VERSION){
 		cpuid(CPUID_EXTENDED_CPU_VERSION,0,gpregs);
 		ff->lme = !!(gpregs[3] & CPUID_LME);
 		ff->gbpt = !!(gpregs[3] & CPUID_1GB);
 	}
-	/*printf("SSE3: %d SSSE3: %d\n",ff->sse3,ff->ssse3);
-	printf("LME: %d GBPT: %d\n",ff->lme,ff->gbpt);
-	printf("DCA: %d SSE4.1: %d SSE4.2: %d X2APIC: %d\n",ff->dca,ff->sse41,ff->sse42,ff->x2apic);
-	printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",ff->pse,ff->pae,ff->pse36,ff->ht);*/
+	/*printf("SSE: %d SSE2: %d\n",cpu->features.sse,cpu->features.sse2);
+	printf("SSE3: %d SSSE3: %d\n",cpu->features.sse3,cpu->features.ssse3);
+	printf("SSE4.1: %d SSE4.2: %d\n",cpu->features.sse41,cpu->features.ssse42);
+	printf("SSE4a: %d\n",cpu->features.sse4a);
+	printf("LME: %d GBPT: %d\n",cpu->features.lme,cpu->features.gbpt);
+	printf("DCA: %d SSE4.1: %d SSE4.2: %d X2APIC: %d\n",cpu->features.dca,cpu->features.sse41,cpu->features.sse42,cpu->features.x2apic);
+	printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",cpu->features.pse,cpu->features.pae,cpu->features.pse36,cpu->features.ht);*/
 	return 0;
 }
 
