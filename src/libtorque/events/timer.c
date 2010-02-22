@@ -104,7 +104,6 @@ torque_err add_timer_to_evhandler(struct torque_ctx *ctx __attribute__ ((unused)
 	}
 #elif defined(TORQUE_FREEBSD)
 	{
-		timerfd_marshal *tm;
 		EVECTOR_AUTOS(1,tk);
 		uintmax_t ms;
 
