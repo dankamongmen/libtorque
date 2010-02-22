@@ -99,7 +99,7 @@
 		<title>SEE ALSO</title>
 		<para> <!-- In alpabetical order. -->
 			<citerefentry>
-				<refentrytitle>libtorque</refentrytitle>
+				<refentrytitle>torque</refentrytitle>
 				<manvolnum>3</manvolnum>
 			</citerefentry>
 		</para>

@@ -8,8 +8,8 @@
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/memory.h>
 
-static libtorque_nodet *
-add_node(unsigned *count,libtorque_nodet **nodes,const libtorque_nodet *node){
+static torque_nodet *
+add_node(unsigned *count,torque_nodet **nodes,const torque_nodet *node){
 	size_t s = (*count + 1) * sizeof(**nodes);
 	typeof(**nodes) *tmp;
 
@@ -82,7 +82,7 @@ match_pagesize(unsigned psizes,const size_t *psvals,size_t ps){
 }
 
 static inline int
-determine_pagesizes(const libtorque_ctx *ctx,libtorque_nodet *mem){
+determine_pagesizes(const torque_ctx *ctx,torque_nodet *mem){
 	unsigned cput;
 	long psize;
 
@@ -93,14 +93,14 @@ determine_pagesizes(const libtorque_ctx *ctx,libtorque_nodet *mem){
 		return -1;
 	}
 	for(cput = 0 ; cput < ctx->cpu_typecount ; ++cput){
-		const libtorque_cput *cpu;
+		const torque_cput *cpu;
 		unsigned tlbt;
 
-		if((cpu = libtorque_cpu_getdesc(ctx,cput)) == NULL){
+		if((cpu = torque_cpu_getdesc(ctx,cput)) == NULL){
 			return -1;
 		}
 		for(tlbt = 0 ; tlbt < cpu->tlbs ; ++tlbt){
-			const libtorque_tlbt *tlb;
+			const torque_tlbt *tlb;
 
 			tlb = &cpu->tlbdescs[tlbt];
 			if(!match_pagesize(mem->psizes,mem->psizevals,tlb->pagesize)){
@@ -113,8 +113,8 @@ determine_pagesizes(const libtorque_ctx *ctx,libtorque_nodet *mem){
 	return 0;
 }
 
-int detect_memories(libtorque_ctx *ctx){
-	libtorque_nodet umamem;
+int detect_memories(torque_ctx *ctx){
+	torque_nodet umamem;
 
 	umamem.count = 1;
 	umamem.psizes = 0;
@@ -125,7 +125,6 @@ int detect_memories(libtorque_ctx *ctx){
 	if((umamem.size = determine_sysmem()) <= 0){
 		goto err;
 	}
-	umamem.nodeid = 0;
 	if(add_node(&ctx->nodecount,&ctx->manodes,&umamem) == NULL){
 		goto err;
 	}
@@ -140,11 +139,11 @@ err:
 	return -1;
 }
 
-void free_memories(libtorque_ctx *ctx){
+void free_memories(torque_ctx *ctx){
 	unsigned z;
 
 	for(z = 0 ; z < ctx->nodecount ; ++z){
-		libtorque_nodet *node;
+		torque_nodet *node;
 
 		node = &ctx->manodes[z];
 		free(ctx->manodes[z].psizevals);
@@ -155,11 +154,11 @@ void free_memories(libtorque_ctx *ctx){
 	free_numa(ctx);
 }
 
-unsigned libtorque_mem_nodecount(const libtorque_ctx *ctx){
+unsigned torque_mem_nodecount(const torque_ctx *ctx){
 	return ctx->nodecount;
 }
 
-const libtorque_nodet *libtorque_node_getdesc(const libtorque_ctx *ctx,unsigned n){
+const torque_nodet *torque_node_getdesc(const torque_ctx *ctx,unsigned n){
 	if(n < ctx->nodecount){
 		return &ctx->manodes[n];
 	}
@@ -167,12 +166,12 @@ const libtorque_nodet *libtorque_node_getdesc(const libtorque_ctx *ctx,unsigned 
 }
 
 // FIXME we really ought just compute this value somewhere; this is terrible
-size_t large_system_pagesize(const libtorque_ctx *ctx){
+size_t large_system_pagesize(const torque_ctx *ctx){
 	size_t ret = 0;
 	unsigned z;
 
 	for(z = 0 ; z < ctx->nodecount ; ++z){
-		const libtorque_nodet *node;
+		const torque_nodet *node;
 		unsigned p;
 
 		node = &ctx->manodes[z];

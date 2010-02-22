@@ -4,7 +4,7 @@
 #include <libtorque/protos/dns.h>
 #include <libtorque/events/thread.h>
 
-int libtorque_dns_init(dns_state *dctx){
+int torque_dns_init(dns_state *dctx){
 #ifndef LIBTORQUE_WITHOUT_ADNS
 	adns_initflags flags = adns_if_noautosys/* | adns_if_debug*/;
 
@@ -107,7 +107,7 @@ adns_tx_callback(int fd,void *state){
 }
 #endif
 
-int load_dns_fds(libtorque_ctx *ctx,dns_state *dctx,const evqueue *evq){
+int load_dns_fds(torque_ctx *ctx,dns_state *dctx,const evqueue *evq){
 #ifndef LIBTORQUE_WITHOUT_ADNS
 	struct pollfd pfds[4];
 	int nfds,to = 0,r;
@@ -137,7 +137,7 @@ int load_dns_fds(libtorque_ctx *ctx,dns_state *dctx,const evqueue *evq){
 	return 0;
 }
 
-void libtorque_dns_shutdown(dns_state *dctx){
+void torque_dns_shutdown(dns_state *dctx){
 #ifndef LIBTORQUE_WITHOUT_ADNS
 	adns_finish(*dctx);
 #else

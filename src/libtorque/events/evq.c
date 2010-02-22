@@ -9,11 +9,11 @@ int destroy_evqueue(evqueue *evq){
 
 	ret |= close(evq->efd);
 	evq->efd = -1;
-	libtorque_dns_shutdown(&evq->dnsctx);
+	torque_dns_shutdown(&evq->dnsctx);
 	return ret;
 }
 
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 // fd is the common signalfd
 static inline int
 add_commonfds_to_evhandler(int fd,evqueue *evq){
@@ -33,7 +33,7 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 	// the pending signal queue, at least not without reading everything
 	// else, putting it on an event queue, and then swapping the exit back
 	// in from some other queue). So no EPOLLET.
-	ee.events = EPOLLIN;
+	ee.events = EVREAD;
 	k.events = &ee;
 	k.ctldata = &ecd;
 	ecd.op = EPOLL_CTL_ADD;
@@ -45,11 +45,11 @@ add_commonfds_to_evhandler(int fd,evqueue *evq){
 #endif
 
 static inline int
-add_evqueue_baseevents(libtorque_ctx *ctx,evqueue *e){
+add_evqueue_baseevents(torque_ctx *ctx,evqueue *e){
 	if(load_dns_fds(ctx,&e->dnsctx,e)){
 		return -1;
 	}
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 	{
 		sigset_t s;
 
@@ -61,24 +61,24 @@ add_evqueue_baseevents(libtorque_ctx *ctx,evqueue *e){
 		}
 	}
 	return 0;
-#elif defined(LIBTORQUE_LINUX_SIGNALFD)
+#elif defined(TORQUE_LINUX_SIGNALFD)
 	return add_commonfds_to_evhandler(ctx->eventtables.common_signalfd,e);
 #else
 	return 0;
 #endif
 }
 
-int init_evqueue(libtorque_ctx *ctx,evqueue *e){
-	if(libtorque_dns_init(&e->dnsctx)){
+int init_evqueue(torque_ctx *ctx,evqueue *e){
+	if(torque_dns_init(&e->dnsctx)){
 		return -1;
 	}
 	if((e->efd = create_efd()) < 0){
-		libtorque_dns_shutdown(&e->dnsctx);
+		torque_dns_shutdown(&e->dnsctx);
 		return -1;
 	}
 	if(add_evqueue_baseevents(ctx,e)){
 		close(e->efd);
-		libtorque_dns_shutdown(&e->dnsctx);
+		torque_dns_shutdown(&e->dnsctx);
 		return -1;
 	}
 	return 0;

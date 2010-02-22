@@ -2,9 +2,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <libtorque/conn.h>
 #include <libtorque/buffers.h>
 #include <libtorque/internal.h>
-#include <libtorque/libtorque.h>
 #include <libtorque/events/fd.h>
 #include <libtorque/protos/ssl.h>
 #include <libtorque/protos/dns.h>
@@ -30,7 +30,7 @@ max_fds(void){
 }
 
 static inline int
-initialize_etables(libtorque_ctx *ctx,evtables *e,const sigset_t *ss){
+initialize_etables(torque_ctx *ctx,evtables *e,const sigset_t *ss){
 	if((e->fdarraysize = max_fds()) <= 0){
 		return -1;
 	}
@@ -60,7 +60,7 @@ static int
 free_etables(evtables *e){
 	int ret = 0;
 
-#ifdef LIBTORQUE_LINUX_SIGNALFD
+#ifdef TORQUE_LINUX_SIGNALFD
 	ret |= close(e->common_signalfd);
 #endif
 	ret |= destroy_evsources(e->sigarray);
@@ -68,20 +68,20 @@ free_etables(evtables *e){
 	return ret;
 }
 
-static inline libtorque_ctx *
-create_libtorque_ctx(libtorque_err *e,const sigset_t *ss){
-	libtorque_ctx *ret;
+static inline torque_ctx *
+create_torque_ctx(torque_err *e,const sigset_t *ss){
+	torque_ctx *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
 		if(initialize_etables(ret,&ret->eventtables,ss)){
 			free(ret);
-			*e = LIBTORQUE_ERR_RESOURCE;
+			*e = TORQUE_ERR_RESOURCE;
 			return NULL;
 		}
 		if(init_evqueue(ret,&ret->evq)){
 			free_etables(&ret->eventtables);
 			free(ret);
-			*e = LIBTORQUE_ERR_RESOURCE;
+			*e = TORQUE_ERR_RESOURCE;
 			return NULL;
 		}
 		ret->sched_zone = NULL;
@@ -95,7 +95,7 @@ create_libtorque_ctx(libtorque_err *e,const sigset_t *ss){
 }
 
 static int
-free_libtorque_ctx(libtorque_ctx *ctx){
+free_torque_ctx(torque_ctx *ctx){
 	int ret = 0;
 
 	ret |= free_etables(&ctx->eventtables);
@@ -105,15 +105,15 @@ free_libtorque_ctx(libtorque_ctx *ctx){
 	return ret;
 }
 
-static libtorque_ctx *
-libtorque_init_sigmasked(libtorque_err *e,const sigset_t *ss){
-	libtorque_ctx *ctx;
+static torque_ctx *
+torque_init_sigmasked(torque_err *e,const sigset_t *ss){
+	torque_ctx *ctx;
 
-	if((ctx = create_libtorque_ctx(e,ss)) == NULL){
+	if((ctx = create_torque_ctx(e,ss)) == NULL){
 		return NULL;
 	}
 	if( (*e = detect_architecture(ctx)) ){
-		free_libtorque_ctx(ctx);
+		free_torque_ctx(ctx);
 		return NULL;
 	}
 	return ctx;
@@ -149,62 +149,62 @@ makesigmask(sigset_t *s){
 }
 
 // Ought be called by the client application prior to launching any threads.
-libtorque_err libtorque_sigmask(sigset_t *olds){
+torque_err torque_sigmask(sigset_t *olds){
 	sigset_t ss;
 
 	if(sigemptyset(&ss) || sigaddset(&ss,EVTHREAD_TERM) ||
 			sigaddset(&ss,EVTHREAD_INT)){
-		return LIBTORQUE_ERR_ASSERT;
+		return TORQUE_ERR_ASSERT;
 	}
 	if(pthread_sigmask(SIG_BLOCK,&ss,olds)){
-		return LIBTORQUE_ERR_ASSERT;
+		return TORQUE_ERR_ASSERT;
 	}
 	return 0;
 }
 
-libtorque_ctx *libtorque_init(libtorque_err *e){
+torque_ctx *torque_init(torque_err *e){
 	struct sigaction oldact;
-	libtorque_ctx *ret;
+	torque_ctx *ret;
 	sigset_t old,add;
 
-	*e = LIBTORQUE_ERR_NONE;
+	*e = TORQUE_ERR_NONE;
 	// If SIGPIPE isn't being handled or at least ignored, start ignoring
 	// it (don't blow away a preexisting handler, though).
 	if(sigaction(SIGPIPE,NULL,&oldact)){
-		*e = LIBTORQUE_ERR_ASSERT;
+		*e = TORQUE_ERR_ASSERT;
 		return NULL;
 	}
 	if(oldact.sa_handler == SIG_DFL){
 		oldact.sa_handler = SIG_IGN;
 		if(sigaction(SIGPIPE,&oldact,NULL)){
-			*e = LIBTORQUE_ERR_ASSERT;
+			*e = TORQUE_ERR_ASSERT;
 			return NULL;
 		}
 	}
 	if(makesigmask(&add) || pthread_sigmask(SIG_BLOCK,&add,&old)){
-		*e = LIBTORQUE_ERR_ASSERT;
+		*e = TORQUE_ERR_ASSERT;
 		return NULL;
 	}
-	ret = libtorque_init_sigmasked(e,&old);
+	ret = torque_init_sigmasked(e,&old);
 	if(pthread_sigmask(SIG_SETMASK,&old,NULL)){
-		libtorque_stop(ret);
-		*e = LIBTORQUE_ERR_ASSERT;
+		torque_stop(ret);
+		*e = TORQUE_ERR_ASSERT;
 		return NULL;
 	}
 	return ret;
 }
 
-libtorque_err libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
+torque_err torque_addsignal(torque_ctx *ctx,const sigset_t *sigs,
 			libtorquercb fxn,void *state){
-	libtorque_err ret;
+	torque_err ret;
 	sigset_t old;
 
 	if(sigismember(sigs,EVTHREAD_TERM) || sigismember(sigs,SIGKILL) ||
 			sigismember(sigs,SIGSTOP)){
-		return LIBTORQUE_ERR_INVAL;
+		return TORQUE_ERR_INVAL;
 	}
 	if(pthread_sigmask(SIG_BLOCK,sigs,&old)){
-		return LIBTORQUE_ERR_ASSERT;
+		return TORQUE_ERR_ASSERT;
 	}
 	if( (ret = add_signal_to_evhandler(ctx,&ctx->evq,sigs,fxn,state)) ){
 		pthread_sigmask(SIG_SETMASK,&old,NULL);
@@ -213,151 +213,210 @@ libtorque_err libtorque_addsignal(libtorque_ctx *ctx,const sigset_t *sigs,
 	return 0;
 }
 
-libtorque_err libtorque_addtimer(libtorque_ctx *ctx,const struct itimerspec *t,
+torque_err torque_addtimer(torque_ctx *ctx,const struct itimerspec *t,
 			libtorquetimecb fxn,void *state){
 	return add_timer_to_evhandler(ctx,&ctx->evq,t,fxn,state);
 }
 
 // We only currently provide one buffering scheme. When that changes, we still
 // won't want to expose anything more than necessary to applications...
-libtorque_err libtorque_addfd(libtorque_ctx *ctx,int fd,libtorquebrcb rx,
+torque_err torque_addfd(torque_ctx *ctx,int fd,libtorquebrcb rx,
 				libtorquebwcb tx,void *state){
-	libtorque_rxbufcb *cbctx;
-	libtorque_err ret;
+	torque_rxbufcb *cbctx;
+	torque_err ret;
 
 	if(fd < 0){
-		return LIBTORQUE_ERR_INVAL;
+		return TORQUE_ERR_INVAL;
 	}
 	if((cbctx = create_rxbuffercb(ctx,rx,tx,state)) == NULL){
-		return LIBTORQUE_ERR_RESOURCE;
+		return TORQUE_ERR_RESOURCE;
 	}
-	if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,buffered_rxfxn,buffered_txfxn,
+	if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,
+					rx ? buffered_rxfxn : NULL,
+					tx ? buffered_txfxn : NULL,
 					cbctx,EVONESHOT)) ){
 		free_rxbuffercb(cbctx);
-		return ret;
 	}
-	return 0;
+	return ret;
 }
 
-libtorque_err libtorque_addfd_unbuffered(libtorque_ctx *ctx,int fd,libtorquercb rx,
+torque_err torque_addfd_unbuffered(torque_ctx *ctx,int fd,libtorquercb rx,
 				libtorquewcb tx,void *state){
 	if(fd < 0){
-		return LIBTORQUE_ERR_INVAL;
+		return TORQUE_ERR_INVAL;
 	}
 	return add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,EVONESHOT);
 }
 
-libtorque_err libtorque_addfd_concurrent(libtorque_ctx *ctx,int fd,
+torque_err torque_addfd_concurrent(torque_ctx *ctx,int fd,
 				libtorquercb rx,libtorquewcb tx,void *state){
 	if(fd < 0){
-		return LIBTORQUE_ERR_INVAL;
+		return TORQUE_ERR_INVAL;
 	}
 	return add_fd_to_evhandler(ctx,&ctx->evq,fd,rx,tx,state,0);
 }
 
-libtorque_err libtorque_addpath(libtorque_ctx *ctx,const char *path,libtorquercb rx,void *state){
+torque_err torque_addconnector(torque_ctx *ctx,int fd,const struct sockaddr *addr,
+				socklen_t socklen,libtorquebrcb rx,
+				libtorquebwcb tx,void *state){
+	torque_err ret;
+
+	if(fd < 0){
+		return TORQUE_ERR_INVAL;
+	}
+	if(connect(fd,addr,socklen)){
+		if(errno == EINPROGRESS){
+			torque_conncb *connctx;
+
+			if((connctx = create_conncb(rx,tx,state)) == NULL){
+				ret = TORQUE_ERR_SYSCALL + errno;
+			}else if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,NULL,
+					conn_unbuffered_txfxn,connctx,EVONESHOT)) ){
+				free_conncb(connctx);
+			}
+		}else{
+			ret = TORQUE_ERR_SYSCALL + errno;
+		}
+	}else{
+		ret = torque_addfd(ctx,fd,rx,tx,state);
+	}
+	return ret;
+}
+
+torque_err torque_addconnector_unbuffered(torque_ctx *ctx,int fd,const struct sockaddr *addr,
+				socklen_t socklen,libtorquercb rx,
+				libtorquewcb tx,void *state){
+	torque_err ret;
+
+	if(fd < 0){
+		return TORQUE_ERR_INVAL;
+	}
+	if(connect(fd,addr,socklen)){
+		if(errno == EINPROGRESS){
+			torque_conncb *connctx;
+
+			if((connctx = create_conncb(rx,tx,state)) == NULL){
+				ret = TORQUE_ERR_SYSCALL + errno;
+			}else if( (ret = add_fd_to_evhandler(ctx,&ctx->evq,fd,NULL,
+					conn_unbuffered_txfxn,connctx,EVONESHOT)) ){
+				free_conncb(connctx);
+			}
+		}else{
+			ret = TORQUE_ERR_SYSCALL + errno;
+		}
+	}else{
+		ret = torque_addfd_unbuffered(ctx,fd,rx,tx,state);
+	}
+	return ret;
+}
+
+torque_err torque_addpath(torque_ctx *ctx,const char *path,libtorquercb rx,void *state){
 	if(add_fswatch_to_evhandler(&ctx->evq,path,rx,state)){
-		return LIBTORQUE_ERR_UNAVAIL; // FIXME
+		return TORQUE_ERR_UNAVAIL; // FIXME
 	}
 	return 0;
 }
 
 #ifndef LIBTORQUE_WITHOUT_SSL
-libtorque_err libtorque_addssl(libtorque_ctx *ctx,int fd,SSL_CTX *sslctx,
+torque_err torque_addssl(torque_ctx *ctx,int fd,SSL_CTX *sslctx,
 			libtorquebrcb rx,libtorquebwcb tx,void *state){
 	struct ssl_cbstate *cbs;
 
 	if((cbs = create_ssl_cbstate(ctx,sslctx,state,rx,tx)) == NULL){
-		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
+		return TORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
-	if(libtorque_addfd_unbuffered(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){
+	if(torque_addfd_unbuffered(ctx,fd,ssl_accept_rxfxn,NULL,cbs)){
 		free_ssl_cbstate(cbs);
-		return LIBTORQUE_ERR_RESOURCE; // FIXME not necessarily correct
+		return TORQUE_ERR_RESOURCE; // FIXME not necessarily correct
 	}
 	return 0;
 }
 #else
-libtorque_err libtorque_addssl(libtorque_ctx *ctx __attribute__ ((unused)),
+torque_err torque_addssl(torque_ctx *ctx __attribute__ ((unused)),
 				int fd __attribute__ ((unused)),
 				SSL_CTX *sslctx __attribute__ ((unused)),
 				libtorquebrcb rx __attribute__ ((unused)),
 				libtorquebwcb tx __attribute__ ((unused)),
 				void *state __attribute__ ((unused))){
-	return LIBTORQUE_ERR_UNAVAIL;
+	return TORQUE_ERR_UNAVAIL;
 }
 #endif
 
 #ifndef LIBTORQUE_WITHOUT_ADNS
-libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx,const char *owner,
+torque_err torque_addlookup_dns(torque_ctx *ctx,const char *owner,
 					libtorquednscb rx,void *state){
 	struct dnsmarshal *dm;
 	adns_query query;
 
 	if((dm = create_dnsmarshal(rx,state)) == NULL){
-		return LIBTORQUE_ERR_RESOURCE;
+		return TORQUE_ERR_RESOURCE;
 	}
 	// FIXME need to lock adns struct...should be one per evqueue
 	// FIXME need allow other than A type!
 	if(adns_submit(ctx->evq.dnsctx,owner,adns_r_a,adns_qf_none,dm,&query)){
 		free_dnsmarshal(dm);
-		return LIBTORQUE_ERR_INVAL; // FIXME break down error cases
+		return TORQUE_ERR_INVAL; // FIXME break down error cases
 	}
 	if(load_dns_fds(ctx,&ctx->evq.dnsctx,&ctx->evq)){
 		adns_cancel(query);
 		free_dnsmarshal(dm);
-		return LIBTORQUE_ERR_ASSERT; // FIXME break down error cases
+		return TORQUE_ERR_ASSERT; // FIXME break down error cases
 	}
 	return 0;
 }
 #else
-libtorque_err libtorque_addlookup_dns(libtorque_ctx *ctx __attribute__ ((unused)),
+torque_err torque_addlookup_dns(torque_ctx *ctx __attribute__ ((unused)),
 				const char *owner __attribute__ ((unused)),
 				libtorquednscb rx __attribute__ ((unused)),
 				void *state __attribute__ ((unused))){
-	return LIBTORQUE_ERR_UNAVAIL;
+	return TORQUE_ERR_UNAVAIL;
 }
 #endif
 
 // Performs a thread-local lookup of the current ctx. This must not be cached
 // beyond the lifetime of the callback instance!
-struct libtorque_ctx *libtorque_getcurctx(void){
+struct torque_ctx *torque_getcurctx(void){
 	return get_thread_ctx();
 }
 
-libtorque_err libtorque_block(libtorque_ctx *ctx){
+torque_err torque_block(torque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx){
-		libtorque_err r;
+		torque_err r;
 		sigset_t os;
 
 		// We ought have already have them blocked on entry, but...this
 		// doesn't help if other threads are unblocked, though.
-		if( (r = libtorque_sigmask(&os)) ){
+		if( (r = torque_sigmask(&os)) ){
 			return r;
 		}
 		ret |= block_threads(ctx);
-		ret |= free_libtorque_ctx(ctx);
+		ret |= free_torque_ctx(ctx);
 		ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	}
-	return ret ? LIBTORQUE_ERR_ASSERT : 0;
+	return ret ? TORQUE_ERR_ASSERT : 0;
 }
 
-libtorque_err libtorque_stop(libtorque_ctx *ctx){
+torque_err torque_stop(torque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx){
-		libtorque_err r;
+		torque_err r;
 		sigset_t os;
 
 		// We ought have already have them blocked on entry, but...this
 		// doesn't help if other threads are unblocked, though.
-		if( (r = libtorque_sigmask(&os)) ){
+		if( (r = torque_sigmask(&os)) ){
 			return r;
 		}
 		ret |= reap_threads(ctx);
-		ret |= free_libtorque_ctx(ctx);
+		ret |= free_torque_ctx(ctx);
 		ret |= pthread_sigmask(SIG_SETMASK,&os,NULL);
 	}
-	return ret ? LIBTORQUE_ERR_ASSERT : 0;
+	return ret ? TORQUE_ERR_ASSERT : 0;
+}
+
+const char *torque_version(void){
+	return TORQUE_VERSIONSTR;
 }

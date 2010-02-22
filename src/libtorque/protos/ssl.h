@@ -17,7 +17,7 @@ SSL *new_ssl_conn(SSL_CTX *)
 	__attribute__ ((malloc));
 
 struct ssl_cbstate *
-create_ssl_cbstate(struct libtorque_ctx *,SSL_CTX *,void *,libtorquebrcb,libtorquebwcb)
+create_ssl_cbstate(struct torque_ctx *,SSL_CTX *,void *,libtorquebrcb,libtorquebwcb)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((malloc));

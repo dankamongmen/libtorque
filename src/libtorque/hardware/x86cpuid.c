@@ -83,11 +83,7 @@ cpuid(cpuid_class level,uint32_t subparam,uint32_t *gpregs){
 // These are largely taken from the Intel document; need check AMD's FIXME
 struct feature_flags {
 	// CPUID 00000001
-	int sse3;	// sse 3 (0)
-	int ssse3;	// ssse 3 (9)
 	int dca;	// direct cache access (18)
-	int sse41;	// sse 4.1 (19)
-	int sse42;	// sse 4.2 (20)
 	int x2apic;	// x2apic (21)
 	int pse;	// page size extension (3)
 	int pae;	// physical address extension (6)
@@ -100,15 +96,15 @@ struct feature_flags {
 
 typedef struct known_x86_vendor {
 	const char *signet;
-	int (*memfxn)(uint32_t,const struct feature_flags *,libtorque_cput *);
-	int (*topfxn)(uint32_t,const struct feature_flags *,libtorque_cput *);
+	int (*memfxn)(uint32_t,const struct feature_flags *,torque_cput *);
+	int (*topfxn)(uint32_t,const struct feature_flags *,torque_cput *);
 } known_x86_vendor;
 
-static int id_amd_caches(uint32_t,const struct feature_flags *,libtorque_cput *);
-static int id_via_caches(uint32_t,const struct feature_flags *,libtorque_cput *);
-static int id_intel_caches(uint32_t,const struct feature_flags *,libtorque_cput *);
-static int id_amd_topology(uint32_t,const struct feature_flags *,libtorque_cput *);
-static int id_intel_topology(uint32_t,const struct feature_flags *,libtorque_cput *);
+static int id_amd_caches(uint32_t,const struct feature_flags *,torque_cput *);
+static int id_via_caches(uint32_t,const struct feature_flags *,torque_cput *);
+static int id_intel_caches(uint32_t,const struct feature_flags *,torque_cput *);
+static int id_amd_topology(uint32_t,const struct feature_flags *,torque_cput *);
+static int id_intel_topology(uint32_t,const struct feature_flags *,torque_cput *);
 
 // There's also: (Collect them all! Impress your friends!)
 //      " UMC UMC UMC" "CyriteadxIns" "NexGivenenDr"
@@ -772,8 +768,8 @@ static const unsigned intel_trace_descriptors[] = {
 };
 
 static inline int
-compare_memdetails(const libtorque_memt * restrict a,
-			const libtorque_memt * restrict b){
+compare_memdetails(const torque_memt * restrict a,
+			const torque_memt * restrict b){
 #define CMP(a,b,field) do { if((a)->field < (b)->field){ return -1; } \
 			else if((a)->field > (b)->field){ return 1; } } \
 			while(0)
@@ -790,9 +786,9 @@ compare_memdetails(const libtorque_memt * restrict a,
 
 // Returns the slot we just added, or NULL on failure. See compare_memdetails()
 // for ordering.
-static inline libtorque_memt *
-add_hwmem(unsigned *memories,libtorque_memt **mems,
-		const libtorque_memt *amem){
+static inline torque_memt *
+add_hwmem(unsigned *memories,torque_memt **mems,
+		const torque_memt *amem){
 	size_t s = (*memories + 1) * sizeof(**mems);
 	typeof(**mems) *tmp;
 
@@ -816,8 +812,8 @@ add_hwmem(unsigned *memories,libtorque_memt **mems,
 }
 
 static inline int
-compare_tlbdetails(const libtorque_tlbt * restrict a,
-			const libtorque_tlbt * restrict b){
+compare_tlbdetails(const torque_tlbt * restrict a,
+			const torque_tlbt * restrict b){
 #define CMP(a,b,field) do { if((a)->field < (b)->field){ return -1; } \
 			else if((a)->field > (b)->field){ return 1; } } \
 			while(0)
@@ -831,8 +827,8 @@ compare_tlbdetails(const libtorque_tlbt * restrict a,
 #undef CMP
 }
 
-static libtorque_tlbt *
-add_tlb(unsigned *tlbs,libtorque_tlbt **tlbdescs,const libtorque_tlbt *tlb){
+static torque_tlbt *
+add_tlb(unsigned *tlbs,torque_tlbt **tlbdescs,const torque_tlbt *tlb){
 	size_t s = (*tlbs + 1) * sizeof(**tlbdescs);
 	typeof(**tlbdescs) *tmp;
 
@@ -856,7 +852,7 @@ add_tlb(unsigned *tlbs,libtorque_tlbt **tlbdescs,const libtorque_tlbt *tlb){
 }
 
 static int
-get_intel_cache(unsigned descriptor,libtorque_memt *mem,unsigned sharedways){
+get_intel_cache(unsigned descriptor,torque_memt *mem,unsigned sharedways){
 	unsigned n;
 
 	// FIXME convert this to a table indexed by (8-bit) descriptor
@@ -875,7 +871,7 @@ get_intel_cache(unsigned descriptor,libtorque_memt *mem,unsigned sharedways){
 }
 
 static int
-get_intel_tlb(unsigned descriptor,libtorque_tlbt *tlb,unsigned sharedways){
+get_intel_tlb(unsigned descriptor,torque_tlbt *tlb,unsigned sharedways){
 	unsigned n;
 
 	for(n = 0 ; n < sizeof(intel_tlb_descriptors) / sizeof(*intel_tlb_descriptors) ; ++n){
@@ -906,9 +902,9 @@ get_intel_trace(unsigned descriptor){
 
 // *DOES NOT* compare sharing values, since that isn't yet generally detected
 // at memory detection time.
-static libtorque_memt *
-match_memtype(unsigned memtc,libtorque_memt *types,
-		const libtorque_memt *amem){
+static torque_memt *
+match_memtype(unsigned memtc,torque_memt *types,
+		const torque_memt *amem){
 	unsigned n;
 
 	for(n = 0 ; n < memtc ; ++n){
@@ -920,7 +916,7 @@ match_memtype(unsigned memtc,libtorque_memt *types,
 }
 
 static int
-decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
+decode_intel_func2(torque_cput *cpu,uint32_t *gpregs){
 	uint32_t mask;
 	unsigned z;
 
@@ -937,8 +933,8 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 			unsigned descriptor;
 
 			if( (descriptor = (gpregs[z] & mask) >> ((3u - y) * 8u)) ){
-				libtorque_memt mem;
-				libtorque_tlbt tlb;
+				torque_memt mem;
+				torque_tlbt tlb;
 
 				// Physical resources are shared at least by
 				// the logical cores, but also further FIXME
@@ -976,7 +972,7 @@ decode_intel_func2(libtorque_cput *cpu,uint32_t *gpregs){
 
 // Function 2 of Intel's CPUID -- See 3.1.3 of the CPUID Application Note
 static int
-id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
+id_intel_caches_old(uint32_t maxlevel,torque_cput *cpu){
 	uint32_t gpregs[4],callreps;
 	int ret;
 
@@ -998,7 +994,7 @@ id_intel_caches_old(uint32_t maxlevel,libtorque_cput *cpu){
 
 static int
 id_intel_caches(uint32_t maxlevel,const struct feature_flags *ff __attribute__ ((unused)),
-				libtorque_cput *cpu){
+				torque_cput *cpu){
 	unsigned n,level,maxdc;
 	uint32_t gpregs[4];
 
@@ -1019,7 +1015,7 @@ id_intel_caches(uint32_t maxlevel,const struct feature_flags *ff __attribute__ (
 		} cachet;
 		n = 0;
 		do{
-			libtorque_memt mem;
+			torque_memt mem;
 			unsigned lev,cpp;
 
 			cpuid(CPUID_STANDARD_CACHECONF,n++,gpregs);
@@ -1162,9 +1158,9 @@ decode_amd_l23cache(uint32_t reg,uintmax_t *size,unsigned *assoc,unsigned *lsize
 }
 
 static int
-id_amd_gbtlbs(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpregs,libtorque_cput *cpud){
-	libtorque_tlbt tlb,tlb2;
-	libtorque_tlbt itlb,itlb2;
+id_amd_gbtlbs(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpregs,torque_cput *cpud){
+	torque_tlbt tlb,tlb2;
+	torque_tlbt itlb,itlb2;
 
 	if(ff->gbpt == 0){ // Check the 1GB Page Table Entries feature flag
 		return 0;
@@ -1227,9 +1223,9 @@ determine_amd_pagesize(const struct feature_flags *ff){
 }
 
 static int
-id_amd_23caches(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpregs,libtorque_cput *cpud){
-	libtorque_tlbt tlb,tlb24,itlb,itlb24;
-	libtorque_memt l2cache,l3cache;
+id_amd_23caches(uint32_t maxexlevel,const struct feature_flags *ff,uint32_t *gpregs,torque_cput *cpud){
+	torque_tlbt tlb,tlb24,itlb,itlb24;
+	torque_memt l2cache,l3cache;
 
 	if(maxexlevel < CPUID_EXTENDED_L23CACHE_TLB){
 		return 0;
@@ -1325,9 +1321,9 @@ decode_amd_l1cache(uint32_t reg,uintmax_t *size,unsigned *assoc,unsigned *lsize)
 }
 
 static int
-id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),const struct feature_flags *ff,libtorque_cput *cpud){
-	libtorque_tlbt tlb,tlb24,itlb,itlb24;
-	libtorque_memt l1dcache,l1icache;
+id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),const struct feature_flags *ff,torque_cput *cpud){
+	torque_tlbt tlb,tlb24,itlb,itlb24;
+	torque_memt l1dcache,l1icache;
 	uint32_t maxex,gpregs[4];
 
 	if((maxex = identify_extended_cpuid()) < CPUID_AMD_L1CACHE_TLB){
@@ -1389,12 +1385,12 @@ id_amd_caches(uint32_t maxlevel __attribute__ ((unused)),const struct feature_fl
 static int
 id_via_caches(uint32_t maxlevel __attribute__ ((unused)),
 		const struct feature_flags *ff __attribute__ ((unused)),
-		libtorque_cput *cpu){
+		torque_cput *cpu){
 	// FIXME What a cheap piece of garbage, yeargh! VIA doesn't supply
 	// cache line info via CPUID. VIA C3 Antaur/Centaur both use 32b. The
 	// proof is by method of esoteric reference:
 	// http://www.digit-life.com/articles2/rmma/rmma-via-c3.html
-	libtorque_memt l1via = {
+	torque_memt l1via = {
 		.level = 1,
 		.linesize = 32,			// FIXME
 		.associativity = 0,		// FIXME
@@ -1409,7 +1405,7 @@ id_via_caches(uint32_t maxlevel __attribute__ ((unused)),
 }
 
 static int
-x86_getbrandname(libtorque_cput *cpudesc){
+x86_getbrandname(torque_cput *cpudesc){
 	char *aname,brandname[16 * 3 + 1]; // _NAMEx functions return E[BCD]X
 	cpuid_class ops[] = { CPUID_EXTENDED_CPU_NAME1,
 				CPUID_EXTENDED_CPU_NAME2,
@@ -1451,7 +1447,7 @@ x86_getbrandname(libtorque_cput *cpudesc){
 }
 
 static int
-id_x86_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *cpu){
+id_x86_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *cpu){
 	uint32_t gpregs[4];
 
 	if(maxfunc < CPUID_CPU_VERSION){
@@ -1504,7 +1500,7 @@ id_x86_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *
 #define CPUID_1GB			0x04000000	// 1GB/4-level pages
 
 static int
-id_amd_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *cpu){
+id_amd_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *cpu){
 	unsigned apiccorebits;
 	uint32_t gpregs[4];
 
@@ -1533,7 +1529,7 @@ id_amd_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *
 }
 
 static int
-id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput *cpu){
+id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *cpu){
 	uint32_t gpregs[4];
 
 	if(maxfunc < CPUID_STANDARD_TOPOLOGY){
@@ -1558,21 +1554,25 @@ id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,libtorque_cput
 
 // CPUID function 00000001 feature flags
 // ECX feature flags
-#define FFLAG_SSE3		0x00000001u
-#define FFLAG_SSSE3		0x00000200u
-#define FFLAG_DCA		0x00040000u
-#define FFLAG_SSE41		0x00080000u
-#define FFLAG_SSE42		0x00100000u
-#define FFLAG_X2APIC		0x00200000u
+#define FFLAG_SSE3		0x00000001u // bit 0
+#define FFLAG_SSE4A		0x00000040u // bit 6
+#define FFLAG_SSSE3		0x00000200u // bit 9
+#define FFLAG_DCA		0x00040000u // bit 18
+#define FFLAG_SSE41		0x00080000u // bit 19
+#define FFLAG_SSE42		0x00100000u // bit 20
+#define FFLAG_X2APIC		0x00200000u // bit 21
 
 // EDX feature flags
-#define FFLAG_PSE		0x00000008u
-#define FFLAG_PAE		0x00000040u
-#define FFLAG_PSE36		0x00020000u
-#define FFLAG_HT		0x10000000u
+#define FFLAG_PSE		0x00000008u // bit 3
+#define FFLAG_PAE		0x00000040u // bit 6
+#define FFLAG_PSE36		0x00020000u // bit 17
+#define FFLAG_MMX		0x00800000u // bit 23
+#define FFLAG_SSE		0x02000000u // bit 25
+#define FFLAG_SSE2		0x04000000u // bit 26
+#define FFLAG_HT		0x10000000u // bit 28
 
 static int
-x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu,struct feature_flags *ff){
+x86_getprocsig(uint32_t maxfunc,x86_details *cpu,struct feature_flags *ff){
 	uint32_t gpregs[4],maxex;
 
 	if(maxfunc < CPUID_CPU_VERSION){
@@ -1586,25 +1586,32 @@ x86_getprocsig(uint32_t maxfunc,libtorque_cput *cpu,struct feature_flags *ff){
 	// Extended family is EAX[27..20]. Family is EAX[11..8].
 	cpu->family = ((gpregs[0] >> 17u) & 0x7f8u) | ((gpregs[0] >> 8u) & 0xfu);
 	memset(ff,0,sizeof(*ff));
-	ff->sse3 = !!(gpregs[2] & FFLAG_SSE3);
-	ff->ssse3 = !!(gpregs[2] & FFLAG_SSSE3);
+	cpu->features.sse3 = !!(gpregs[2] & FFLAG_SSE3);
+	cpu->features.ssse3 = !!(gpregs[2] & FFLAG_SSSE3);
+	cpu->features.sse41 = !!(gpregs[2] & FFLAG_SSE41);
+	cpu->features.sse42 = !!(gpregs[2] & FFLAG_SSE42);
+	cpu->features.sse4a = !!(gpregs[2] & FFLAG_SSE4A);
 	ff->dca = !!(gpregs[2] & FFLAG_DCA);
-	ff->sse41 = !!(gpregs[2] & FFLAG_SSE41);
-	ff->sse42 = !!(gpregs[2] & FFLAG_SSE42);
 	ff->x2apic = !!(gpregs[2] & FFLAG_X2APIC);
 	ff->pse = !!(gpregs[3] & FFLAG_PSE);
 	ff->pae = !!(gpregs[3] & FFLAG_PAE);
 	ff->pse36 = !!(gpregs[3] & FFLAG_PSE36);
 	ff->ht = !!(gpregs[3] & FFLAG_HT);
+	cpu->features.mmx = !!(gpregs[3] & FFLAG_MMX);
+	cpu->features.sse = !!(gpregs[3] & FFLAG_SSE);
+	cpu->features.sse2 = !!(gpregs[3] & FFLAG_SSE2);
 	if((maxex = identify_extended_cpuid()) >= CPUID_EXTENDED_CPU_VERSION){
 		cpuid(CPUID_EXTENDED_CPU_VERSION,0,gpregs);
 		ff->lme = !!(gpregs[3] & CPUID_LME);
 		ff->gbpt = !!(gpregs[3] & CPUID_1GB);
 	}
-	/*printf("SSE3: %d SSSE3: %d\n",ff->sse3,ff->ssse3);
-	printf("LME: %d GBPT: %d\n",ff->lme,ff->gbpt);
-	printf("DCA: %d SSE4.1: %d SSE4.2: %d X2APIC: %d\n",ff->dca,ff->sse41,ff->sse42,ff->x2apic);
-	printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",ff->pse,ff->pae,ff->pse36,ff->ht);*/
+	/*printf("SSE: %d SSE2: %d\n",cpu->features.sse,cpu->features.sse2);
+	printf("SSE3: %d SSSE3: %d\n",cpu->features.sse3,cpu->features.ssse3);
+	printf("SSE4.1: %d SSE4.2: %d\n",cpu->features.sse41,cpu->features.ssse42);
+	printf("SSE4a: %d\n",cpu->features.sse4a);
+	printf("LME: %d GBPT: %d\n",cpu->features.lme,cpu->features.gbpt);
+	printf("DCA: %d SSE4.1: %d SSE4.2: %d X2APIC: %d\n",cpu->features.dca,cpu->features.sse41,cpu->features.sse42,cpu->features.x2apic);
+	printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",cpu->features.pse,cpu->features.pae,cpu->features.pse36,cpu->features.ht);*/
 	return 0;
 }
 
@@ -1647,7 +1654,7 @@ x86apic(unsigned maxlevel,uint32_t *apic){
 }
 
 static int
-x86topology(unsigned maxlevel,const libtorque_cput *cpu,unsigned *thread,
+x86topology(unsigned maxlevel,const torque_cput *cpu,unsigned *thread,
 				unsigned *core,unsigned *pkg){
 	unsigned tpc,cpp;
 	uint32_t apic;
@@ -1677,7 +1684,7 @@ x86topology(unsigned maxlevel,const libtorque_cput *cpu,unsigned *thread,
 
 // Before this is called, pin to the desired processor (FIXME enforce?). Relies
 // on the caller to free data upon error.
-int x86cpuid(libtorque_cput *cpudesc,unsigned *thread,unsigned *core,
+int x86cpuid(torque_cput *cpudesc,unsigned *thread,unsigned *core,
 						unsigned *pkg){
 	const known_x86_vendor *vendor;
 	struct feature_flags ff;
@@ -1689,9 +1696,9 @@ int x86cpuid(libtorque_cput *cpudesc,unsigned *thread,unsigned *core,
 	cpudesc->memdescs = NULL;
 	cpudesc->strdescription = NULL;
 	cpudesc->tlbs = cpudesc->memories = 0;
-	cpudesc->x86type = PROCESSOR_X86_UNKNOWN;
+	memset(&cpudesc->spec,0,sizeof(cpudesc->spec));
+	cpudesc->spec.x86.x86type = PROCESSOR_X86_UNKNOWN;
 	cpudesc->threadspercore = cpudesc->coresperpackage = 0;
-	cpudesc->family = cpudesc->model = cpudesc->stepping = 0;
 	if(!cpuid_available()){
 		return -1;
 	}
@@ -1700,7 +1707,7 @@ int x86cpuid(libtorque_cput *cpudesc,unsigned *thread,unsigned *core,
 	if((vendor = lookup_vendor(gpregs + 1)) == NULL){
 		return -1;
 	}
-	if(x86_getprocsig(maxlevel,cpudesc,&ff)){
+	if(x86_getprocsig(maxlevel,&cpudesc->spec.x86,&ff)){
 		return -1;
 	}
 	if(vendor->topfxn && vendor->topfxn(maxlevel,&ff,cpudesc)){
@@ -1715,5 +1722,6 @@ int x86cpuid(libtorque_cput *cpudesc,unsigned *thread,unsigned *core,
 	if(x86topology(maxlevel,cpudesc,thread,core,pkg)){
 		return -1;
 	}
+	cpudesc->isa = TORQUE_ISA_X86;
 	return 0;
 }

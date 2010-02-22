@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all test testarchdetect testtorquehost hardtest testssl docs clean \
+.PHONY: all test testarchdetect testtorquehost hardtest testssl doc clean \
 	mrproper flow install unsafe-install deinstall
 .DEFAULT_GOAL:=test
 
@@ -9,7 +9,9 @@
 MAJORVER:=0
 MINORVER:=0
 RELEASEVER:=1
-DFLAGS+=-DLIBTORQUE_VERSIONSTR="\"$(MAJORVER).$(MINORVER).$(RELEASEVER)\""
+
+# Functions. Invoke with $(call funcname,comma,delimited,args).
+which = $(firstword $(wildcard $(addsuffix /$(1),$(subst :, ,$(PATH)))))
 
 # Don't run shell commands unnecessarily. Cache commonly-used results here.
 UNAME:=$(shell uname)
@@ -29,7 +31,7 @@ DOCPREFIX?=$(PREFIX)/share/man
 endif
 
 # Some systems don't install exuberant-ctags as 'ctags'. Some people use etags.
-TAGBIN?=$(shell which exctags 2> /dev/null || echo ctags)
+TAGBIN?=$(firstword $(call which,exctags) $(call which,ctags))
 
 # We want GCC 4.3+ if we can find it. Some systems have install it as gcc-v.v,
 # some as gccv.v, some will have a suitably up-to-date default gcc...bleh.
@@ -70,6 +72,16 @@ DFLAGS+=-DLIBTORQUE_WITHOUT_NUMA
 endif
 endif
 
+ifeq ($(UNAME),FreeBSD)
+DFLAGS+=-DLIBTORQUE_WITHOUT_CUDA
+else
+ifndef LIBTORQUE_WITHOUT_CUDA
+LIBFLAGS+=-lcuda
+else
+DFLAGS+=-DLIBTORQUE_WITHOUT_CUDA
+endif
+endif
+
 ifndef LIBTORQUE_WITHOUT_WERROR
 WFLAGS+=-Werror
 endif
@@ -89,17 +101,22 @@ DOT?=$(shell (which dot) 2> /dev/null || echo dot)
 
 # System-specific variables closed to external specification
 ifeq ($(UNAME),Linux)
-DFLAGS+=-DLIBTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+DFLAGS+=-DTORQUE_LINUX -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 LFLAGS+=-Wl,--warn-shared-textrel
 MANBIN:=mandb
 LDCONFIG:=ldconfig
 else
 ifeq ($(UNAME),FreeBSD)
-DFLAGS+=-DLIBTORQUE_FREEBSD
+DFLAGS+=-DTORQUE_FREEBSD
 MT_DFLAGS:=-D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 MANBIN:=makewhatis
 LDCONFIG:=ldconfig -m
 LFLAGS+=-L/usr/local/lib
+else
+ifeq ($(UNAME),SunOS)
+DFLAGS+=-DTORQUE_SOLARIS
+# FIXME
+endif
 endif
 endif
 
@@ -144,7 +161,7 @@ TORQUEOBJ:=$(addprefix $(OUT)/,$(TORQUESRC:%.c=%.o))
 TORQUEHOSTSRC:=$(foreach dir, $(TORQUEHOSTDIRS), $(filter $(dir)/%, $(CSRC)))
 TORQUEHOSTOBJ:=$(addprefix $(OUT)/,$(TORQUEHOSTSRC:%.c=%.o))
 SRC:=$(CSRC)
-TESTBINS:=$(addprefix $(BINOUT)/,echoserver signalrx signaltx torquessl) # FIXME autodiscover
+TESTBINS:=$(addprefix $(BINOUT)/,$(notdir $(basename $(wildcard $(TOOLDIR)/testing/*))))
 ifndef LIBTORQUE_WITHOUT_EV
 TESTBINS+=$(addprefix $(BINOUT)/libev-,signalrx)
 endif
@@ -164,7 +181,7 @@ MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3))
 FIGDOC:=$(addprefix $(OUT)/,$(FIGSRC:%.dot=%.svg))
 DOCS:=$(MAN1OBJ) $(MAN3OBJ) $(FIGDOC)
 PRETTYDOT:=$(FIGDIR)/notugly/notugly.xsl
-INCINSTALL:=$(addprefix $(SRCDIR)/lib$(TORQUE)/,lib$(TORQUE).h ssl/ssl.h)
+INCINSTALL:=$(addprefix $(SRCDIR)/lib$(TORQUE)/,lib$(TORQUE).h)
 TAGS:=.tags
 
 # Anything that all source->object translations ought dep on. We currently
@@ -222,7 +239,8 @@ WFLAGS+=-Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # -ftree-parallelize-loops
 OFLAGS+=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
 	-fvisibility=hidden -fipa-cp -ftree-loop-linear -ftree-loop-im \
-	-ftree-loop-ivcanon -fno-common
+	-ftree-loop-ivcanon -fno-common -ftree-vectorizer-verbose=5
+#OFLAGS+=-fdump-tree-all
 CFLAGS+=-pipe -std=gnu99 $(DFLAGS)
 MT_CFLAGS:=$(CFLAGS) -pthread $(MT_DFLAGS)
 CFLAGS+=$(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
@@ -245,9 +263,9 @@ flow:
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
-all: test docs
+all: test doc
 
-docs: $(TAGS) $(DOCS)
+doc: $(TAGS) $(DOCS)
 
 test: $(TAGS) $(BINS) $(LIBS) $(TESTBINS) testarchdetect testtorquehost
 
@@ -306,20 +324,16 @@ $(BINOUT)/$(TORQUEHOST): $(TORQUEHOSTOBJ) $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(TORQUEHOSTCFLAGS) -o $@ $(TORQUEHOSTOBJ) $(TORQUEHOSTLFLAGS)
 
-$(BINOUT)/$(SSLSRV): $(OUT)/tools/testing/$(SSLSRV).o $(LIBS)
-	@mkdir -p $(@D)
-	$(CC) $(TESTBINCFLAGS) -o $@ $< $(TESTBINLFLAGS)
-
 # The .o files generated for $(TESTBINS) get removed post-build due to their
 # status as "intermediate files". The following directive precludes said
 # operation, should it be necessary or desirable:
-#.SECONDARY: $(addsuffix .o,$(addprefix $(OUT)/tools/testing/,$(TESTBINS)))
+#.SECONDARY: $(addsuffix .o,$(addprefix $(OUT)/$(TOOLDIR)/testing/,$(TESTBINS)))
 
-$(BINOUT)/libev-%: $(OUT)/tools/libev/%.o
+$(BINOUT)/libev-%: $(OUT)/$(TOOLDIR)/libev/%.o
 	@mkdir -p $(@D)
 	$(CC) $(TESTBINCFLAGS) -o $@ $< $(EVTESTBINLFLAGS)
 
-$(BINOUT)/%: $(OUT)/tools/testing/%.o $(LIBS)
+$(BINOUT)/%: $(OUT)/$(TOOLDIR)/testing/%.o $(LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(TESTBINCFLAGS) -o $@ $< $(TESTBINLFLAGS)
 
@@ -335,9 +349,10 @@ $(OUT)/tools/libev/signalrx.o: tools/libev/signalrx.c $(GLOBOBJDEPS)
 ######################################################################
 
 # Generic rules
+VFLAGS:=-DTORQUE_VERSIONSTR="\"$(MAJORVER).$(MINORVER).$(RELEASEVER)\""
 $(OUT)/%.o: %.c $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(VFLAGS) $(CFLAGS) -c $< -o $@
 
 # Assemble only, sometimes useful for close-in optimization
 $(OUT)/%.s: %.c $(GLOBOBJDEPS)

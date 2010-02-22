@@ -9,11 +9,11 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <libtorque/torque.h>
 #include <libtorque/buffers.h>
-#include <libtorque/libtorque.h>
 
 static int
-ssl_conn_handler(int fd,struct libtorque_rxbuf *rxbuf,void *cbstate){
+ssl_conn_handler(int fd,struct torque_rxbuf *rxbuf,void *cbstate){
 	const char *buf;
 	size_t len;
 
@@ -61,7 +61,7 @@ make_ssl_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 
 static void
 print_version(void){
-	fprintf(stderr,"torquessl from libtorque " LIBTORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"torquessl from libtorque %s\n",torque_version());
 }
 
 static void
@@ -135,10 +135,10 @@ err:
 
 int main(int argc,char **argv){
 	const char *certfile = NULL,*keyfile = NULL,*cafile = NULL;
-	struct libtorque_ctx *ctx = NULL;
+	struct torque_ctx *ctx = NULL;
 	SSL_CTX *sslctx = NULL;
 	struct sockaddr_in sin;
-	libtorque_err err;
+	torque_err err;
 	sigset_t termset;
 	int sig,sd = -1;
 
@@ -156,7 +156,7 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't set signal mask\n");
 		return EXIT_FAILURE;
 	}
-	if((ctx = libtorque_init(&err)) == NULL){
+	if((ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}
@@ -164,15 +164,15 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't create OpenSSL fd\n");
 		goto err;
 	}
-	if(libtorque_init_ssl()){
+	if(torque_init_ssl()){
 		fprintf(stderr,"Couldn't initialize OpenSSL\n");
 		goto err;
 	}
-	if((sslctx = libtorque_ssl_ctx(certfile,keyfile,cafile,0)) == NULL){
+	if((sslctx = torque_ssl_ctx(certfile,keyfile,cafile,0)) == NULL){
 		fprintf(stderr,"Couldn't initialize OpenSSL context\n");
 		goto err;
 	}
-	if(libtorque_addssl(ctx,sd,sslctx,ssl_conn_handler,NULL,NULL)){
+	if(torque_addssl(ctx,sd,sslctx,ssl_conn_handler,NULL,NULL)){
 		fprintf(stderr,"Couldn't add SSL sd %d\n",sd);
 		goto err;
 	}
@@ -182,12 +182,12 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	printf("Got signal %d (%s), closing down...\n",sig,strsignal(sig));
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
-	if(libtorque_stop_ssl()){
+	if(torque_stop_ssl()){
 		fprintf(stderr,"Couldn't shutdown OpenSSL\n");
 		return EXIT_FAILURE;
 	}
@@ -195,12 +195,12 @@ int main(int argc,char **argv){
 	return EXIT_SUCCESS;
 
 err:
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
-	if(libtorque_stop_ssl()){
+	if(torque_stop_ssl()){
 		fprintf(stderr,"Couldn't shutdown OpenSSL\n");
 		return EXIT_FAILURE;
 	}

@@ -1,11 +1,10 @@
 #include <errno.h>
 #include <unistd.h>
 #include <libtorque/buffers.h>
-#include <libtorque/libtorque.h>
 #include <libtorque/events/thread.h>
 
 static inline int
-rxback(libtorque_rxbuf *rxb,int fd,void *cbstate){
+rxback(torque_rxbuf *rxb,int fd,void *cbstate){
 	if(rxb->bufoff - rxb->bufate){
 		return rxb->rx(fd,rxb,cbstate);
 	}
@@ -13,15 +12,18 @@ rxback(libtorque_rxbuf *rxb,int fd,void *cbstate){
 }
 
 static inline int
-txback(libtorque_rxbuf *rxb,int fd,void *cbstate){
+txback(torque_rxbuf *rxb,int fd,void *cbstate){
 	if(rxb->bufoff - rxb->bufate){
-		return rxb->tx(fd,rxb,cbstate);
+		if(rxb->tx(fd,rxb,cbstate) == 0){
+			return restorefd(get_thread_evh(),fd,EVREAD);
+		}
+		return -1;
 	}
 	return 0;
 }
 
 static int
-growrxbuf(libtorque_rxbuf *rxb){
+growrxbuf(torque_rxbuf *rxb){
 	typeof(*rxb->buffer) *tmp;
 	size_t news;
 
@@ -35,34 +37,27 @@ growrxbuf(libtorque_rxbuf *rxb){
 }
 
 void buffered_txfxn(int fd,void *cbstate){
-	libtorque_rxbufcb *cbctx = cbstate;
-	libtorque_rxbuf *rxb = &cbctx->rxbuf;
-	int cb;
+	torque_rxbufcb *cbctx = cbstate;
+	torque_rxbuf *rxb = &cbctx->rxbuf;
 
 	// FIXME very likely incomplete
-	if((cb = txback(rxb,fd,cbstate)) < 0){
-		goto err;
-	}
-	if(restorefd(get_thread_evh(),fd,EVREAD)){
-		goto err;
+	if(txback(rxb,fd,cbstate)){
+		close(fd);
 	}
 	return;
-
-err:
-	close(fd);
 }
 
 void buffered_rxfxn(int fd,void *cbstate){
-	libtorque_rxbufcb *cbctx = cbstate;
-	libtorque_rxbuf *rxb = &cbctx->rxbuf;
+	torque_rxbufcb *cbctx = cbstate;
+	torque_rxbuf *rxb = &cbctx->rxbuf;
 	int r;
 
 	for( ; ; ){
 		if(rxb->buftot - rxb->bufoff == 0){
 			int cb;
 
-			if((cb = rxback(rxb,fd,cbstate)) < 0){
-				break;
+			if( (cb = rxback(rxb,fd,cbstate)) ){
+				return;
 			}
 			if(rxb->buftot - rxb->bufoff == 0){
 				if(growrxbuf(rxb)){
@@ -75,9 +70,8 @@ void buffered_rxfxn(int fd,void *cbstate){
 		}else if(r == 0){
 			int cb;
 
-			// must close, *unless* TX indicated FIXME
-			if((cb = rxback(rxb,fd,cbstate)) <= 0){
-				break;
+			if( (cb = rxb->rx(fd,rxb,cbstate)) ){
+				return;
 			}
 			if(restorefd(get_thread_evh(),fd,EVWRITE)){
 				break;
@@ -86,10 +80,11 @@ void buffered_rxfxn(int fd,void *cbstate){
 		}else if(errno == EAGAIN || errno == EWOULDBLOCK){
 			int cb;
 
-			if((cb = rxback(rxb,fd,cbstate)) < 0){
-				break;
+			if( (cb = rxback(rxb,fd,cbstate)) ){
+				return;
 			}
-			if(restorefd(get_thread_evh(),fd,EVREAD | (cb ? EVWRITE : 0))){
+			// FIXME sometimes we'll need EVWRITE as well!
+			if(restorefd(get_thread_evh(),fd,EVREAD)){
 				break;
 			}
 			return;
@@ -97,5 +92,6 @@ void buffered_rxfxn(int fd,void *cbstate){
 			break;
 		}
 	}
+	// On any internal error, we're responsible for closing the fd.
 	close(fd);
 }

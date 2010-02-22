@@ -10,18 +10,18 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <libtorque/torque.h>
 #include <libtorque/buffers.h>
-#include <libtorque/libtorque.h>
 
 static int
-echo_server(int fd,struct libtorque_rxbuf *rxb,void *v __attribute__ ((unused))){
+echo_server(int fd,struct torque_rxbuf *rxb,void *v __attribute__ ((unused))){
 	const char *buf;
 	size_t len,w;
 
 	buf = rxbuffer_valid(rxb,&len);
 	if(len == 0){
 		fprintf(stdout,"[%4d] closed\n",fd);
-		return -1; // FIXME could still need to transmit
+		goto err; // FIXME could still need to transmit
 	}
 	fprintf(stdout,"[%4d] Read %zub\n",fd,len);
 	w = 0;
@@ -36,7 +36,7 @@ echo_server(int fd,struct libtorque_rxbuf *rxb,void *v __attribute__ ((unused)))
 			}else if(errno != EINTR){
 				fprintf(stderr,"[%4d] Error %d (%s) writing %zub\n",fd,
 						errno,strerror(errno),len);
-				return -1;
+				goto err;
 			}
 		}else{
 			w += r;
@@ -45,13 +45,16 @@ echo_server(int fd,struct libtorque_rxbuf *rxb,void *v __attribute__ ((unused)))
 	printf("wrote %zu/%zu\n",w,len);
 	rxbuffer_advance(rxb,w);
 	return 0;
+
+err:
+	close(fd);
+	return -1;
 }
 
 static void
 conn_handler(int fd,void *v){
-	struct libtorque_ctx *ctx = v;
+	struct torque_ctx *ctx = v;
 
-	fprintf(stdout,"Got a connection on %d\n",fd);
 	do{
 		struct sockaddr_in sina;
 		socklen_t slen;
@@ -65,7 +68,7 @@ conn_handler(int fd,void *v){
 			if(((flags = fcntl(sd,F_GETFL)) < 0) ||
 					fcntl(sd,F_SETFL,flags | (long)O_NONBLOCK)){
 				close(sd);
-			}else if(libtorque_addfd(ctx,sd,echo_server,echo_server,NULL)){
+			}else if(torque_addfd(ctx,sd,echo_server,NULL,NULL)){
 				fprintf(stderr,"Couldn't add client sd %d\n",sd);
 				close(sd);
 			}
@@ -108,7 +111,7 @@ make_echo_fd(int domain,const struct sockaddr *saddr,socklen_t slen){
 
 static void
 print_version(void){
-	fprintf(stderr,"echoserver from libtorque " LIBTORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"echoserver from libtorque %s\n",torque_version());
 }
 
 static void
@@ -169,9 +172,9 @@ err:
 }
 
 int main(int argc,char **argv){
-	struct libtorque_ctx *ctx = NULL;
+	struct torque_ctx *ctx = NULL;
 	struct sockaddr_in sin;
-	libtorque_err err;
+	torque_err err;
 	sigset_t termset;
 	int sig,sd = -1;
 
@@ -182,17 +185,17 @@ int main(int argc,char **argv){
 	if(parse_args(argc,argv,&sin.sin_port)){
 		return EXIT_FAILURE;
 	}
-	if( (err = libtorque_sigmask(NULL)) ){
+	if( (err = torque_sigmask(NULL)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
-	if((ctx = libtorque_init(&err)) == NULL){
+	if((ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		goto err;
 	}
 	if((sd = make_echo_fd(AF_INET,(struct sockaddr *)&sin,sizeof(sin))) < 0){
@@ -200,7 +203,7 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	printf("Registering server sd %d, port %hu\n",sd,ntohs(sin.sin_port));
-	if(libtorque_addfd_concurrent(ctx,sd,conn_handler,NULL,ctx)){
+	if(torque_addfd_concurrent(ctx,sd,conn_handler,NULL,ctx)){
 		fprintf(stderr,"Couldn't add server sd %d\n",sd);
 		goto err;
 	}
@@ -210,18 +213,18 @@ int main(int argc,char **argv){
 		goto err;
 	}
 	printf("Got signal %d (%s), closing down...\n",sig,strsignal(sig));
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	printf("Successfully cleaned up.\n");
 	return EXIT_SUCCESS;
 
 err:
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	if((sd >= 0) && close(sd)){

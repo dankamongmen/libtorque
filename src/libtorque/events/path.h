@@ -1,11 +1,11 @@
-#ifndef LIBTORQUE_EVENTS_PATH
-#define LIBTORQUE_EVENTS_PATH
+#ifndef TORQUE_EVENTS_PATH
+#define TORQUE_EVENTS_PATH
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <libtorque/libtorque.h>
+#include <libtorque/torque.h>
 #include <libtorque/events/sources.h>
 
 struct evqueue;

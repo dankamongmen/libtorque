@@ -98,9 +98,9 @@
 	</refsect1>
 	<refsect1 id="see_also">
 		<title>SEE ALSO</title>
-		<para> <!-- In alpabetical order. -->
+		<para> <!-- In alphabetical order. -->
 			<citerefentry>
-				<refentrytitle>libtorque</refentrytitle>
+				<refentrytitle>torque</refentrytitle>
 				<manvolnum>3</manvolnum>
 			</citerefentry>
 		</para>

@@ -11,7 +11,7 @@
 // OpenSSL requires a numeric identifier for threads. On FreeBSD (using
 // the default or libthr implementations), pthread_self() is insufficient; it
 // seems to return an aggregate... :/
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 static unsigned long openssl_id_idx;
 static pthread_key_t openssl_id_key;
 static pthread_once_t openssl_once = PTHREAD_ONCE_INIT;
@@ -60,7 +60,7 @@ int pin_thread(unsigned aid){
 
 	CPU_ZERO(&mask);
 	CPU_SET(aid,&mask);
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 	if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
 				sizeof(mask),&mask)){
 #else
@@ -102,7 +102,7 @@ reap_thread(pthread_t tid){
 }
 
 typedef struct tguard {
-	libtorque_ctx *ctx;
+	torque_ctx *ctx;
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
 	stack_t stack;
@@ -119,7 +119,7 @@ static void *
 thread(void *void_marshal){
 	tguard *marshal = void_marshal;
 	evhandler *ev = NULL;
-	libtorque_ctx *ctx;
+	torque_ctx *ctx;
 
 	ctx = marshal->ctx;
 	if(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL)){
@@ -176,7 +176,7 @@ int setup_thread_stack(stack_t *s,pthread_attr_t *attr){
 }
 
 // Must be pinned to the desired CPU upon entry! // FIXME verify?
-int spawn_thread(libtorque_ctx *ctx){
+int spawn_thread(torque_ctx *ctx){
 	pthread_attr_t attr;
 	tguard tidguard = {
 		.ctx = ctx,
@@ -222,7 +222,7 @@ int spawn_thread(libtorque_ctx *ctx){
 	return ret;
 }
 
-int reap_threads(libtorque_ctx *ctx){
+int reap_threads(torque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx->ev){
@@ -231,7 +231,7 @@ int reap_threads(libtorque_ctx *ctx){
 	return ret;
 }
 
-int block_threads(libtorque_ctx *ctx){
+int block_threads(torque_ctx *ctx){
 	int ret = 0;
 
 	if(ctx->ev){
@@ -247,13 +247,13 @@ int get_thread_aid(void){
 	// sched_getcpu() is unsafe on ubuntu 8.04's glibc 2.7 + 2.6.9; it
 	// coredumps on entry, jumping to an invalid address. best avoided.
 	// furthermore, valgrind doesn't emulate it properly in 3.5.0.
-/*#if defined(LIBTORQUE_LINUX) && (__GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 7)
+/*#if defined(TORQUE_LINUX) && (__GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ > 7)
 	return sched_getcpu();
 #else*/
 	cpu_set_t mask;
 	int z;
 
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 	if(cpuset_getaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,
 				sizeof(mask),&mask)){
 #else

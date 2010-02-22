@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-struct libtorque_ctx;
+struct torque_ctx;
 
 // All of these functions return NULL on failure (not MAP_FAILED as might be
 // expected). Similarly, NULL is unacceptable as input to mod_pages(), etc.
@@ -44,7 +44,7 @@ void *hwaligned_alloc_tight(size_t,size_t *)
 // primarily per-connection buffers. Also, such an allocation will (hopefully)
 // trigger large TLB support in the OS immediately. The return is suitable for
 // use with mod_pages(). Returns the actual allocation size in the parameter.
-void *get_big_page(const struct libtorque_ctx *,size_t *)
+void *get_big_page(const struct torque_ctx *,size_t *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1)))
 	__attribute__ ((malloc));

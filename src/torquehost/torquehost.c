@@ -8,11 +8,11 @@
 #include <getopt.h>
 #include <pthread.h>
 #include <arpa/inet.h>
-#include <libtorque/libtorque.h>
+#include <libtorque/torque.h>
 
 static void
 print_version(FILE *fp){
-	fprintf(fp,"torquehost from libtorque " LIBTORQUE_VERSIONSTR "\n");
+	fprintf(fp,"torquehost from libtorque %s\n",torque_version());
 }
 
 #define DEFAULT_TIMEOUT 60
@@ -103,7 +103,7 @@ timeoutcb(void *state __attribute__ ((unused))){
 }
 
 static void
-lookup_callback(const libtorque_dnsret *dnsret,void *state){
+lookup_callback(const torque_dnsret *dnsret,void *state){
 	char ipbuf[INET_ADDRSTRLEN];
 	int returns,*shared_returns;
 
@@ -133,8 +133,8 @@ lookup_callback(const libtorque_dnsret *dnsret,void *state){
 }
 
 static int
-add_lookup(struct libtorque_ctx *ctx,const char *host,int *results){
-	libtorque_err err;
+add_lookup(struct torque_ctx *ctx,const char *host,int *results){
+	torque_err err;
 
 	if(pthread_mutex_lock(&lock)){
 		return -1;
@@ -143,8 +143,8 @@ add_lookup(struct libtorque_ctx *ctx,const char *host,int *results){
 	if(pthread_mutex_unlock(&lock)){
 		return -1;
 	}
-	if( (err = libtorque_addlookup_dns(ctx,host,lookup_callback,results)) ){
-		fprintf(stderr,"Error adding query (%s)\n",libtorque_errstr(err));
+	if( (err = torque_addlookup_dns(ctx,host,lookup_callback,results)) ){
+		fprintf(stderr,"Error adding query (%s)\n",torque_errstr(err));
 		return -1;
 	}
 	return 0;
@@ -169,7 +169,7 @@ fpgetline(FILE *fp){
 }
 
 static int
-spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv,int *results){
+spool_targets(struct torque_ctx *ctx,FILE *fp,char **argv,int *results){
 	*results = 1;
 	if(fp){
 		char *l;
@@ -199,9 +199,9 @@ spool_targets(struct libtorque_ctx *ctx,FILE *fp,char **argv,int *results){
 
 int main(int argc,char **argv){
 	unsigned timeout = DEFAULT_TIMEOUT;
-	struct libtorque_ctx *ctx = NULL;
+	struct torque_ctx *ctx = NULL;
 	const char *a0 = *argv;
-	libtorque_err err;
+	torque_err err;
 	FILE *fp = NULL;
 	int results;
 
@@ -223,9 +223,9 @@ int main(int argc,char **argv){
 		usage(a0);
 		goto err;
 	}
-	if((ctx = libtorque_init(&err)) == NULL){
+	if((ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		goto err;
 	}
 	if(timeout){
@@ -233,9 +233,9 @@ int main(int argc,char **argv){
 
 		memset(&it,0,sizeof(it)); // FIXME
 		it.it_interval.tv_sec = timeout;
-		if( (err = libtorque_addtimer(ctx,&it,timeoutcb,NULL)) ){
+		if( (err = torque_addtimer(ctx,&it,timeoutcb,NULL)) ){
 			fprintf(stderr,"Couldn't add timer (%s)\n",
-					libtorque_errstr(err));
+					torque_errstr(err));
 			goto err;
 		}
 	}
@@ -256,17 +256,17 @@ int main(int argc,char **argv){
 		pthread_cond_wait(&cond,&lock);
 	}
 	pthread_mutex_unlock(&lock);
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't stop libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
 
 err:
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't destroy libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 	}
 	return EXIT_FAILURE;
 }

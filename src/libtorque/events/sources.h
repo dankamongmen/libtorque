@@ -1,5 +1,5 @@
-#ifndef LIBTORQUE_EVENTS_SOURCES
-#define LIBTORQUE_EVENTS_SOURCES
+#ifndef TORQUE_EVENTS_SOURCES
+#define TORQUE_EVENTS_SOURCES
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,8 +7,8 @@ extern "C" {
 
 #include <stdint.h>
 #include <pthread.h>
+#include <libtorque/torque.h>
 #include <libtorque/internal.h>
-#include <libtorque/libtorque.h>
 
 // The callback state associated with an event source.
 // The alignment ought be determined at runtime based off L1 parameters, and

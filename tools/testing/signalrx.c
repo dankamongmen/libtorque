@@ -8,8 +8,8 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <libtorque/torque.h>
 #include <libtorque/buffers.h>
-#include <libtorque/libtorque.h>
 
 static struct {
 	pthread_mutex_t lock;
@@ -46,7 +46,7 @@ signalrx(int sig,void *v __attribute__ ((unused))){
 
 static void
 print_version(void){
-	fprintf(stderr,"signalrx from libtorque " LIBTORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"signalrx from libtorque %s\n",torque_version());
 }
 
 static void
@@ -96,18 +96,18 @@ err:
 }
 
 int main(int argc,char **argv){
-	struct libtorque_ctx *ctx = NULL;
+	struct torque_ctx *ctx = NULL;
 	uintmax_t totalsigs;
-	libtorque_err err;
+	torque_err err;
 	sigset_t ss;
 	unsigned z;
 
 	if(parse_args(argc,argv)){
 		return EXIT_FAILURE;
 	}
-	if((ctx = libtorque_init(&err)) == NULL){
+	if((ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		goto err;
 	}
 	if(sigemptyset(&ss)){
@@ -126,13 +126,13 @@ int main(int argc,char **argv){
 		}
 		printf("Watching signal %d (%s)\n",s,strsignal(s));
 	}
-	if(libtorque_addsignal(ctx,&ss,signalrx,NULL)){
+	if(torque_addsignal(ctx,&ss,signalrx,NULL)){
 		fprintf(stderr,"Couldn't listen on signals\n");
 		goto err;
 	}
-	if( (err = libtorque_block(ctx)) ){
+	if( (err = torque_block(ctx)) ){
 		fprintf(stderr,"Error blocking on libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		goto err;
 	}
 	totalsigs = 0;
@@ -154,9 +154,9 @@ int main(int argc,char **argv){
 	return EXIT_SUCCESS;
 
 err:
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't shutdown libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
 	return EXIT_FAILURE;

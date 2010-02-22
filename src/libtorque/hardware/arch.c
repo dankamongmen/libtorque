@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libtorque/internal.h>
+#include <libtorque/hardware/cuda.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/memory.h>
 #include <libtorque/hardware/x86cpuid.h>
@@ -10,9 +11,9 @@
 // Returns the slot we just added to the end, or NULL on failure. Pointers
 // will be shallow-copied; dynamically allocate them, and do not free them
 // explicitly (they'll be handled by free_cpudetails()).
-static inline libtorque_cput *
-add_cputype(unsigned *cputc,libtorque_cput **types,
-		const libtorque_cput *acpu){
+static inline torque_cput *
+add_cputype(unsigned *cputc,torque_cput **types,
+		const torque_cput *acpu){
 	size_t s = (*cputc + 1) * sizeof(**types);
 	typeof(**types) *tmp;
 
@@ -25,17 +26,11 @@ add_cputype(unsigned *cputc,libtorque_cput **types,
 }
 
 static void
-free_cpudetails(libtorque_cput *details){
+free_cpudetails(torque_cput *details){
 	free(details->tlbdescs);
-	details->tlbdescs = NULL;
 	free(details->memdescs);
-	details->memdescs = NULL;
 	free(details->strdescription);
-	details->strdescription = NULL;
-	details->stepping = details->model = details->family = 0;
-	details->tlbs = details->elements = details->memories = 0;
-	details->coresperpackage = details->threadspercore = 0;
-	details->x86type = PROCESSOR_X86_UNKNOWN;
+	memset(details,0,sizeof(*details));
 }
 
 // Methods to discover processor and cache details include:
@@ -44,47 +39,53 @@ free_cpudetails(libtorque_cput *details){
 //  - CPUCTL ioctl(2)s (freebsd only, with cpuctl device, x86 only)
 //  - /proc/cpuinfo (linux only)
 //  - /sys/devices/{system/cpu/*,/virtual/cpuid/*} (linux only)
-static libtorque_err
-detect_cpudetails(unsigned id,libtorque_cput *details,
+static torque_err
+detect_cpudetails(unsigned id,torque_cput *details,
 			unsigned *thread,unsigned *core,unsigned *pkg){
 	if(pin_thread(id)){
-		return LIBTORQUE_ERR_AFFINITY;
+		return TORQUE_ERR_AFFINITY;
 	}
 	if(x86cpuid(details,thread,core,pkg)){
 		free_cpudetails(details);
-		return LIBTORQUE_ERR_CPUDETECT;
+		return TORQUE_ERR_CPUDETECT;
 	}
 	return 0;
 }
 
 static int
-compare_cpudetails(const libtorque_cput * restrict a,
-			const libtorque_cput * restrict b){
-	if(a->family != b->family || a->model != b->model ||
-		a->stepping != b->stepping || a->x86type != b->x86type){
+compare_cpudetails(const torque_cput * restrict a,
+			const torque_cput * restrict b){
+	if(memcmp(&a->spec,&b->spec,sizeof(a->spec))){
 		return -1;
 	}
 	if(a->memories != b->memories || a->tlbs != b->tlbs){
 		return -1;
 	}
+	if(a->tlbs){
+		if(memcmp(a->tlbdescs,b->tlbdescs,a->tlbs * sizeof(*a->tlbdescs))){
+			return -1;
+		}
+	}
+	if(a->memories){
+		if(memcmp(a->memdescs,b->memdescs,a->memories * sizeof(*a->memdescs))){
+			return -1;
+		}
+	}
 	if(a->threadspercore != b->threadspercore || a->coresperpackage != b->coresperpackage){
+		return -1;
+	}
+	if(a->isa != b->isa){
 		return -1;
 	}
 	if(strcmp(a->strdescription,b->strdescription)){
 		return -1;
 	}
-	if(memcmp(a->tlbdescs,b->tlbdescs,a->tlbs * sizeof(*a->tlbdescs))){
-		return -1;
-	}
-	if(memcmp(a->memdescs,b->memdescs,a->memories * sizeof(*a->memdescs))){
-		return -1;
-	}
 	return 0;
 }
 
-static libtorque_cput *
-match_cputype(unsigned cputc,libtorque_cput *types,
-		const libtorque_cput *acpu){
+static torque_cput *
+match_cputype(unsigned cputc,torque_cput *types,
+		const torque_cput *acpu){
 	unsigned n;
 
 	for(n = 0 ; n < cputc ; ++n){
@@ -98,7 +99,7 @@ match_cputype(unsigned cputc,libtorque_cput *types,
 // Revert to the original cpuset mask
 static int
 unpin_thread(const cpu_set_t *cset){
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 	if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_TID,-1,sizeof(*cset),cset)){
 #else
 	if(pthread_setaffinity_np(pthread_self(),sizeof(*cset),cset)){
@@ -139,10 +140,10 @@ unpin_thread(const cpu_set_t *cset){
 // successful return, mask contains the original affinity mask of the process.
 static inline unsigned
 detect_cpucount(cpu_set_t *mask){
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 	if(cpuset_getaffinity(CPU_LEVEL_CPUSET,CPU_WHICH_CPUSET,-1,
 				sizeof(*mask),mask) == 0){
-#elif defined(LIBTORQUE_LINUX)
+#elif defined(TORQUE_LINUX)
 	// We might be only a subthread of a larger application; use the
 	// affinity mask of the thread which initializes us.
 	if(pthread_getaffinity_np(pthread_self(),sizeof(*mask),mask) == 0){
@@ -160,38 +161,38 @@ detect_cpucount(cpu_set_t *mask){
 
 // Might leave the calling thread pinned to a particular processor; restore the
 // CPU mask if necessary after a call.
-static libtorque_err
-detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
+static torque_err
+detect_cputypes(torque_ctx *ctx,unsigned *cputc,torque_cput **types){
 	struct top_map *topmap = NULL;
 	unsigned z,aid,cpucount;
-	libtorque_err ret;
+	torque_err ret;
 	cpu_set_t mask;
 
 	*cputc = 0;
 	*types = NULL;
 	// we're basically doing this in the main loop. purge! FIXME
 	if((cpucount = detect_cpucount(&mask)) <= 0){
-		ret = LIBTORQUE_ERR_AFFINITY;
+		ret = TORQUE_ERR_AFFINITY;
 		goto err;
 	}
 	// Might be quite large; we don't want it allocated on the stack
 	if((topmap = malloc(cpucount * sizeof(*topmap))) == NULL){
-		ret = LIBTORQUE_ERR_RESOURCE;
+		ret = TORQUE_ERR_RESOURCE;
 		goto err;
 	}
 	memset(topmap,0,cpucount * sizeof(*topmap));
 	// FIXME parallelize this (see bug 24) -- move the code before
 	// spawn_thread() into it, and make it thread safe.
 	for(z = 0, aid = 0 ; z < cpucount ; ++z){
-		libtorque_cput cpudetails;
 		unsigned thread,core,pkg;
+		torque_cput cpudetails;
 		typeof(*types) cputype;
 
 		while(aid < CPU_SETSIZE && !CPU_ISSET(aid,&mask)){
 			++aid;
 		}
 		if(aid == CPU_SETSIZE){
-			ret = LIBTORQUE_ERR_AFFINITY;
+			ret = TORQUE_ERR_AFFINITY;
 			goto err;
 		}
 		if( (ret = detect_cpudetails(aid,&cpudetails,&thread,&core,&pkg)) ){
@@ -204,7 +205,7 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 			cpudetails.elements = 1;
 			if((cputype = add_cputype(cputc,types,&cpudetails)) == NULL){
 				free_cpudetails(&cpudetails);
-				ret = LIBTORQUE_ERR_RESOURCE;
+				ret = TORQUE_ERR_RESOURCE;
 				goto err;
 			}
 		}
@@ -212,13 +213,13 @@ detect_cputypes(libtorque_ctx *ctx,unsigned *cputc,libtorque_cput **types){
 			goto err;
 		}
 		if(spawn_thread(ctx)){
-			ret = LIBTORQUE_ERR_RESOURCE;
+			ret = TORQUE_ERR_RESOURCE;
 			goto err;
 		}
 		++aid;
 	}
 	if(unpin_thread(&mask)){
-		ret = LIBTORQUE_ERR_AFFINITY;
+		ret = TORQUE_ERR_AFFINITY;
 		goto err;
 	}
 	free(topmap);
@@ -237,14 +238,45 @@ err:
 	return ret;
 }
 
-libtorque_err detect_architecture(libtorque_ctx *ctx){
-	libtorque_err ret;
+static torque_err
+detect_cuda(unsigned *cputc,torque_cput **types){
+	int devs,i;
+
+	if((devs = detect_cudadevcount()) < 0){
+		return TORQUE_ERR_GPUDETECT;
+	}
+	for(i = 0 ; i < devs ; ++i){
+		torque_cput cpudetails;
+		typeof(*types) cputype;
+
+		if(cudaid(&cpudetails,i)){
+			return -1;
+		}
+		if( (cputype = match_cputype(*cputc,*types,&cpudetails)) ){
+			++cputype->elements;
+			free_cpudetails(&cpudetails);
+		}else{
+			cpudetails.elements = 1;
+			if((cputype = add_cputype(cputc,types,&cpudetails)) == NULL){
+				free_cpudetails(&cpudetails);
+				return TORQUE_ERR_RESOURCE;
+			}
+		}
+	}
+	return 0;
+}
+
+torque_err detect_architecture(torque_ctx *ctx){
+	torque_err ret;
 
 	if( (ret = detect_cputypes(ctx,&ctx->cpu_typecount,&ctx->cpudescs)) ){
 		goto err;
 	}
+	if( (ret = detect_cuda(&ctx->cpu_typecount,&ctx->cpudescs)) ){
+		goto err;
+	}
 	if(detect_memories(ctx)){
-		ret = LIBTORQUE_ERR_MEMDETECT;
+		ret = TORQUE_ERR_MEMDETECT;
 		goto err;
 	}
 	return 0;
@@ -254,7 +286,7 @@ err:
 	return ret;
 }
 
-void free_architecture(libtorque_ctx *ctx){
+void free_architecture(torque_ctx *ctx){
 	reset_topology(ctx);
 	while(ctx->cpu_typecount--){
 		free_cpudetails(&ctx->cpudescs[ctx->cpu_typecount]);
@@ -265,12 +297,12 @@ void free_architecture(libtorque_ctx *ctx){
 	free_memories(ctx);
 }
 
-unsigned libtorque_cpu_typecount(const libtorque_ctx *ctx){
+unsigned torque_cpu_typecount(const torque_ctx *ctx){
 	return ctx->cpu_typecount;
 }
 
 // Takes a description ID
-const libtorque_cput *libtorque_cpu_getdesc(const libtorque_ctx *ctx,unsigned n){
+const torque_cput *torque_cpu_getdesc(const torque_ctx *ctx,unsigned n){
 	if(n >= ctx->cpu_typecount){
 		return NULL;
 	}

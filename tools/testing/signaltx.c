@@ -21,7 +21,7 @@ rxtermsig(int s){
 
 static void
 print_version(void){
-	fprintf(stderr,"signaltx from libtorque " LIBTORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"signaltx from libtorque " TORQUE_VERSIONSTR "\n");
 }
 
 static void

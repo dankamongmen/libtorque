@@ -5,13 +5,13 @@
 #include <libtorque/hardware/x86cpuid.h>
 #include <libtorque/hardware/topology.h>
 
-const libtorque_topt *libtorque_get_topology(libtorque_ctx *ctx){
+const torque_topt *torque_get_topology(torque_ctx *ctx){
 	return ctx->sched_zone;
 }
 
-static inline libtorque_topt *
+static inline torque_topt *
 create_zone(unsigned id,unsigned cputype){
-	libtorque_topt *s;
+	torque_topt *s;
 
 	if( (s = malloc(sizeof(*s))) ){
 		CPU_ZERO(&s->schedulable);
@@ -22,9 +22,9 @@ create_zone(unsigned id,unsigned cputype){
 	return s;
 }
 
-static libtorque_topt *
-find_sched_group(libtorque_topt **sz,unsigned id,unsigned cputype){
-	libtorque_topt *n;
+static torque_topt *
+find_sched_group(torque_topt **sz,unsigned id,unsigned cputype){
+	torque_topt *n;
 
 	while(*sz){
 		if((*sz)->groupid == id){
@@ -43,7 +43,7 @@ find_sched_group(libtorque_topt **sz,unsigned id,unsigned cputype){
 }
 
 static int
-share_level(libtorque_topt *sz){
+share_level(torque_topt *sz){
 	unsigned z;
 
 	for(z = 0 ; z < CPU_SETSIZE ; ++z){
@@ -70,15 +70,15 @@ first_aid(cpu_set_t *cs){
 // extra state during initial topology detection, but not later; this is stored
 // in *tm, which must be zeroed out prior to topology detection, and not
 // touched between calls. It must have space for a top_map per invocation.
-libtorque_err topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
+torque_err topologize(torque_ctx *ctx,struct top_map *tm,unsigned aid,
 		unsigned thread,unsigned core,unsigned pkg,unsigned cputype){
-	libtorque_topt *sg;
+	torque_topt *sg;
 
 	if(aid >= CPU_SETSIZE){
-		return LIBTORQUE_ERR_ASSERT;
+		return TORQUE_ERR_ASSERT;
 	}
 	if((sg = find_sched_group(&ctx->sched_zone,pkg,cputype)) == NULL){
-		return LIBTORQUE_ERR_RESOURCE;
+		return TORQUE_ERR_RESOURCE;
 	}
 	// If we share the package, it mustn't be a new package. Quod, we
 	// needn't worry about free()ing it, and can stroll on down...FIXME
@@ -90,17 +90,17 @@ libtorque_err topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
 			unsigned oid;
 
 			if((oid = first_aid(&sg->schedulable)) >= CPU_SETSIZE){
-				return LIBTORQUE_ERR_ASSERT;
+				return TORQUE_ERR_ASSERT;
 			}
 			sg->sub = create_zone(tm[oid].core,cputype);
 			if(sg->sub == NULL){
-				return LIBTORQUE_ERR_RESOURCE;
+				return TORQUE_ERR_RESOURCE;
 			}
 			CPU_SET(oid,&sg->sub->schedulable);
 			sg->sub->next = NULL;
 		}
 		if((sc = find_sched_group(&sg->sub,core,cputype)) == NULL){
-			return LIBTORQUE_ERR_RESOURCE;
+			return TORQUE_ERR_RESOURCE;
 		}
 		CPU_SET(aid,&sc->schedulable);
 	}
@@ -112,9 +112,9 @@ libtorque_err topologize(libtorque_ctx *ctx,struct top_map *tm,unsigned aid,
 }
 
 static void
-free_topology(libtorque_topt *top){
+free_topology(torque_topt *top){
 	while(top){
-		libtorque_topt *tmp;
+		torque_topt *tmp;
 
 		free_topology(top->sub);
 		tmp = top->next;
@@ -123,28 +123,28 @@ free_topology(libtorque_topt *top){
 	}
 }
 
-void reset_topology(libtorque_ctx *ctx){
+void reset_topology(torque_ctx *ctx){
 	free_topology(ctx->sched_zone);
 	ctx->sched_zone = NULL;
 }
 
-static const libtorque_cput *lookup_aid_intop(const libtorque_ctx *,const libtorque_topt *,unsigned)
+static const torque_cput *lookup_aid_intop(const torque_ctx *,const torque_topt *,unsigned)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)));
 
-static const libtorque_cput *
-lookup_aid_intop(const libtorque_ctx *ctx,const libtorque_topt *top,unsigned aid){
+static const torque_cput *
+lookup_aid_intop(const torque_ctx *ctx,const torque_topt *top,unsigned aid){
 	do{
 		if(CPU_ISSET(aid,&top->schedulable)){
 			if(top->sub){
 				return lookup_aid_intop(ctx,top->sub,aid);
 			}
-			return libtorque_cpu_getdesc(ctx,top->cpudesc);
+			return torque_cpu_getdesc(ctx,top->cpudesc);
 		}
 	}while( (top = top->next) );
 	return NULL;
 }
 
-const libtorque_cput *lookup_aid(const libtorque_ctx *ctx,unsigned aid){
+const torque_cput *lookup_aid(const torque_ctx *ctx,unsigned aid){
 	return lookup_aid_intop(ctx,ctx->sched_zone,aid);
 }

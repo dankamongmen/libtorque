@@ -26,15 +26,15 @@ evhandler *create_evhandler(const evqueue *,const stack_t *)
 int create_efd(void)
 	__attribute__ ((warn_unused_result));
 
-void destroy_evhandler(const libtorque_ctx *,evhandler *)
+void destroy_evhandler(const torque_ctx *,evhandler *)
 	__attribute__ ((nonnull(1,2)));
 
-void event_thread(libtorque_ctx *,evhandler *)
+void event_thread(torque_ctx *,evhandler *)
 	__attribute__ ((nonnull(1,2)))
 	__attribute__ ((noreturn));
 
 // Used to set up common signal-related evtable sources during initialization
-int initialize_common_sources(struct libtorque_ctx *,struct evtables *,const sigset_t *)
+int initialize_common_sources(struct torque_ctx *,struct evtables *,const sigset_t *)
 	__attribute__ ((warn_unused_result))
 	__attribute__ ((nonnull(1,2)));
 
@@ -43,7 +43,7 @@ int initialize_common_sources(struct libtorque_ctx *,struct evtables *,const sig
 evhandler *get_thread_evh(void)
 	__attribute__ ((warn_unused_result));
 
-libtorque_ctx *get_thread_ctx(void)
+torque_ctx *get_thread_ctx(void)
 	__attribute__ ((warn_unused_result));
 
 void rxcommonsignal(int,void *);

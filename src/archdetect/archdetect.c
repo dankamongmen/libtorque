@@ -5,7 +5,6 @@
 #include <string.h>
 #include <getopt.h>
 #include <libtorque/internal.h>
-#include <libtorque/libtorque.h>
 #include <libtorque/hardware/arch.h>
 #include <libtorque/hardware/memory.h>
 #include <libtorque/hardware/topology.h>
@@ -43,7 +42,7 @@ fprintf_bunit(FILE *fp,const char *suffix,uintmax_t val){
 }
 
 static const char *
-memory_type(libtorque_memtypet mtype){
+memory_type(torque_memtypet mtype){
 	switch(mtype){
 		case MEMTYPE_DATA: return "data";
 		case MEMTYPE_CODE: return "code";
@@ -53,7 +52,7 @@ memory_type(libtorque_memtypet mtype){
 }
 
 static const char *
-tlb_type(libtorque_memtypet ttype){
+tlb_type(torque_memtypet ttype){
 	switch(ttype){
 		case MEMTYPE_DATA: return "data";
 		case MEMTYPE_CODE: return "code";
@@ -63,7 +62,7 @@ tlb_type(libtorque_memtypet ttype){
 }
 
 static const char *
-x86_type(libtorque_x86typet x86type){
+x86_type(torque_x86typet x86type){
 	switch(x86type){
 		case PROCESSOR_X86_OEM: return "OEM";
 		case PROCESSOR_X86_OVERDRIVE: return "OverDrive"; // FIXME: TM!
@@ -72,8 +71,17 @@ x86_type(libtorque_x86typet x86type){
 	}
 }
 
+static const char *
+isa_type(torque_isat isa){
+	switch(isa){
+		case TORQUE_ISA_X86: return "x86";
+		case TORQUE_ISA_NVIDIA: return "CUDA";
+		default: return NULL;
+	}
+}
+
 static int
-detail_memory(const libtorque_memt *mem){
+detail_memory(const torque_memt *mem){
 	const char *memt;
 
 	if((memt = memory_type(mem->memtype)) == NULL){
@@ -118,7 +126,7 @@ detail_memory(const libtorque_memt *mem){
 }
 
 static int
-detail_tlb(const libtorque_tlbt *tlb){
+detail_tlb(const torque_tlbt *tlb){
 	const char *tlbt;
 
 	if((tlbt = tlb_type(tlb->tlbtype)) == NULL){
@@ -163,29 +171,74 @@ detail_tlb(const libtorque_tlbt *tlb){
 }
 
 static int
-detail_processing_unit(const libtorque_cput *pudesc){
+detail_x86(const x86_details *x86){
 	const char *x86type;
-	unsigned n;
 
-	if(pudesc->strdescription == NULL){
-		fprintf(stderr,"Error: no string description\n");
+	if(x86->features.mmx){ printf("+MMX"); }
+	if(x86->features.sse){ printf("+SSE"); }
+	if(x86->features.sse2){ printf("+SSE2"); }
+	if(x86->features.sse3){ printf("+SSE3"); }
+	if(x86->features.ssse3){ printf("+SSSE3"); }
+	printf("\n");
+	if((x86type = x86_type(x86->x86type)) == NULL){
+		fprintf(stderr,"Error: invalid x86 type information\n");
 		return -1;
 	}
-	if((x86type = x86_type(pudesc->x86type)) == NULL){
-		fprintf(stderr,"Error: invalid x86 type information\n");
+	if(x86->family == 0){
+		fprintf(stderr,"Error: invalid processor family\n");
+		return -1;
+	}
+	printf("\tFamily: 0x%03x (%d) Model: 0x%02x (%d) Stepping: %d (%s)\n",
+		x86->family,x86->family,x86->model,x86->model,x86->stepping,
+		x86type);
+	return 0;
+}
+
+static int
+detail_nvidia(const cuda_details *nv){
+	if(nv->drvmajor <= 0 || nv->drvminor < 0){
+		fprintf(stderr,"Error: invalid CUDA version information\n");
+		return -1;
+	}
+	printf(" version %d.%d\n",nv->drvmajor,nv->drvminor);
+	printf("\tCUDA compute capabilities: %u.%u\n",nv->major,nv->minor);
+	return 0;
+}
+
+static int
+detail_processing_unit(const torque_cput *pudesc){
+	const char *isa;
+	unsigned n;
+
+	if((isa = isa_type(pudesc->isa)) == NULL){
+		fprintf(stderr,"Error: invalid ISA information\n");
+		return -1;
+	}
+	printf("%s",isa);
+	switch(pudesc->isa){
+	case TORQUE_ISA_X86:
+		if(detail_x86(&pudesc->spec.x86)){
+			return -1;
+		}
+		break;
+	case TORQUE_ISA_NVIDIA:
+		if(detail_nvidia(&pudesc->spec.cuda)){
+			return -1;
+		}
+		break;
+	default:
+		fprintf(stderr,"Error: invalid ISA information\n");
 		return -1;
 	}
 	if(pudesc->threadspercore <= 0){
 		fprintf(stderr,"Error: invalid SMT information\n");
 		return -1;
 	}
-	printf("\tBrand name: %s (%s)\n",pudesc->strdescription,x86type);
-	if(pudesc->family == 0){
-		fprintf(stderr,"Error: invalid processor family\n");
+	if(pudesc->strdescription == NULL){
+		fprintf(stderr,"Error: no string description\n");
 		return -1;
 	}
-	printf("\tFamily: 0x%03x (%d) Model: 0x%02x (%d) Stepping: %d\n",
-		pudesc->family,pudesc->family,pudesc->model,pudesc->model,pudesc->stepping);
+	printf("\tBrand name: %s\n",pudesc->strdescription);
 	if(pudesc->threadspercore == 1){
 		printf("\t1 thread per processing core, %u core%s per package\n",
 				pudesc->coresperpackage,
@@ -197,12 +250,8 @@ detail_processing_unit(const libtorque_cput *pudesc){
 				pudesc->coresperpackage != 1 ? "s" : "",
 				pudesc->coresperpackage - pudesc->coresperpackage / pudesc->threadspercore);
 	}
-	if(pudesc->memories <= 0){
-		fprintf(stderr,"Error: memory count of 0\n");
-		return -1;
-	}
 	for(n = 0 ; n < pudesc->memories ; ++n){
-		const libtorque_memt *mem = pudesc->memdescs + n;
+		const torque_memt *mem = pudesc->memdescs + n;
 
 		printf("\tCache %u of %u: ",n + 1,pudesc->memories);
 		if(detail_memory(mem)){
@@ -210,7 +259,7 @@ detail_processing_unit(const libtorque_cput *pudesc){
 		}
 	}
 	for(n = 0 ; n < pudesc->tlbs ; ++n){
-		const libtorque_tlbt *tlb = pudesc->tlbdescs + n;
+		const torque_tlbt *tlb = pudesc->tlbdescs + n;
 
 		printf("\tTLB %u of %u: ",n + 1,pudesc->tlbs);
 		if(detail_tlb(tlb)){
@@ -221,13 +270,13 @@ detail_processing_unit(const libtorque_cput *pudesc){
 }
 
 static int
-detail_processing_units(const libtorque_ctx *ctx,unsigned cpu_typecount){
+detail_processing_units(const torque_ctx *ctx,unsigned cpu_typecount){
 	unsigned n;
 
 	for(n = 0 ; n < cpu_typecount ; ++n){
-		const libtorque_cput *pudesc;
+		const torque_cput *pudesc;
 
-		if((pudesc = libtorque_cpu_getdesc(ctx,n)) == NULL){
+		if((pudesc = torque_cpu_getdesc(ctx,n)) == NULL){
 			fprintf(stderr,"Couldn't look up CPU type %u\n",n);
 			return EXIT_FAILURE;
 		}
@@ -235,7 +284,7 @@ detail_processing_units(const libtorque_ctx *ctx,unsigned cpu_typecount){
 			fprintf(stderr,"Error: element count of %u\n",pudesc->elements);
 			return -1;
 		}
-		printf("(%4ux) Processing unit type %u of %u:\n",
+		printf("(%4ux) Processing unit type %u of %u: ",
 				pudesc->elements,n + 1,cpu_typecount);
 		if(detail_processing_unit(pudesc)){
 			return -1;
@@ -245,14 +294,14 @@ detail_processing_units(const libtorque_ctx *ctx,unsigned cpu_typecount){
 }
 
 static int
-detail_memory_nodes(const libtorque_ctx *ctx,unsigned mem_nodecount){
+detail_memory_nodes(const torque_ctx *ctx,unsigned mem_nodecount){
 	unsigned n;
 
 	for(n = 0 ; n < mem_nodecount ; ++n){
-		const libtorque_nodet *mdesc;
+		const torque_nodet *mdesc;
 		unsigned z;
 
-		if((mdesc = libtorque_node_getdesc(ctx,n)) == NULL){
+		if((mdesc = torque_node_getdesc(ctx,n)) == NULL){
 			fprintf(stderr,"Couldn't look up mem node %u\n",n);
 			return EXIT_FAILURE;
 		}
@@ -282,7 +331,7 @@ detail_memory_nodes(const libtorque_ctx *ctx,unsigned mem_nodecount){
 static const char *depth_terms[] = { "Package", "Core", "Thread", NULL };
 
 static int
-print_cpuset(const libtorque_ctx *ctx,const libtorque_topt *s,unsigned depth){
+print_cpuset(const torque_ctx *ctx,const torque_topt *s,unsigned depth){
 	unsigned z;
 	int r = 0;
 
@@ -341,7 +390,7 @@ print_cpuset(const libtorque_ctx *ctx,const libtorque_topt *s,unsigned depth){
 }
 
 static inline int
-print_topology(const libtorque_ctx *ctx,const libtorque_topt *t){
+print_topology(const torque_ctx *ctx,const torque_topt *t){
 	if(print_cpuset(ctx,t,0) < 0){
 		return -1;
 	}
@@ -350,7 +399,7 @@ print_topology(const libtorque_ctx *ctx,const libtorque_topt *t){
 
 static void
 print_version(void){
-	fprintf(stderr,"archdetect from libtorque " LIBTORQUE_VERSIONSTR "\n");
+	fprintf(stderr,"archdetect from libtorque %s\n",torque_version());
 }
 
 static void
@@ -396,11 +445,11 @@ parse_args(int argc,char **argv){
 
 int main(int argc,char **argv){
 	unsigned cpu_typecount,mem_nodecount;
-	struct libtorque_ctx *ctx = NULL;
-	const libtorque_topt *t;
+	struct torque_ctx *ctx = NULL;
+	const torque_topt *t;
 	int ret = EXIT_FAILURE;
 	const char *a0 = *argv;
-	libtorque_err err;
+	torque_err err;
 
 	if(setlocale(LC_ALL,"") == NULL){
 		fprintf(stderr,"Couldn't set locale\n");
@@ -411,26 +460,26 @@ int main(int argc,char **argv){
 		usage(a0);
 		goto done;
 	}
-	if((ctx = libtorque_init(&err)) == NULL){
+	if((ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		goto done;
 	}
-	if((t = libtorque_get_topology(ctx)) == NULL){
+	if((t = torque_get_topology(ctx)) == NULL){
 		fprintf(stderr,"Couldn't look up topology\n");
 		goto done;
 	}
 	if(print_topology(ctx,t)){
 		goto done;
 	}
-	if((mem_nodecount = libtorque_mem_nodecount(ctx)) <= 0){
+	if((mem_nodecount = torque_mem_nodecount(ctx)) <= 0){
 		fprintf(stderr,"Got invalid memory node count: %u\n",mem_nodecount);
 		goto done;
 	}
 	if(detail_memory_nodes(ctx,mem_nodecount)){
 		goto done;
 	}
-	if((cpu_typecount = libtorque_cpu_typecount(ctx)) <= 0){
+	if((cpu_typecount = torque_cpu_typecount(ctx)) <= 0){
 		fprintf(stderr,"Got invalid CPU type count: %u\n",cpu_typecount);
 		goto done;
 	}
@@ -440,9 +489,9 @@ int main(int argc,char **argv){
 	ret = EXIT_SUCCESS;
 
 done:
-	if( (err = libtorque_stop(ctx)) ){
+	if( (err = torque_stop(ctx)) ){
 		fprintf(stderr,"Couldn't destroy libtorque (%s)\n",
-				libtorque_errstr(err));
+				torque_errstr(err));
 		ret = EXIT_FAILURE;
 	}
 	return ret;

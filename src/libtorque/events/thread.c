@@ -12,34 +12,34 @@
 #include <libtorque/events/sources.h>
 #include <libtorque/hardware/topology.h>
 
-static __thread libtorque_ctx *tsd_ctx;
+static __thread torque_ctx *tsd_ctx;
 static __thread evhandler *tsd_evhandler;
 
 evhandler *get_thread_evh(void){
 	return tsd_evhandler;
 }
 
-libtorque_ctx *get_thread_ctx(void){
+torque_ctx *get_thread_ctx(void){
 	return tsd_ctx;
 }
 
 static inline void
-handle_event(libtorque_ctx *ctx,const kevententry *e){
-#ifdef LIBTORQUE_LINUX
-	if(e->events & EPOLLIN){
+handle_event(torque_ctx *ctx,const kevententry *e){
+#ifdef TORQUE_LINUX
+	if(e->events & EVREAD){
 #else
 	if(e->filter == EVFILT_READ){
 #endif
 		handle_evsource_read(ctx->eventtables.fdarray,KEVENTENTRY_ID(e));
 	}
-#ifdef LIBTORQUE_LINUX
-	if(e->events & EPOLLOUT){
+#ifdef TORQUE_LINUX
+	if(e->events & EVWRITE){
 #else
 	else if(e->filter == EVFILT_WRITE){
 #endif
 		handle_evsource_write(ctx->eventtables.fdarray,KEVENTENTRY_ID(e));
 	}
-#ifdef LIBTORQUE_FREEBSD
+#ifdef TORQUE_FREEBSD
 	else if(e->filter == EVFILT_SIGNAL){
 		handle_evsource_read(ctx->eventtables.sigarray,KEVENTENTRY_ID(e));
         }else if(e->filter == EVFILT_TIMER){
@@ -50,7 +50,7 @@ handle_event(libtorque_ctx *ctx,const kevententry *e){
 
 void rxcommonsignal(int sig,void *cbstate){
 	if(sig == EVTHREAD_TERM || sig == EVTHREAD_INT){
-		const libtorque_ctx *ctx = cbstate;
+		const torque_ctx *ctx = cbstate;
 		void *ret = PTHREAD_CANCELED;
 		evhandler *e = get_thread_evh();
 		struct rusage ru;
@@ -84,7 +84,7 @@ void rxcommonsignal(int sig,void *cbstate){
 	}
 }
 
-#if defined(LIBTORQUE_LINUX) && !defined(LIBTORQUE_LINUX_SIGNALFD)
+#if defined(TORQUE_LINUX) && !defined(TORQUE_LINUX_SIGNALFD)
 static sig_atomic_t sem_rxcommonsignal;
 
 static inline void
@@ -106,7 +106,7 @@ rxcommonsignal_handler(int sig,void *cbstate __attribute__ ((unused))){
 #define check_for_termination(...)
 #endif
 
-void event_thread(libtorque_ctx *ctx,evhandler *e){
+void event_thread(torque_ctx *ctx,evhandler *e){
 	tsd_evhandler = e;
 	tsd_ctx = ctx;
 	while(1){
@@ -122,7 +122,7 @@ void event_thread(libtorque_ctx *ctx,evhandler *e){
 			continue;
 		}
 		while(events--){
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 			handle_event(ctx,&PTR_TO_EVENTV(&e->evec)->events[events]);
 #else
 			handle_event(ctx,&PTR_TO_EVENTV(&e->evec)[events]);
@@ -133,7 +133,7 @@ void event_thread(libtorque_ctx *ctx,evhandler *e){
 }
 
 static int
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 create_evector(struct kevent *kv,int n){
 	if((kv->events = malloc(n * sizeof(*kv->events))) == NULL){
 		return -1;
@@ -153,7 +153,7 @@ create_evector(struct kevent **kv,int n){
 }
 
 static void
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 destroy_evector(struct kevent *kv){
 	free(kv->events);
 	free(kv->ctldata);
@@ -189,11 +189,11 @@ prep_common_sigset(sigset_t *s){
 // All event queues (evqueues) will need to register events on the common
 // signals (on Linux, this is done via a common signalfd()). Either way, we
 // don't want to touch the evsources more than once.
-int initialize_common_sources(libtorque_ctx *ctx,struct evtables *evt,const sigset_t *ss __attribute__ ((unused))){
+int initialize_common_sources(torque_ctx *ctx,struct evtables *evt,const sigset_t *ss __attribute__ ((unused))){
 	if(EVTHREAD_TERM >= evt->sigarraysize || EVTHREAD_INT >= evt->sigarraysize){
 		return -1;
 	}
-#ifdef LIBTORQUE_LINUX_SIGNALFD
+#ifdef TORQUE_LINUX_SIGNALFD
 	{
 	sigset_t s;
 
@@ -207,7 +207,7 @@ int initialize_common_sources(libtorque_ctx *ctx,struct evtables *evt,const sigs
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal,NULL,ctx);
 	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal,NULL,ctx);
 	}
-#elif defined(LIBTORQUE_LINUX)
+#elif defined(TORQUE_LINUX)
 	setup_evsource(evt->sigarray,EVTHREAD_TERM,rxcommonsignal_handler,NULL,ctx);
 	setup_evsource(evt->sigarray,EVTHREAD_INT,rxcommonsignal_handler,NULL,ctx);
 	if(init_epoll_sigset(ss)){
@@ -239,7 +239,7 @@ int create_efd(void){
 	int fd,flags;
 
 // Until the epoll API stabilizes a bit... :/
-#ifdef LIBTORQUE_LINUX
+#ifdef TORQUE_LINUX
 #ifdef EPOLL_CLOEXEC
 #define SAFE_EPOLL_CLOEXEC EPOLL_CLOEXEC
 #else // otherwise, it wants a size hint in terms of fd's
@@ -256,7 +256,7 @@ int create_efd(void){
 		}
 	}
 #undef SAFE_EPOLL_CLOEXEC
-#elif defined(LIBTORQUE_FREEBSD)
+#elif defined(TORQUE_FREEBSD)
 	if((fd = kqueue()) < 0){
 		return -1;
 	}
@@ -281,8 +281,8 @@ evhandler *create_evhandler(const evqueue *evq,const stack_t *stack){
 }
 
 static inline int
-print_evthread(FILE *fp,const libtorque_ctx *ctx){
-	const libtorque_cput *cpu;
+print_evthread(FILE *fp,const torque_ctx *ctx){
+	const torque_cput *cpu;
 	int aid;
 
 	if((aid = get_thread_aid()) < 0){
@@ -298,7 +298,7 @@ print_evthread(FILE *fp,const libtorque_ctx *ctx){
 }
 
 static inline int
-print_evstats(const libtorque_ctx *ctx,const evthreadstats *stats){
+print_evstats(const torque_ctx *ctx,const evthreadstats *stats){
 	if(printf("<thread ") < 0){
 		return -1;
 	}
@@ -322,7 +322,7 @@ print_evstats(const libtorque_ctx *ctx,const evthreadstats *stats){
 	return 0;
 }
 
-void destroy_evhandler(const libtorque_ctx *ctx,evhandler *e){
+void destroy_evhandler(const torque_ctx *ctx,evhandler *e){
 	if(e){
 		print_evstats(ctx,&e->stats);
 		destroy_evectors(&e->evec);

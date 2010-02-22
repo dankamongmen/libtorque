@@ -7,7 +7,7 @@
 #include <libtorque/events/sources.h>
 
 void signal_demultiplexer(int s){
-	libtorque_ctx *ctx = get_thread_ctx();
+	torque_ctx *ctx = get_thread_ctx();
 	int errdup;
 
 	// Preserve errno (in case the callback changes it and we're being
@@ -59,7 +59,7 @@ int init_signal_handlers(void){
 //      receive SIGKILL or SIGSTOP signals  via  a  signalfd  file  descriptor;
 //      these signals are silently ignored if specified in mask.
 //
-libtorque_err add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __attribute__ ((unused)),
+torque_err add_signal_to_evhandler(torque_ctx *ctx,const evqueue *evq __attribute__ ((unused)),
 			const sigset_t *sigs,libtorquercb rfxn,void *cbstate){
 	unsigned z;
 
@@ -69,38 +69,38 @@ libtorque_err add_signal_to_evhandler(libtorque_ctx *ctx,const evqueue *evq __at
 					NULL,cbstate);
 		}
 	}
-#ifdef LIBTORQUE_LINUX_SIGNALFD
+#ifdef TORQUE_LINUX_SIGNALFD
 	{
 		// FIXME we could restrict this all to a single signalfd, since
 		// it takes a sigset_t...less potential parallelism, though
-		libtorque_err ret;
+		torque_err ret;
 		int fd;
 
 		if((fd = signalfd(-1,sigs,SFD_NONBLOCK | SFD_CLOEXEC)) < 0){
 			if(errno == ENOSYS){
-				return LIBTORQUE_ERR_UNAVAIL;
+				return TORQUE_ERR_UNAVAIL;
 			}
-			return LIBTORQUE_ERR_RESOURCE;
+			return TORQUE_ERR_RESOURCE;
 		}
 		if( (ret = add_fd_to_evhandler(ctx,evq,fd,signalfd_demultiplexer,NULL,ctx,0)) ){
 			close(fd);
 			return ret;
 		}
 	}
-#elif defined(LIBTORQUE_LINUX)
+#elif defined(TORQUE_LINUX)
 	if(add_epoll_sigset(sigs,ctx->eventtables.sigarraysize)){
-		return LIBTORQUE_ERR_ASSERT;
+		return TORQUE_ERR_ASSERT;
 	}
-#elif defined(LIBTORQUE_FREEBSD)
+#elif defined(TORQUE_FREEBSD)
 	for(z = 1 ; z < ctx->eventtables.sigarraysize ; ++z){
 		struct kevent k;
 
 		if(!sigismember(sigs,z)){
 			continue;
 		}
-		EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EV_CLEAR,0,0,NULL);
+		EV_SET(&k,z,EVFILT_SIGNAL,EV_ADD | EVEDGET,0,0,NULL);
 		if(Kevent(evq->efd,&k,1,NULL,0)){
-			return LIBTORQUE_ERR_ASSERT; // FIXME pull previous out
+			return TORQUE_ERR_ASSERT; // FIXME pull previous out
 		}
 	}
 #else
