@@ -79,8 +79,7 @@ XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 # This can be a URL; it's the docbook-to-manpage XSL
 #DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
 
-# GraphViz 2.20.2 is known to work
-DOT?=$(shell (which dot) 2> /dev/null)
+DOT?=$(shell (which dot) 2> /dev/null || echo dot)
 
 #
 # USER SPECIFICATION AREA ENDS
