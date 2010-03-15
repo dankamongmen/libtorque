@@ -92,6 +92,8 @@ XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 #DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
 
 DOT?=$(shell (which dot) 2> /dev/null || echo dot)
+BIBTEX?=$(shell (which bibtex) 2> /dev/null || echo bibtex)
+LATEX?=$(shell (which pdflatex) 2> /dev/null || echo pdflatex) -halt-on-error
 
 #
 # USER SPECIFICATION AREA ENDS
@@ -135,6 +137,7 @@ SRCDIR:=src
 TOOLDIR:=tools
 MANDIR:=doc/man
 FIGDIR:=doc/figures
+PDFDIR:=doc/paper
 CSRCDIRS:=$(wildcard $(SRCDIR)/*)
 ARCHDETECTDIRS:=$(SRCDIR)/$(ARCHDETECT)
 TORQUEDIRS:=$(SRCDIR)/lib$(TORQUE)
@@ -176,10 +179,12 @@ REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 MAN1SRC:=$(wildcard $(MANDIR)/man1/*)
 MAN3SRC:=$(wildcard $(MANDIR)/man3/*)
 FIGSRC:=$(wildcard $(FIGDIR)/*.dot)
+PDFSRC:=$(wildcard $(PDFDIR)/*.tex)
 MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1torque))
 MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3torque))
 FIGDOC:=$(addprefix $(OUT)/,$(FIGSRC:%.dot=%.svg))
-DOCS:=$(MAN1OBJ) $(MAN3OBJ) $(FIGDOC)
+PAPER:=$(addprefix $(OUT)/,$(PDFSRC:%.tex=%.pdf))
+DOCS:=$(MAN1OBJ) $(MAN3OBJ) $(FIGDOC) $(PAPER)
 PRETTYDOT:=$(FIGDIR)/notugly/notugly.xsl
 INCINSTALL:=$(addprefix $(SRCDIR)/lib$(TORQUE)/,$(TORQUE).h)
 TAGS:=.tags
@@ -373,6 +378,13 @@ $(OUT)/%.3torque: %.xml $(GLOBOBJDEPS)
 $(OUT)/%.1torque: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
+
+$(OUT)/%.pdf: %.tex %.bib $(GLOBOBJDEPS)
+	@mkdir -p $(@D)
+	$(LATEX) -output-directory $(@D) $<
+	$(BIBTEX) $(basename $@)
+	$(LATEX) $<
+	$(LATEX) $<
 
 $(OUT)/%.svg: %.dot $(PRETTYDOT) $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
