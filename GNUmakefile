@@ -366,11 +366,11 @@ $(OUT)/%.i: %.c $(GLOBOBJDEPS)
 
 # Should the network be inaccessible, and local copies are installed, try:
 #DOC2MANXSL?=--nonet
-$(OUT)/%.3: %.xml $(GLOBOBJDEPS)
+$(OUT)/%.3torque: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
 
-$(OUT)/%.1: %.xml $(GLOBOBJDEPS)
+$(OUT)/%.1torque: %.xml $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
 
