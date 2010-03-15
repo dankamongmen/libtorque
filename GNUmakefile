@@ -181,7 +181,7 @@ MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3))
 FIGDOC:=$(addprefix $(OUT)/,$(FIGSRC:%.dot=%.svg))
 DOCS:=$(MAN1OBJ) $(MAN3OBJ) $(FIGDOC)
 PRETTYDOT:=$(FIGDIR)/notugly/notugly.xsl
-INCINSTALL:=$(addprefix $(SRCDIR)/lib$(TORQUE)/,lib$(TORQUE).h)
+INCINSTALL:=$(addprefix $(SRCDIR)/lib$(TORQUE)/,$(TORQUE).h)
 TAGS:=.tags
 
 # Anything that all source->object translations ought dep on. We currently
