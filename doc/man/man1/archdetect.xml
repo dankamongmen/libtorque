@@ -23,12 +23,12 @@
 <!-- If the application e.g. belongs to a package like X.org,	-->
 <!-- this should be set to the package/suite name instead of	-->
 <!-- dhpackage.							-->
-<!ENTITY dhproduct "libtorque">
+<!ENTITY dhproduct "torque">
 
 <!-- SECTION should be 1-8, maybe w/ subsection other	-->
 <!-- parameters are allowed: see man(7), man(1) and	-->
 <!-- http://www.tldp.org/HOWTO/Man-Page/q2.html.	-->
-<!ENTITY dhsection "1">
+<!ENTITY dhsection "1torque">
 
 ]>
 

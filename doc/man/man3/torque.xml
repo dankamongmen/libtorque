@@ -18,7 +18,7 @@
   
 <!-- This is the application/package name.                     -->
 <!ENTITY dhucpackage "LIBTORQUE">
-<!ENTITY dhpackage   "libtorque">
+<!ENTITY dhpackage   "torque">
 
 <!-- If the application e.g. belongs to a package like X.org,  -->
 <!-- this should be set to the package/suite name instead of   -->
@@ -28,7 +28,7 @@
 <!-- SECTION should be 1-8, maybe w/ subsection other          -->
 <!-- parameters are allowed: see man(7), man(1) and            -->
 <!-- http://www.tldp.org/HOWTO/Man-Page/q2.html.               -->
-<!ENTITY dhsection   "3">
+<!ENTITY dhsection   "3torque">
 
 ]>
 
