@@ -383,8 +383,8 @@ $(OUT)/%.pdf: %.tex %.bib $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(LATEX) -output-directory $(@D) $<
 	$(BIBTEX) $(basename $@)
-	$(LATEX) $<
-	$(LATEX) $<
+	$(LATEX) -output-directory $(@D) $<
+	$(LATEX) -output-directory $(@D) $<
 
 $(OUT)/%.svg: %.dot $(PRETTYDOT) $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
