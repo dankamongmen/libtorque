@@ -42,13 +42,13 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	if(cerr != CUDA_SUCCESS || attr <= 0){
 		return TORQUE_ERR_ASSERT;
 	}
-	// FIXME warp size is more our "SIMD width" than threads per core...
+	// FIXME warp/cores is more our "SIMD width" than threads per core...
 	cpudesc->threadspercore = 1;
 	cerr = cuDeviceGetAttribute(&attr,CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT,c);
 	if(cerr != CUDA_SUCCESS || attr <= 0){
 		return TORQUE_ERR_ASSERT;
 	}
-	cpudesc->coresperpackage = attr * CORES_PER_NVPROCESSOR * cpudesc->threadspercore;
+	cpudesc->coresperpackage = attr * CORES_PER_NVPROCESSOR;
 	if((cerr = cuDeviceTotalMem(&mem,c)) != CUDA_SUCCESS){
 		return TORQUE_ERR_ASSERT;
 	}
