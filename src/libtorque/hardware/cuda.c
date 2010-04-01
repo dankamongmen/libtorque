@@ -2,10 +2,10 @@
 #include <libtorque/hardware/cuda.h>
 
 #ifndef LIBTORQUE_WITHOUT_CUDA
-#include <cuda/cuda.h>
+#include <cuda.h>
 int detect_cudadevcount(void){
+	int count,attr;
 	CUresult cerr;
-	int count;
 
 	if((cerr = cuInit(0)) != CUDA_SUCCESS){
 		if(cerr == CUDA_ERROR_NO_DEVICE){
@@ -13,6 +13,14 @@ int detect_cudadevcount(void){
 		}
 		return -1;
 	}
+	if((cerr = cuDriverGetVersion(&attr)) != CUDA_SUCCESS){
+		return -1;
+	}
+	// CUDA is backwards-, but not forwards-compatible
+	if(CUDA_VERSION > attr){
+		return -1;
+	}
+	// major = attr / 1000. minor = attr % 1000
 	if((cerr = cuDeviceGetCount(&count)) != CUDA_SUCCESS){
 		return -1;
 	}
@@ -30,11 +38,6 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	int attr;
 
 	memset(cpudesc,0,sizeof(*cpudesc));
-	if((cerr = cuDriverGetVersion(&attr)) != CUDA_SUCCESS){
-		return TORQUE_ERR_ASSERT;
-	}
-	cpudesc->spec.cuda.drvmajor = attr / 1000;
-	cpudesc->spec.cuda.drvminor = attr % 1000;
 	if((cerr = cuDeviceGet(&c,devno)) != CUDA_SUCCESS){
 		return TORQUE_ERR_INVAL;
 	}

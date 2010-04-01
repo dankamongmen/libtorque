@@ -196,11 +196,11 @@ detail_x86(const x86_details *x86){
 
 static int
 detail_nvidia(const cuda_details *nv){
-	if(nv->drvmajor <= 0 || nv->drvminor < 0){
+	if(nv->major <= 0 || nv->minor < 0){
 		fprintf(stderr,"Error: invalid CUDA version information\n");
 		return -1;
 	}
-	printf(" version %d.%d\n",nv->drvmajor,nv->drvminor);
+	printf(" version %d.%d\n",nv->major,nv->minor);
 	printf("\tCUDA compute capabilities: %u.%u\n",nv->major,nv->minor);
 	return 0;
 }
@@ -230,15 +230,15 @@ detail_processing_unit(const torque_cput *pudesc){
 		fprintf(stderr,"Error: invalid ISA information\n");
 		return -1;
 	}
-	if(pudesc->threadspercore <= 0){
-		fprintf(stderr,"Error: invalid SMT information\n");
-		return -1;
-	}
 	if(pudesc->strdescription == NULL){
 		fprintf(stderr,"Error: no string description\n");
 		return -1;
 	}
 	printf("\tBrand name: %s\n",pudesc->strdescription);
+	if(pudesc->threadspercore <= 0){
+		fprintf(stderr,"Error: invalid SMT information\n");
+		return -1;
+	}
 	if(pudesc->threadspercore == 1){
 		printf("\t1 thread per processing core, %u core%s per package\n",
 				pudesc->coresperpackage,
