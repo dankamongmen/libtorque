@@ -56,7 +56,7 @@ DFLAGS+=-DLIBTORQUE_WITHOUT_ADNS
 endif
 
 ifndef LIBTORQUE_WITHOUT_SSL
-DFLAGS+=$(shell pkg-config --cflags openssl)
+IFLAGS+=$(shell pkg-config --cflags openssl)
 LIBFLAGS+=$(shell (pkg-config --libs openssl || echo -lssl -lcrypto))
 else
 DFLAGS+=-DLIBTORQUE_WITHOUT_SSL
