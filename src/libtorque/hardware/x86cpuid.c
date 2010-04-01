@@ -1478,26 +1478,27 @@ id_x86_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *cpu
 
 // CPUID function 80000001 feature flags
 // ECX results
-#define CPUID_WDT			0x1000u
-#define CPUID_SSE5			0x0800u
-#define CPUID_IBS			0x0400u
-#define CPUID_OSVW			0x0200u
-#define CPUID_3DNOWPREFETCH		0x0100u
-#define CPUID_MISALIGNSSE		0x0080u
-#define CPUID_SSE4A			0x0040u
-#define CPUID_ABM			0x0020u
-#define CPUID_ALTMOVCR8			0x0010u
-#define CPUID_EXTAPICSPACE		0x0008u
-#define CPUID_SVM			0x0004u
-#define CPUID_CMPLEGACY			0x0002u
-#define CPUID_CLAHFSAHF			0x0001u
+#define CPUID_FMA4			0x00010000u // bit 16
+#define CPUID_WDT			0x00001000u
+#define CPUID_XOP			0x00000800u // bit 11
+#define CPUID_IBS			0x00000400u
+#define CPUID_OSVW			0x00000200u
+#define CPUID_3DNOWPREFETCH		0x00000100u
+#define CPUID_MISALIGNSSE		0x00000080u // bit 7
+#define CPUID_SSE4A			0x00000040u
+#define CPUID_ABM			0x00000020u
+#define CPUID_ALTMOVCR8			0x00000010u
+#define CPUID_EXTAPICSPACE		0x00000008u // bit 3
+#define CPUID_SVM			0x00000004u
+#define CPUID_CMPLEGACY			0x00000002u
+#define CPUID_CLAHFSAHF			0x00000001u
 
 // EDX results (taken from AMD manual, need crosschecking with Intel FIXME)
-#define CPUID_3DNOW			0x80000000	// 3D-Now
-#define CPUID_3DNOWEXT			0x40000000	// 3D-Now extensions
-#define CPUID_LME			0x20000000	// long-mode enable
-#define CPUID_RDTSCP			0x08000000	// read tscp
-#define CPUID_1GB			0x04000000	// 1GB/4-level pages
+#define CPUID_3DNOW			0x80000000u	// 3D-Now
+#define CPUID_3DNOWEXT			0x40000000u	// 3D-Now extensions
+#define CPUID_LME			0x20000000u	// long-mode enable
+#define CPUID_RDTSCP			0x08000000u	// read tscp
+#define CPUID_1GB			0x04000000u	// 1GB/4-level pages
 
 static int
 id_amd_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *cpu){
@@ -1602,15 +1603,13 @@ x86_getprocsig(uint32_t maxfunc,x86_details *cpu,struct feature_flags *ff){
 	cpu->features.sse2 = !!(gpregs[3] & FFLAG_SSE2);
 	if((maxex = identify_extended_cpuid()) >= CPUID_EXTENDED_CPU_VERSION){
 		cpuid(CPUID_EXTENDED_CPU_VERSION,0,gpregs);
+		cpu->features.xop = !!(gpregs[2] & CPUID_XOP);
+		cpu->features.fma4 = !!(gpregs[2] & CPUID_FMA4);
 		ff->lme = !!(gpregs[3] & CPUID_LME);
 		ff->gbpt = !!(gpregs[3] & CPUID_1GB);
 	}
-	/*printf("SSE: %d SSE2: %d\n",cpu->features.sse,cpu->features.sse2);
-	printf("SSE3: %d SSSE3: %d\n",cpu->features.sse3,cpu->features.ssse3);
-	printf("SSE4.1: %d SSE4.2: %d\n",cpu->features.sse41,cpu->features.ssse42);
-	printf("SSE4a: %d\n",cpu->features.sse4a);
-	printf("LME: %d GBPT: %d\n",cpu->features.lme,cpu->features.gbpt);
-	printf("DCA: %d SSE4.1: %d SSE4.2: %d X2APIC: %d\n",cpu->features.dca,cpu->features.sse41,cpu->features.sse42,cpu->features.x2apic);
+	/*printf("LME: %d GBPT: %d\n",cpu->features.lme,cpu->features.gbpt);
+	printf("DCA: %d X2APIC: %d\n",cpu->features.dca,cpu->features.x2apic);
 	printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",cpu->features.pse,cpu->features.pae,cpu->features.pse36,cpu->features.ht);*/
 	return 0;
 }

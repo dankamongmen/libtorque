@@ -183,6 +183,10 @@ detail_x86(const x86_details *x86){
 	if(x86->features.sse41){ printf("SSE4.1 "); }
 	if(x86->features.sse42){ printf("SSE4.2 "); }
 	if(x86->features.sse4a){ printf("SSE4a "); }
+	if(x86->features.avx){ printf("AVX "); }
+	if(x86->features.xop){ printf("XOP "); }
+	if(x86->features.fma4){ printf("FMA4 "); }
+	if(x86->features.cvt16){ printf("CVT16 "); }
 	printf("\n");
 	if((x86type = x86_type(x86->x86type)) == NULL){
 		fprintf(stderr,"Error: invalid x86 type information\n");

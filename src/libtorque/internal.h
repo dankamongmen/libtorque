@@ -98,10 +98,14 @@ typedef struct x86_details {
 		unsigned sse42 : 1;
 		// Introduced on AMD Barcelona. 6 new instructions.
 		unsigned sse4a : 1;
+		// Never implemented. AMD broke SSE5 down into XOP/FMA4/CVT16
+		// unsigned sse5 : 1;
 		// Introduces the VEX encoding scheme, 256-bit YMM registers.
 		unsigned avx : 1;
+		// Main VEX/AVX support, scheduled for AMD Bulldozer.
 		unsigned xop : 1;
 		unsigned fma4 : 1;
+		// Floating-point conversion ops, scheduled for AMD Bulldozer.
 		unsigned cvt16 : 1;
 	} features;
 } x86_details;
