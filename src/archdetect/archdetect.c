@@ -174,11 +174,15 @@ static int
 detail_x86(const x86_details *x86){
 	const char *x86type;
 
-	if(x86->features.mmx){ printf("+MMX"); }
-	if(x86->features.sse){ printf("+SSE"); }
-	if(x86->features.sse2){ printf("+SSE2"); }
-	if(x86->features.sse3){ printf("+SSE3"); }
-	if(x86->features.ssse3){ printf("+SSSE3"); }
+	printf("\n\tExtensions: ");
+	if(x86->features.mmx){ printf("MMX "); }
+	if(x86->features.sse){ printf("SSE "); }
+	if(x86->features.sse2){ printf("SSE2 "); }
+	if(x86->features.sse3){ printf("SSE3 "); }
+	if(x86->features.ssse3){ printf("SSSE3 "); }
+	if(x86->features.sse41){ printf("SSE4.1 "); }
+	if(x86->features.sse42){ printf("SSE4.2 "); }
+	if(x86->features.sse4a){ printf("SSE4a "); }
 	printf("\n");
 	if((x86type = x86_type(x86->x86type)) == NULL){
 		fprintf(stderr,"Error: invalid x86 type information\n");
@@ -200,8 +204,7 @@ detail_nvidia(const cuda_details *nv){
 		fprintf(stderr,"Error: invalid CUDA version information\n");
 		return -1;
 	}
-	printf(" version %d.%d\n",nv->major,nv->minor);
-	printf("\tCUDA compute capabilities: %u.%u\n",nv->major,nv->minor);
+	printf("\n\tCUDA compute capabilities: %u.%u\n",nv->major,nv->minor);
 	return 0;
 }
 
