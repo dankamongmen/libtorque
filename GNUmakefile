@@ -181,13 +181,12 @@ REALSOS:=$(addprefix $(LIBOUT)/,$(TORQUEREAL))
 # Documentation processing
 MAN1SRC:=$(wildcard $(MANDIR)/man1/*)
 MAN3SRC:=$(wildcard $(MANDIR)/man3/*)
-FIGSRC:=$(wildcard $(FIGDIR)/*.dot)
 PDFSRC:=$(wildcard $(PDFDIR)/*.tex)
 MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1torque))
 MAN3OBJ:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3torque))
-FIGDOC:=$(addprefix $(OUT)/,$(FIGSRC:%.dot=%.svg))
+FIGSVG:=$(wildcard $(FIGDIR)/*.svg)
 PAPER:=$(addprefix $(OUT)/,$(PDFSRC:%.tex=%.pdf))
-DOCS:=$(MAN1OBJ) $(MAN3OBJ) $(FIGDOC) $(PAPER)
+DOCS:=$(MAN1OBJ) $(MAN3OBJ) $(FIGSVG) $(PAPER)
 PRETTYDOT:=$(FIGDIR)/notugly/notugly.xsl
 INCINSTALL:=$(addprefix $(SRCDIR)/lib$(TORQUE)/,$(TORQUE).h)
 TAGS:=.tags
