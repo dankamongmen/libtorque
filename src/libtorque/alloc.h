@@ -1,6 +1,8 @@
 #ifndef LIBTORQUE_ALLOC
 #define LIBTORQUE_ALLOC
 
+#include <libtorque/port/gcc.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,7 +24,7 @@ void *get_pages(size_t)
 //     truly shared line splits)
 void *hwaligned_alloc_tight(size_t,size_t *)
 	__attribute__ ((warn_unused_result))
-	__attribute__ ((alloc_size(1)))
+	ALLOC_SIZE(1)
 	__attribute__ ((malloc));
 
 // Aligned to the least common multiple of hardware cacheline lengths
@@ -35,7 +37,7 @@ void *hwaligned_alloc_tight(size_t,size_t *)
 //     allocator ought request a block, and then parcel it out)
 void *hwaligned_alloc_tight(size_t,size_t *)
 	__attribute__ ((warn_unused_result))
-	__attribute__ ((alloc_size(1)))
+	ALLOC_SIZE(1)
 	__attribute__ ((malloc));
 
 // Get a VMA as large as the largest (*architectural*, not necessarily
