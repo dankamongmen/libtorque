@@ -35,9 +35,10 @@ TAGBIN?=$(firstword $(call which,exctags) $(call which,ctags))
 
 # We want GCC 4.3+ if we can find it. Some systems have install it as gcc-v.v,
 # some as gccv.v, some will have a suitably up-to-date default gcc...bleh.
-ifeq "$(origin CC)" "default"
-CC:=$(shell (which gcc-4.4 || which gcc44 || which gcc-4.3 || which gcc43 || echo gcc) 2>/dev/null)
-endif
+# If gcc as found in the $PATH is not 4.3+, export it as CC.
+#ifeq "$(origin CC)" "default"
+#CC:=$(shell (which gcc-4.4 || which gcc44 || which gcc-4.3 || which gcc43 || echo gcc) 2>/dev/null)
+#endif
 
 # We compile for the host µ-architecture/ISA, providing the "native" option to
 # gcc's -march and -mtune. If you don't have gcc 4.3 or greater, you'll need to
