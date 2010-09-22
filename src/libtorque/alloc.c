@@ -29,9 +29,10 @@ void *get_big_page(const struct torque_ctx *ctx,size_t *s){
 	return get_pages(*s);
 }
 
-// The default stack under NPTL is equal to RLIMIT_STACK's rlim_cur (8M on my
-// Debian machine). Coloring is used inside of NPTL as of at least eglibc 2.10.
-// FIXME there's a lot to do here; this is very naive
+// The default stack under NPTL is equal to RLIMIT_STACK's rlim_cur (8M on
+// my Debian machine). Coloring is used inside of NPTL as of at least
+// eglibc 2.10. PTHREAD_STACK_MIN is only 16k(!), and SIGSTKSZ 8k.
+// // FIXME there's a lot to do here; this is very naive
 void *get_stack(size_t *s){
 	if(*s == 0){
 		*s = PTHREAD_STACK_MIN > SIGSTKSZ ? PTHREAD_STACK_MIN : SIGSTKSZ;
