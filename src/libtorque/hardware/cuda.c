@@ -29,6 +29,7 @@ int detect_cudadevcount(void){
 
 // CUDA must already have been initialized before calling cudaid().
 #define CUDASTRLEN 80
+// warp/cores is more our "SIMD width" than threads per core...unused
 #define CORES_PER_NVPROCESSOR 8 //  taken from CUDA 2.3 SDK's deviceQuery.cpp
 torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	CUresult cerr;
@@ -45,13 +46,12 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	if(cerr != CUDA_SUCCESS || attr <= 0){
 		return TORQUE_ERR_ASSERT;
 	}
-	// FIXME warp/cores is more our "SIMD width" than threads per core...
 	cpudesc->threadspercore = 1;
 	cerr = cuDeviceGetAttribute(&attr,CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT,c);
 	if(cerr != CUDA_SUCCESS || attr <= 0){
 		return TORQUE_ERR_ASSERT;
 	}
-	cpudesc->coresperpackage = attr * CORES_PER_NVPROCESSOR;
+	cpudesc->coresperpackage = attr;
 	if((cerr = cuDeviceTotalMem(&mem,c)) != CUDA_SUCCESS){
 		return TORQUE_ERR_ASSERT;
 	}
