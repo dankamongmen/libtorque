@@ -59,6 +59,7 @@ endif
 ifndef LIBTORQUE_WITHOUT_SSL
 IFLAGS+=$(shell pkg-config --cflags openssl)
 LIBFLAGS+=$(shell (pkg-config --libs openssl || echo -lssl -lcrypto))
+TESTBINLFLAGS+=$(shell (pkg-config --libs openssl || echo -lssl -lcrypto))
 else
 DFLAGS+=-DLIBTORQUE_WITHOUT_SSL
 endif
@@ -263,8 +264,8 @@ TORQUECFLAGS:=$(MT_CFLAGS) -shared
 TORQUELFLAGS:=$(LFLAGS) -Wl,-soname,$(TORQUESOR) $(LIBFLAGS)
 TORQUEHOSTCFLAGS:=$(CFLAGS)
 TORQUEHOSTLFLAGS:=$(LFLAGS) -ladns -L$(LIBOUT) -ltorque
-TESTBINCFLAGS:=$(MT_CFLAGS)
-TESTBINLFLAGS:=$(LFLAGS) -Wl,-R$(LIBOUT) -L$(LIBOUT) -ltorque
+TESTBINCFLAGS+=$(MT_CFLAGS)
+TESTBINLFLAGS+=$(LFLAGS) -Wl,-R$(LIBOUT) -L$(LIBOUT) -ltorque
 EVTESTBINLFLAGS:=$(LFLAGS) -lev
 
 flow:
