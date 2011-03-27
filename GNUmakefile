@@ -256,7 +256,7 @@ MT_CFLAGS:=$(CFLAGS) -pthread $(MT_DFLAGS)
 CFLAGS+=$(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 MT_CFLAGS+=$(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 LIBFLAGS+=-lpthread -lblossom
-LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common \
+LFLAGS+=-Wl,-O2,--no-undefined-version,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc
 ARCHDETECTCFLAGS:=$(CFLAGS)
 ARCHDETECTLFLAGS:=$(LFLAGS) -L$(LIBOUT) -ltorque
