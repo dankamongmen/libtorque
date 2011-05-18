@@ -154,7 +154,8 @@ err:
 
 typedef struct spinconnctx {
 	struct torque_ctx *ctx;
-	struct sockaddr_in sin;
+	const struct sockaddr *sa;
+	socklen_t slen;
 	fdmaker fdfxn;
 } spinconnctx;
 
@@ -168,8 +169,7 @@ conn_complete_cb(int fd,void *state){
 		torque_err err;
 
 		if( (err = torque_addconnector_unbuffered(ctx->ctx,sd,
-				(const struct sockaddr *)&ctx->sin,sizeof(ctx->sin),
-				NULL,conn_complete_cb,ctx)) ){
+				ctx->sa,ctx->slen,NULL,conn_complete_cb,ctx)) ){
 			fprintf(stderr,"Couldn't add descriptor %d (%s)\n",sd,
 					torque_errstr(err));
 			close(sd);
@@ -179,6 +179,10 @@ conn_complete_cb(int fd,void *state){
 }
  
 int main(int argc,char **argv){
+	union {
+		struct sockaddr sa;
+		struct sockaddr_in sin;
+	} su;
 	spinconnctx ctx = {
 		.ctx = NULL,
 		.fdfxn = NULL,
@@ -186,8 +190,8 @@ int main(int argc,char **argv){
 	torque_err err;
 	int sd = -1;
 
-	memset(&ctx.sin,0,sizeof(ctx.sin));
-	if(parse_args(argc,argv,&ctx.sin.sin_port,&ctx.fdfxn)){
+	memset(&su,0,sizeof(su));
+	if(parse_args(argc,argv,&su.sin.sin_port,&ctx.fdfxn)){
 		return EXIT_FAILURE;
 	}
 	if( (err = torque_sigmask(NULL)) ){
@@ -200,16 +204,18 @@ int main(int argc,char **argv){
 				torque_errstr(err));
 		goto err;
 	}
-	ctx.sin.sin_family = AF_INET;
-	ctx.sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	su.sin.sin_family = AF_INET;
+	su.sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	if((sd = ctx.fdfxn()) < 0){
 		fprintf(stderr,"Couldn't get socket (%s)\n",
 				strerror(errno));
 		goto err;
 	}
-	printf("Spinning connections to port %hu...\n",ntohs(ctx.sin.sin_port));
-	if( (err = torque_addconnector_unbuffered(ctx.ctx,sd,(const struct sockaddr *)&ctx.sin,
-				sizeof(ctx.sin),NULL,conn_complete_cb,&ctx)) ){
+	printf("Spinning connections to port %hu...\n",ntohs(su.sin.sin_port));
+	ctx.sa = &su.sa;
+	ctx.slen = sizeof(su.sin);
+	if( (err = torque_addconnector_unbuffered(ctx.ctx,sd,ctx.sa,
+				ctx.slen,NULL,conn_complete_cb,&ctx)) ){
 		fprintf(stderr,"Couldn't add descriptor %d (%s)\n",sd,
 				torque_errstr(err));
 		goto err;
