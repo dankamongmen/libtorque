@@ -33,7 +33,7 @@ int detect_cudadevcount(void){
 #define CORES_PER_NVPROCESSOR 8 //  taken from CUDA 2.3 SDK's deviceQuery.cpp
 torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	CUresult cerr;
-#if CUDA_VERSION < 4000
+#if CUDA_VERSION < 3020
 	unsigned mem;
 #else
 	size_t mem;
