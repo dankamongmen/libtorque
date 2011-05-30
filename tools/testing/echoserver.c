@@ -56,12 +56,12 @@ conn_handler(int fd,void *v){
 	struct torque_ctx *ctx = v;
 
 	do{
-		struct sockaddr_in sina;
+		struct sockaddr sina;
 		socklen_t slen;
 		int sd;
 
 		slen = sizeof(sina);
-		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) >= 0){
+		while((sd = accept(fd,&sina,&slen)) >= 0){
 			int flags;
 
 			fprintf(stdout,"Got new connection on sd %d\n",sd);
@@ -173,7 +173,10 @@ err:
 
 int main(int argc,char **argv){
 	struct torque_ctx *ctx = NULL;
-	struct sockaddr_in sin;
+	union {
+		struct sockaddr_in sin;
+		struct sockaddr sa;
+	} su;
 	torque_err err;
 	sigset_t termset;
 	int sig,sd = -1;
@@ -181,8 +184,8 @@ int main(int argc,char **argv){
 	sigemptyset(&termset);
 	sigaddset(&termset,SIGINT);
 	sigaddset(&termset,SIGTERM);
-	memset(&sin,0,sizeof(sin));
-	if(parse_args(argc,argv,&sin.sin_port)){
+	memset(&su,0,sizeof(su));
+	if(parse_args(argc,argv,&su.sin.sin_port)){
 		return EXIT_FAILURE;
 	}
 	if( (err = torque_sigmask(NULL)) ){
@@ -190,19 +193,19 @@ int main(int argc,char **argv){
 				torque_errstr(err));
 		return EXIT_FAILURE;
 	}
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = htonl(INADDR_ANY);
-	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
+	su.sin.sin_family = AF_INET;
+	su.sin.sin_addr.s_addr = htonl(INADDR_ANY);
+	su.sin.sin_port = htons(su.sin.sin_port ? su.sin.sin_port : DEFAULT_PORT);
 	if((ctx = torque_init(&err)) == NULL){
 		fprintf(stderr,"Couldn't initialize libtorque (%s)\n",
 				torque_errstr(err));
 		goto err;
 	}
-	if((sd = make_echo_fd(AF_INET,(struct sockaddr *)&sin,sizeof(sin))) < 0){
+	if((sd = make_echo_fd(AF_INET,&su.sa,sizeof(su.sin))) < 0){
 		fprintf(stderr,"Couldn't create server sd\n");
 		goto err;
 	}
-	printf("Registering server sd %d, port %hu\n",sd,ntohs(sin.sin_port));
+	printf("Registering server sd %d, port %hu\n",sd,ntohs(su.sin.sin_port));
 	if(torque_addfd_concurrent(ctx,sd,conn_handler,NULL,ctx)){
 		fprintf(stderr,"Couldn't add server sd %d\n",sd);
 		goto err;

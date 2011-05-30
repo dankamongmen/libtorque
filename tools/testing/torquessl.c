@@ -135,23 +135,26 @@ err:
 
 int main(int argc,char **argv){
 	const char *certfile = NULL,*keyfile = NULL,*cafile = NULL;
+	union {
+		struct sockaddr sa;
+		struct sockaddr_in sin;
+	} su;
 	struct torque_ctx *ctx = NULL;
 	SSL_CTX *sslctx = NULL;
-	struct sockaddr_in sin;
-	torque_err err;
 	sigset_t termset;
 	int sig,sd = -1;
+	torque_err err;
 
 	sigemptyset(&termset);
 	sigaddset(&termset,SIGINT);
 	sigaddset(&termset,SIGTERM);
-	memset(&sin,0,sizeof(sin));
-	if(parse_args(argc,argv,&certfile,&keyfile,&cafile,&sin.sin_port)){
+	memset(&su,0,sizeof(su));
+	if(parse_args(argc,argv,&certfile,&keyfile,&cafile,&su.sin.sin_port)){
 		return EXIT_FAILURE;
 	}
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = htonl(INADDR_ANY);
-	sin.sin_port = htons(sin.sin_port ? sin.sin_port : DEFAULT_PORT);
+	su.sin.sin_family = AF_INET;
+	su.sin.sin_addr.s_addr = htonl(INADDR_ANY);
+	su.sin.sin_port = htons(su.sin.sin_port ? su.sin.sin_port : DEFAULT_PORT);
 	if(pthread_sigmask(SIG_SETMASK,&termset,NULL)){
 		fprintf(stderr,"Couldn't set signal mask\n");
 		return EXIT_FAILURE;
@@ -160,7 +163,7 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Couldn't initialize libtorque\n");
 		goto err;
 	}
-	if((sd = make_ssl_fd(AF_INET,(struct sockaddr *)&sin,sizeof(sin))) < 0){
+	if((sd = make_ssl_fd(AF_INET,&su.sa,sizeof(su.sin))) < 0){
 		fprintf(stderr,"Couldn't create OpenSSL fd\n");
 		goto err;
 	}
