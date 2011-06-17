@@ -273,7 +273,7 @@ flow:
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
-all: test doc
+all: $(TAGS) $(BINS) $(LIBS) $(TESTBINS) doc
 
 doc: $(TAGS) $(DOCS)
 
