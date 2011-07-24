@@ -146,7 +146,7 @@ void free_memories(torque_ctx *ctx){
 		torque_nodet *node;
 
 		node = &ctx->manodes[z];
-		free(ctx->manodes[z].psizevals);
+		free(node->psizevals);
 	}
 	free(ctx->manodes);
 	ctx->manodes = NULL;
