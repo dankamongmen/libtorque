@@ -1,6 +1,6 @@
                           ==================================================
                              libtorque, a multithreaded I/O event library
-                          Copyright © 2009, 2010 Nick Black <dank@qemfd.net>
+                          Copyright © 2009--2011 Nick Black <dank@qemfd.net>
                              Render this document with fixed-width fonts!
                           ==================================================
 ___________________________________________________________________
@@ -10,7 +10,7 @@ ___________________________________________________________________
 888 888 888 888P  888   Y888 888P 888    Y888 888 Y888 888P 888   ,
 888 888 888 88"   888    "88 88"  888     "88 888  "88 88"   "YeeP"
 _____________________________________________ 888 _________________
-continuation-based unix i/o for manycore numa\888/© nick black 2009
+continuation-based unix i/o for manycore numa\888/© nick black 20xx
 
 Wiki - http://dank.qemfd.net/dankwiki/index.php/Libtorque
 Mailing list - http://groups.google.com/group/libtorque-devel
