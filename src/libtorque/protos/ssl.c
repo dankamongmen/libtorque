@@ -496,7 +496,7 @@ ssl_accept_internal(int sd,const ssl_cbstate *sc){
 }
 
 void ssl_accept_rxfxn(int fd,void *cbstate){
-	struct sockaddr_in sina;
+	struct sockaddr sina;
 	socklen_t slen;
 	int sd;
 
@@ -504,7 +504,7 @@ void ssl_accept_rxfxn(int fd,void *cbstate){
 		int flags;
 
 		slen = sizeof(sina);
-		while((sd = accept(fd,(struct sockaddr *)&sina,&slen)) < 0){
+		while((sd = accept(fd,&sina,&slen)) < 0){
 			if(errno != EINTR){ // loop on EINTR
 				if(restorefd(get_thread_evh(),fd,EVREAD)){
 					// FIXME stat?;

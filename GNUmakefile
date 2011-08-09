@@ -1,7 +1,7 @@
 .DELETE_ON_ERROR:
 .PHONY: all test testarchdetect testtorquehost hardtest testssl doc clean \
 	mrproper flow install unsafe-install deinstall
-.DEFAULT_GOAL:=test
+.DEFAULT_GOAL:=all
 
 # Shared object versioning. MAJORVER will become 1 upon the first stable
 # release, and at that point changes only when the API changes. The minor
@@ -273,7 +273,7 @@ flow:
 
 # In addition to the binaries and unit tests, 'all' builds documentation,
 # packaging, graphs, and all that kind of crap.
-all: test doc
+all: $(TAGS) $(BINS) $(LIBS) $(TESTBINS) doc
 
 doc: $(TAGS) $(DOCS)
 

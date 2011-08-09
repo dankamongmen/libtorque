@@ -1051,7 +1051,8 @@ id_intel_caches(uint32_t maxlevel,const struct feature_flags *ff __attribute__ (
 			// package sharing the cache is EAX[25:14] + 1
 			mem.sharedways = ((gpregs[0] >> 14u) & 0xfffu) + 1;
 			mem.level = lev;
-			// Cores per package = EAX[31:26] + 1
+			// Cores per package = EAX[31:26] + 1. Maximum
+			// possible, not necessarily installed.
 			if((cpp = ((gpregs[0] >> 26u) & 0x3fu) + 1) == 0){
 				return -1;
 			}
@@ -1063,7 +1064,7 @@ id_intel_caches(uint32_t maxlevel,const struct feature_flags *ff __attribute__ (
 					}
 				}
 				cpu->coresperpackage = cpp;
-			}else if(cpu->coresperpackage != cpp){
+			}else if(cpu->coresperpackage > cpp){
 				return -1;
 			}
 			if(mem.sharedways < cpu->threadspercore){
@@ -1608,9 +1609,9 @@ x86_getprocsig(uint32_t maxfunc,x86_details *cpu,struct feature_flags *ff){
 		ff->lme = !!(gpregs[3] & CPUID_LME);
 		ff->gbpt = !!(gpregs[3] & CPUID_1GB);
 	}
-	/*printf("LME: %d GBPT: %d\n",cpu->features.lme,cpu->features.gbpt);
-	printf("DCA: %d X2APIC: %d\n",cpu->features.dca,cpu->features.x2apic);
-	printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",cpu->features.pse,cpu->features.pae,cpu->features.pse36,cpu->features.ht);*/
+	/*printf("LME: %d GBPT: %d\n",ff->lme,ff->gbpt);
+	printf("DCA: %d X2APIC: %d\n",ff->dca,ff->x2apic);
+	printf("PSE: %d PAE: %d PSE36: %d HT: %d\n",ff->pse,ff->pae,ff->pse36,ff->ht);*/
 	return 0;
 }
 
