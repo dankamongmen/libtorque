@@ -37,7 +37,7 @@ int restore_dns_fds(dns_state dctx __attribute__ ((unused)),const evhandler *evh
 
 		flags |= pfds[nfds].events & (POLLIN | POLLPRI) ? EVREAD : 0;
 		flags |= pfds[nfds].events & POLLOUT ? EVWRITE : 0;
-		ret |= restorefd(evh,fd,flags);
+		ret |= restorefd(evh,pfds[nfds].fd,flags);
 	}
 	return ret;
 #else
