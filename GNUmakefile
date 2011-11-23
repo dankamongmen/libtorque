@@ -106,6 +106,7 @@ LATEX?=$(shell (which pdflatex) 2> /dev/null || echo pdflatex) -halt-on-error
 ######################################################################
 
 # Unilateral definitions, shielded from the environment (save as components).
+LFLAGS+=-L/usr/local/lib
 
 # System-specific variables closed to external specification
 ifeq ($(UNAME),Linux)
@@ -119,7 +120,6 @@ DFLAGS+=-DTORQUE_FREEBSD
 MT_DFLAGS:=-D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 MANBIN:=makewhatis
 LDCONFIG:=ldconfig -m
-LFLAGS+=-L/usr/local/lib
 else
 ifeq ($(UNAME),SunOS)
 DFLAGS+=-DTORQUE_SOLARIS
