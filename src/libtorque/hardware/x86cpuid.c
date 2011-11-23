@@ -417,6 +417,27 @@ static const intel_cache_descriptor intel_cache_descriptors[] = {
 		.level = 1,
 		.memtype = MEMTYPE_DATA,
 	},
+	{       .descriptor = 0x76, // FIXME identified as TLB(?)!
+		.linesize = 64,
+		.totalsize = 1024 * 1024,
+		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x78,
+		.linesize = 64,
+		.totalsize = 1024 * 1024,
+		.associativity = 4,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x79, // sectored
+		.linesize = 64,
+		.totalsize = 128 * 1024,
+		.associativity = 8,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
 	{       .descriptor = 0x7a, // sectored
 		.linesize = 64,
 		.totalsize = 256 * 1024,
@@ -449,6 +470,13 @@ static const intel_cache_descriptor intel_cache_descriptors[] = {
 		.linesize = 64,
 		.totalsize = 512 * 1024,
 		.associativity = 2,
+		.level = 2,
+		.memtype = MEMTYPE_UNIFIED,
+	},
+	{       .descriptor = 0x80,
+		.linesize = 64,
+		.totalsize = 512 * 1024,
+		.associativity = 8,
 		.level = 2,
 		.memtype = MEMTYPE_UNIFIED,
 	},
@@ -957,6 +985,8 @@ decode_intel_func2(torque_cput *cpu,uint32_t *gpregs){
 					// FIXME 128-byte prefetching
 				}else if(descriptor == 0x40){
 					// Means "no higher(?)-level cache"
+				}else if(descriptor == 0xff){
+					// Means "call with leaf 4"
 				}else{
 					return -1;
 				}
