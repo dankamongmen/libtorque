@@ -400,7 +400,7 @@ $(TAGS): $(SRC) $(CINC) $(MAKEFILE_LIST)
 	$(TAGBIN) -f $@ $^
 
 clean:
-	rm -rf $(OUT)
+	rm -rf $(OUT) $(wildcard core*)
 
 mrproper: clean
 	rm -rf $(TAGS)
