@@ -1,8 +1,8 @@
-                          ==================================================
-                             libtorque, a multithreaded I/O event library
-                          Copyright © 2009--2011 Nick Black <dank@qemfd.net>
-                             Render this document with fixed-width fonts!
-                          ==================================================
+                 ==================================================
+                    libtorque, a multithreaded I/O event library
+                 Copyright © 2009--2012 Nick Black <dank@qemfd.net>
+                    Render this document with fixed-width fonts!
+                 ==================================================
 ___________________________________________________________________
 888 ,e, 888        d8           "...tear the roof off the sucka..."
 888  "  888 88e   d88    e88 88e  888,8,  e88 888 8888 8888  ,e e,
@@ -58,7 +58,7 @@ libtorque is licensed under version 2 of the Apache License:
 
         http://www.apache.org/licenses/LICENSE-2.0.html
 
-A copy can be found in the toplevel file LICENSE.
+A copy can be found in the toplevel file COPYING.
 
 Development of libtorque would have been impossible without the extraordinary
 grace, patience and benevolence of management at McAfee Research, particularly
@@ -75,16 +75,15 @@ everything from the Pentium Pro onwards). Further hardware support is intended.
 
 --operating system requirements-----------------------------------------------
 
-libtorque has been tested on Linux (versions 2.6.19 through 2.6.32), and 
+libtorque has been tested on Linux (versions 2.6.19 through 3.2.6), and
 FreeBSD (version 7.1). It might work on earlier versions of Linux. Support for
 other operating systems, and earlier versions, is intended.
 
 --compiler requirements-------------------------------------------------------
 
-libtorque does not employ the GNU autoconf tools, but is reliant upon GNU Make
-and the GNU Compiler Collection. gcc is tracked quite closely, and only recent
-versions might be supported at any time; 4.3 is the minimum gcc version
-explicitly supported or recommended
+libtorque is reliant upon GNU Make and the GNU Compiler Collection. gcc is
+tracked quite closely, and only recent versions might be supported at any time;
+4.3 is the minimum gcc version explicitly supported or recommended
 
 gcc 4.2, and also llvm using the 4.2 frontend, appear to work if some -W
 options are removed from WFLAGS. The results have not been extensively tested.
@@ -180,8 +179,12 @@ Exuberant Ctags are required to build the tagfile. Install:
 -=+ III. Building libtorque +=-
 ----------------------------------------------------------------libtorque-----
 
-The file GNUmakefile.local is sourced by GNUmakefile, but not used by the
-pristine distribution. Local build variables can be stored in this file.
+If you have downloaded a release tarball, "configure" will already be present.
+If you're building from a source checkout, you'll need the GNU Autotools. Run
+"autoreconf -fi" to (re)generate "configure".
+
+Run "./configure" and "make" to build the library, and "make install" to
+install it.
 
 Environment variables can affect the build by overriding defaults:
 

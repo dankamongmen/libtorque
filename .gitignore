@@ -1,7 +1,9 @@
 .out
 .tags
 autom4te.cache
+autoscan.log
 config.log
 config.status
 configure
+configure.scan
 GNUmakefile.local

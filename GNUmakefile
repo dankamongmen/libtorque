@@ -255,7 +255,7 @@ CFLAGS+=-pipe -std=gnu99 $(DFLAGS)
 MT_CFLAGS:=$(CFLAGS) -pthread $(MT_DFLAGS)
 CFLAGS+=$(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
 MT_CFLAGS+=$(IFLAGS) $(MFLAGS) $(OFLAGS) $(WFLAGS)
-LIBFLAGS+=-lpthread -lblossom
+LIBFLAGS+=-lpthread
 LFLAGS+=-Wl,-O2,--no-undefined-version,--enable-new-dtags,--as-needed,--warn-common \
 	-Wl,--fatal-warnings,-z,noexecstack,-z,combreloc
 ARCHDETECTCFLAGS:=$(CFLAGS)
