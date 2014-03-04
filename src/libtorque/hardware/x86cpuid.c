@@ -744,6 +744,20 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 		.level = 2,
 		.tlbtype = MEMTYPE_DATA,
 	},
+	{	.descriptor = 0x61,
+		.pagesize = 4 * 1024,
+		.entries = 48,
+		.associativity = 48,
+		.level = 2,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0x63,
+		.pagesize = 1 * 1024 * 1024 * 1024,
+		.entries = 4,
+		.associativity = 4,
+		.level = 3,
+		.tlbtype = MEMTYPE_DATA,
+	},
 	{	.descriptor = 0xb0,
 		.pagesize = 4 * 1024,
 		.entries = 128,
@@ -988,6 +1002,7 @@ decode_intel_func2(torque_cput *cpu,uint32_t *gpregs){
 				}else if(descriptor == 0xff){
 					// Means "call with leaf 4"
 				}else{
+					//printf("UNKNOWN DESCRIPTOR %x\n",descriptor);
 					return -1;
 				}
 			}
