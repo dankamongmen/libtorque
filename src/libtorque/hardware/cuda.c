@@ -7,6 +7,10 @@ int detect_cudadevcount(void){
 	int count,attr;
 	CUresult cerr;
 
+	// cuInit unknown failures (999) are typically due to a missing module
+	// or a missing /dev node, especially following the introduction of
+	// nvidia-uvm and /dev/nvidia-uvm. Running as root will facilitate the
+	// necessary setup.
 	if((cerr = cuInit(0)) != CUDA_SUCCESS){
 		if(cerr == CUDA_ERROR_NO_DEVICE){
 			return 0;
