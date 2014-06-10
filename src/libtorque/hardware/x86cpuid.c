@@ -1608,6 +1608,12 @@ id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *c
 #define FFLAG_SSE41		0x00080000u // bit 19
 #define FFLAG_SSE42		0x00100000u // bit 20
 #define FFLAG_X2APIC		0x00200000u // bit 21
+#define FFLAG_MOVBE		0x00400000u // bit 22, MOVBE instruction
+#define FFLAG_POPCNT		0x00800000u // bit 23, POPCNT instruction
+#define FFLAG_AES		0x02000000u // bit 25, AESni instructions
+#define FFLAG_XSAVE		0x04000000u // bit 26, XSAVE/XRSTOR/X[SG]ETBV
+#define FFLAG_AVX		0x10000000u // bit 28, AVX
+#define FFLAG_RDRAND		0x40000000u // bit 30, RDRAND
 
 // EDX feature flags
 #define FFLAG_PSE		0x00000008u // bit 3
