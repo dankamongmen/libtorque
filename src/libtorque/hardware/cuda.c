@@ -1,3 +1,4 @@
+#include <string.h>
 #include <libtorque/internal.h>
 #include <libtorque/hardware/cuda.h>
 
