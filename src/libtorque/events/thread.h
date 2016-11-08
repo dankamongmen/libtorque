@@ -27,7 +27,7 @@ int create_efd(void)
 	__attribute__ ((warn_unused_result));
 
 void destroy_evhandler(const torque_ctx *,evhandler *)
-	__attribute__ ((nonnull(1,2)));
+	__attribute__ ((nonnull(1)));
 
 void event_thread(torque_ctx *,evhandler *)
 	__attribute__ ((nonnull(1,2)))

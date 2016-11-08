@@ -1,3 +1,4 @@
+#include <string.h>
 #include <libtorque/torque.h>
 
 // Ugh, must be kept up-to-date viz error enumerate by hand FIXME

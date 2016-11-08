@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 #include <pthread.h>
 #include <sys/resource.h>
 #include <libtorque/events/fd.h>

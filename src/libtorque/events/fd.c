@@ -1,3 +1,4 @@
+#include <string.h>
 #include <pthread.h>
 #include <libtorque/events/fd.h>
 #include <libtorque/events/sysdep.h>
