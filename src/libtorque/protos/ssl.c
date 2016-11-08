@@ -76,7 +76,7 @@ int torque_stop_ssl(void){
 	return ret;
 }
 
-#  if OPENSSL_API_COMPAT >= 0x10000000L
+#if !defined(OPENSSL_API_COMPAT) || OPENSSL_API_COMPAT >= 0x10000000L
 // See threads(3SSL)
 static void
 openssl_lock_callback(int mode,int n,const char *file __attribute__ ((unused)),
