@@ -387,7 +387,7 @@ $(OUT)/%.1torque: %.xml $(GLOBOBJDEPS)
 $(OUT)/%.pdf: %.tex %.bib $(GLOBOBJDEPS)
 	@mkdir -p $(@D)
 	$(LATEX) -output-directory $(@D) $<
-	$(BIBTEX) $(basename $@)
+	openout_any=a $(BIBTEX) $(basename $@)
 	$(LATEX) -output-directory $(@D) $<
 	$(LATEX) -output-directory $(@D) $<
 
