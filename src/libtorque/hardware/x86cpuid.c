@@ -783,14 +783,42 @@ static const intel_tlb_descriptor intel_tlb_descriptors[] = {
 		.pagesize = 4 * 1024,
 		.entries = 128,
 		.associativity = 4,
-		.level = 2,
+		.level = 1,
 		.tlbtype = MEMTYPE_DATA,
 	},
 	{	.descriptor = 0xb4,
 		.pagesize = 4 * 1024,
 		.entries = 256,
 		.associativity = 4,
-		.level = 2,
+		.level = 1,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0xb5,
+		.pagesize = 4 * 1024,
+		.entries = 64,
+		.associativity = 8,
+		.level = 1,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0xb6,
+		.pagesize = 4 * 1024,
+		.entries = 128,
+		.associativity = 8,
+		.level = 1,
+		.tlbtype = MEMTYPE_CODE,
+	},
+	{	.descriptor = 0xba,
+		.pagesize = 4 * 1024,
+		.entries = 64,
+		.associativity = 4,
+		.level = 1,
+		.tlbtype = MEMTYPE_DATA,
+	},
+	{	.descriptor = 0xc0,		// FIXME 4KB/4MB pages
+		.pagesize = 4 * 1024,
+		.entries = 8,
+		.associativity = 4,
+		.level = 1,
 		.tlbtype = MEMTYPE_DATA,
 	},
 	{	.descriptor = 0xca,
@@ -1002,7 +1030,7 @@ decode_intel_func2(torque_cput *cpu,uint32_t *gpregs){
 				}else if(descriptor == 0xff){
 					// Means "call with leaf 4"
 				}else{
-					//printf("UNKNOWN DESCRIPTOR %x\n",descriptor);
+					fprintf(stderr, "UNKNOWN DESCRIPTOR %x\n",descriptor);
 					return -1;
 				}
 			}
@@ -1021,6 +1049,7 @@ id_intel_caches_old(uint32_t maxlevel,torque_cput *cpu){
 	uint32_t gpregs[4],callreps;
 	int ret;
 
+	printf("START DETECT\n");
 	if(maxlevel < CPUID_STANDARD_CPUCONF){
 		return -1;
 	}
@@ -1034,6 +1063,7 @@ id_intel_caches_old(uint32_t maxlevel,torque_cput *cpu){
 		}
 		cpuid(CPUID_STANDARD_CPUCONF,0,gpregs);
 	}
+	printf("GOOD DETECT (%d)\n", ret);
 	return ret;
 }
 
@@ -1048,8 +1078,10 @@ id_intel_caches(uint32_t maxlevel,const struct feature_flags *ff __attribute__ (
 		// deterministic cache function (for some reason). Thankfully,
 		// all multicore processors support said function.
 		cpu->coresperpackage = 1;
+		printf("OLD CACHES!\n");
 		return id_intel_caches_old(maxlevel,cpu);
 	}
+	printf("NEW CACHES!\n");
 	maxdc = level = 1;
 	do{
 		enum { // Table 2.9, IAN 485
@@ -1075,6 +1107,7 @@ id_intel_caches(uint32_t maxlevel,const struct feature_flags *ff __attribute__ (
 			}else if(cachet == NULLCACHE){
 				continue;
 			}else{
+	printf("UNKNOWN CACHE TYPE!\n");
 				return -1;
 			}
 			if(lev > maxdc){
@@ -1099,27 +1132,33 @@ id_intel_caches(uint32_t maxlevel,const struct feature_flags *ff __attribute__ (
 			// Cores per package = EAX[31:26] + 1. Maximum
 			// possible, not necessarily installed.
 			if((cpp = ((gpregs[0] >> 26u) & 0x3fu) + 1) == 0){
+	printf("TOO MANY CORES PER PACKAGE!\n");
 				return -1;
 			}
+	printf("TOO MANY CORES (%u > %u)!\n", cpu->coresperpackage, cpp);
 			if(cpu->coresperpackage == 0){
 				if(maxlevel < CPUID_STANDARD_TOPOLOGY){
 					// See comments within x86_getprocsig()
 					if((cpu->threadspercore /= cpp) == 0){
+				printf("no no no 1\n");
 						return -1;
 					}
 				}
 				cpu->coresperpackage = cpp;
-			}else if(cpu->coresperpackage > cpp){
+			}else if(cpu->coresperpackage / cpu->threadspercore > cpp){
+				printf("no no no 2\n");
 				return -1;
 			}
 			if(mem.sharedways < cpu->threadspercore){
 				mem.sharedways = cpu->threadspercore;
 			}
 			if(add_hwmem(&cpu->memories,&cpu->memdescs,&mem) == NULL){
+				printf("no no no 3\n");
 				return -1;
 			}
 		}while(cachet != NULLCACHE);
 	}while(++level <= maxdc);
+	printf("BACK TO THE OLD!\n");
 	return id_intel_caches_old(maxlevel,cpu);
 }
 
@@ -1761,15 +1800,20 @@ int x86cpuid(torque_cput *cpudesc,unsigned *thread,unsigned *core,
 	if(x86_getprocsig(maxlevel,&cpudesc->spec.x86,&ff)){
 		return -1;
 	}
+	printf("TOPFXN!\n");
 	if(vendor->topfxn && vendor->topfxn(maxlevel,&ff,cpudesc)){
 		return -1;
 	}
+	printf("MEMFXN!\n");
 	if(vendor->memfxn(maxlevel,&ff,cpudesc)){
+		printf("BAD MEMFXN!\n");
 		return -1;
 	}
+	printf("BRANDNAME!\n");
 	if(x86_getbrandname(cpudesc)){
 		return -1;
 	}
+	printf("TOPOLOGXY!\n");
 	if(x86topology(maxlevel,cpudesc,thread,core,pkg)){
 		return -1;
 	}
