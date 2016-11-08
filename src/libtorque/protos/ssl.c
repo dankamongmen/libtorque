@@ -76,6 +76,7 @@ int torque_stop_ssl(void){
 	return ret;
 }
 
+#  if OPENSSL_API_COMPAT >= 0x10000000L
 // See threads(3SSL)
 static void
 openssl_lock_callback(int mode,int n,const char *file __attribute__ ((unused)),
@@ -126,6 +127,7 @@ openssl_dyndestroy_callback(struct CRYPTO_dynlock_value *l,
 	pthread_mutex_destroy(&l->mutex);
 	free(l);
 }
+#endif
 
 static int
 openssl_verify_callback(int preverify_ok,X509_STORE_CTX *xctx __attribute__ ((unused))){
