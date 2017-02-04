@@ -405,7 +405,7 @@ clean:
 mrproper: clean
 	rm -rf $(TAGS)
 
-install: test unsafe-install
+install: unsafe-install
 
 unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
 	@mkdir -p $(PREFIX)/lib
