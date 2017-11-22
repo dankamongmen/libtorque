@@ -68,7 +68,7 @@ torque_err add_timer_to_evhandler(struct torque_ctx *ctx __attribute__ ((unused)
 			free(tm);
 			return TORQUE_ERR_INVAL;
 		}
-		if(add_fd_to_evhandler(ctx,evq,fd,timer_passthru,NULL,cbstate,0)){
+		if(add_fd_to_evhandler(ctx,evq,fd,timer_passthru,NULL,tm,0)){
 			close(fd);
 			free(tm);
 			return TORQUE_ERR_ASSERT;
@@ -98,7 +98,7 @@ torque_err add_timer_to_evhandler(struct torque_ctx *ctx __attribute__ ((unused)
 			free(tm);
 			return TORQUE_ERR_INVAL;
 		}
-		setup_evsource(ev,0,timer_passthru,NULL,cbstate);
+		setup_evsource(ev,0,timer_passthru,NULL,tm);
 		ctx->eventtables.timerev = ev;
 		memcpy(&ctx->eventtables.itimer,t,sizeof(*t));
 	}
