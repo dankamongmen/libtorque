@@ -1,6 +1,6 @@
                  ==================================================
                     libtorque, a multithreaded I/O event library
-                 Copyright © 2009--2016 Nick Black <dank@qemfd.net>
+                 Copyright © 2009--2017 Nick Black <dank@qemfd.net>
                     Render this document with fixed-width fonts!
                  ==================================================
 ___________________________________________________________________
@@ -12,11 +12,11 @@ ___________________________________________________________________
 _____________________________________________ 888 _________________
 continuation-based unix i/o for manycore numa\888/© nick black 20xx
 
-Wiki - http://dank.qemfd.net/dankwiki/index.php/Libtorque
+Wiki - https://nick-black.com/dankwiki/index.php/Libtorque
 Mailing list - http://groups.google.com/group/libtorque-devel
 GitHub project page - http://github.com/dankamongmen/libtorque
 Primary git repository - git://github.com/dankamongmen/libtorque.git
-Bugzilla - http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque
+Bugzilla - https://nick-black.com/bugzilla/buglist.cgi?product=libtorque
 
  I. History and licensing
  II. Minimum requirements
@@ -52,7 +52,7 @@ libtorque was conceived as a project for Professor Richard Vuduc's Fall 2009
 Georgia Institute of Technology. The original proposal for libtorque is
 available at:
 
-        http://dank.qemfd.net/tabpower/cse6230proposal.pdf
+        https://nick-black.com/tabpower/cse6230proposal.pdf
 
 libtorque is licensed under version 2 of the Apache License:
 
@@ -118,7 +118,7 @@ still be used by libtorque without this support, but it will be difficult to
 partition processing and memory elements up among processes. Affinities have
 been part of Linux since 2.5.8. See the Linux kernel's
 Documentation/cpusets.txt and libtorque bug #14
-(http://dank.qemfd.net/bugzilla/show_bug.cgi?id=14) for more info. If cgroups
+(https://nick-black.com/bugzilla/show_bug.cgi?id=14) for more info. If cgroups
 are used, you likely also want CONFIG_GROUP_SCHED.
 
 The SGI libcpuset library (http://oss.sgi.com/projects/cpusets/) was evaluated,

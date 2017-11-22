@@ -49,8 +49,7 @@
 			</author>
 		</authorgroup>
 		<copyright>
-			<year>2009</year>
-			<year>2010</year>
+			<year>2009-2017</year>
 			<holder>&dhusername;</holder>
 		</copyright>
 	</refentryinfo>
@@ -193,7 +192,7 @@
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
-		<para>Search <ulink url="http://dank.qemfd.net/bugzilla/buglist.cgi?product=libtorque"/>.
+		<para>Search <ulink url="https://nick-black.com/bugzilla/buglist.cgi?product=libtorque"/>.
 		Mail bug reports and/or patches to the authors.</para>
 	</refsect1>
 	<refsect1 id="see_also">
@@ -279,7 +278,7 @@
 				<manvolnum>3</manvolnum>
 			</citerefentry>
 		</para>
-		<para>GitHub: <ulink url="http://dank.qemfd.net/dankwiki/index.php/Libtorque"/></para>
+		<para>GitHub: <ulink url="https://nick-black.com/dankwiki/index.php/Libtorque"/></para>
 		<para>Project wiki: <ulink url="http://github.com/dankamongmen/libtorque"/></para>
 	</refsect1>
 </refentry>

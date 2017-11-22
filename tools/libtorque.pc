@@ -5,7 +5,7 @@ includedir=${prefix}/include
 Name: libtorque
 Description: Continuations-based I/O for manycore NUMA machines
 Version: 0.0.1			# FIXME write from makefile
-URL: http://dank.qemfd.net/dankwiki/index.php/Libtorque
+URL: https://nick-black.com/dankwiki/index.php/Libtorque
 Requires: libssl
 Libs: -L${libdir} -ltorque
 Cflags: -I${includedir}

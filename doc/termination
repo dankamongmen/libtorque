@@ -8,7 +8,7 @@ with debuggers and other arbitrary tools, and not allowing termination to slow
 down the usual case of event handling.
 
 Relevant details of the POSIX signal/threads model are available at
-http://dank.qemfd.net/dankwiki/index.php/Pthreads#Pthreads_signal_model
+https://nick-black.com/dankwiki/index.php/Pthreads#Pthreads_signal_model
 
 1. POSIX cancellation unused
 2. API and semantics

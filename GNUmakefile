@@ -197,7 +197,7 @@ TAGS:=.tags
 # Anything that all source->object translations ought dep on. We currently
 # include all header files in this list; it'd be nice to refine that FIXME.
 # We don't include TAGS due to too much rebuilding as a result:
-# http://dank.qemfd.net/bugzilla/show_bug.cgi?id=92
+# https://nick-black.com/bugzilla/show_bug.cgi?id=92
 GLOBOBJDEPS:=$(CINC) $(MAKEFILE_LIST)
 
 # Debugging flags. Normally unused, but uncomment the 2nd line to enable.
