@@ -99,7 +99,7 @@ XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 
 DOT?=$(shell (which dot) 2> /dev/null || echo dot)
 BIBTEX?=$(shell (which bibtex) 2> /dev/null || echo bibtex)
-LATEX?=$(shell (which pdflatex) 2> /dev/null || echo pdflatex) -halt-on-error
+LATEX?=$(shell (which xelatex) 2> /dev/null || echo pdflatex) -halt-on-error
 
 #
 # USER SPECIFICATION AREA ENDS
