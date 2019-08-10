@@ -1,0 +1,11 @@
+pipeline:
+  build:
+    image: library/debian:unstable
+    commands: 
+      - apt-get update
+      - apt-get -y dist-upgrade
+      - apt-get -y install devscripts git-buildpackage
+      - mk-build-deps --install -t'apt-get -y'
+      - autoreconf -fis
+      - make -j8
+      - make test
