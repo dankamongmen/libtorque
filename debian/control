@@ -2,7 +2,7 @@ Source: libtorque
 Priority: optional
 Maintainer: nick black <dankamongmen@gmail.com>
 Build-Depends: debhelper (>= 11), pkg-config, libssl-dev, libadns1-dev,
- libnuma-dev
+ libnuma-dev, exuberant-ctags
 Standards-Version: 4.1.3
 Section: libs
 Homepage: https://nick-black.com/dankwiki/index.php/Libtorque
