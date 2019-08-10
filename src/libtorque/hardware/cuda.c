@@ -64,11 +64,6 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	if((cerr = cuDeviceTotalMem(&mem,c)) != CUDA_SUCCESS){
 		return TORQUE_ERR_ASSERT;
 	}
-	// FIXME do something with mem -- new NUMA node?
-	if((cerr = cuDeviceComputeCapability(&cpudesc->spec.cuda.major,
-			&cpudesc->spec.cuda.minor,c)) != CUDA_SUCCESS){
-		return TORQUE_ERR_ASSERT;
-	}
 	if((str = malloc(CUDASTRLEN)) == NULL){
 		return TORQUE_ERR_RESOURCE;
 	}
