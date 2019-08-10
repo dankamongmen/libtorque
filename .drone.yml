@@ -6,4 +6,4 @@ pipeline:
       - apt-get -y install devscripts git-buildpackage
       - mk-build-deps --install -t'apt-get -y'
       - make -j8 LIBTORQUE_WITHOUT_CUDA=1
-      - make test LIBTORQUE_WITHOUT_CUDA=1
+#      - make test LIBTORQUE_WITHOUT_CUDA=1
