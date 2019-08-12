@@ -4,6 +4,7 @@
 
 #ifndef LIBTORQUE_WITHOUT_CUDA
 #include <cuda.h>
+#include <cuda_runtime_api.h>
 int detect_cudadevcount(void){
 	int count,attr;
 	CUresult cerr;
@@ -43,6 +44,7 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 #else
 	size_t mem;
 #endif
+	struct cudaDeviceProp dprop;
 	CUdevice c;
 	char *str;
 	int attr;
@@ -51,6 +53,11 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	if((cerr = cuDeviceGet(&c,devno)) != CUDA_SUCCESS){
 		return TORQUE_ERR_INVAL;
 	}
+	if((cerr = cudaGetDeviceProperties(&dprop, c)) != CUDA_SUCCESS){
+		return TORQUE_ERR_INVAL;
+	}
+	cpudesc->spec.cuda.major = dprop.major;
+	cpudesc->spec.cuda.minor = dprop.minor;
 	cerr = cuDeviceGetAttribute(&attr,CU_DEVICE_ATTRIBUTE_WARP_SIZE,c);
 	if(cerr != CUDA_SUCCESS || attr <= 0){
 		return TORQUE_ERR_ASSERT;
