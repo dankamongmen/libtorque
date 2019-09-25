@@ -202,7 +202,7 @@ GLOBOBJDEPS:=$(CINC) $(MAKEFILE_LIST)
 
 # Debugging flags. Normally unused, but uncomment the 2nd line to enable.
 DEBUGFLAGS:=-rdynamic -g -D_FORTIFY_SOURCE=2
-DFLAGS+=$(DEBUGFLAGS)
+#DFLAGS+=$(DEBUGFLAGS)
 
 # Main compilation flags. Define with += to inherit from system-specific flags.
 IFLAGS+=-I$(SRCDIR)
@@ -217,7 +217,7 @@ WFLAGS+=-Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
         -Wdeclaration-after-statement -Wfloat-equal -Wpacked -Winvalid-pch \
         -Wdisabled-optimization -Wcast-align -Wformat -Wformat-security \
         -Wold-style-definition -Woverlength-strings -Wwrite-strings \
-	-Wstrict-aliasing=3 -Wunsafe-loop-optimizations -Wstrict-overflow=1
+        -Wstrict-overflow=1
 # We get the following from -O (taken from gcc 4.3 docs)
 # -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop -fdelayed-branch -fdse \
 # -fguess-branch-probability -fif-conversion2 -fif-conversion \
@@ -248,8 +248,7 @@ WFLAGS+=-Wall -W -Wextra -Wmissing-prototypes -Wundef -Wshadow \
 # These require -pthread:
 # -ftree-parallelize-loops
 OFLAGS+=-O2 -fomit-frame-pointer -finline-functions -fdiagnostics-show-option \
-	-fvisibility=hidden -fipa-cp -ftree-loop-linear -ftree-loop-im \
-	-ftree-loop-ivcanon -fno-common -ftree-vectorizer-verbose=5
+	-fvisibility=hidden -fno-common
 #OFLAGS+=-fdump-tree-all
 CFLAGS+=-pipe -std=gnu99 $(DFLAGS)
 MT_CFLAGS:=$(CFLAGS) -pthread $(MT_DFLAGS)
