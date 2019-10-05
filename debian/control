@@ -14,7 +14,7 @@ Package: libtorque-dev
 Section: libdevel
 Architecture: any
 Depends: libtorque1 (= ${binary:Version}), ${misc:Depends}, libssl-dev,
- libadns-dev
+ libadns1-dev
 Description: Event-driven continuations for manycore NUMA (development)
  Continuation-based UNIX I/O for manycore NUMA (development).
 

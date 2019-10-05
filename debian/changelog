@@ -1,6 +1,6 @@
 libtorque (0.0.1-4) unstable; urgency=medium
 
-  * Add libadns-dev to run deps of libtorque-dev
+  * Add libadns1-dev to run deps of libtorque-dev
 
  -- Nick Black <dankamongmen@gmail.com>  Sat, 05 Oct 2019 02:41:06 -0400
 
