@@ -38,7 +38,8 @@ int detect_cudadevcount(void){
 // warp/cores is more our "SIMD width" than threads per core...unused
 #define CORES_PER_NVPROCESSOR 8 //  taken from CUDA 2.3 SDK's deviceQuery.cpp
 torque_err cudaid(torque_cput *cpudesc,unsigned devno){
-	CUresult cerr;
+	cudaError_t cerr;
+	CUresult cres;
 #if CUDA_VERSION < 3020
 	unsigned mem;
 #else
@@ -50,7 +51,7 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	int attr;
 
 	memset(cpudesc,0,sizeof(*cpudesc));
-	if((cerr = cuDeviceGet(&c,devno)) != CUDA_SUCCESS){
+	if((cres = cuDeviceGet(&c,devno)) != CUDA_SUCCESS){
 		return TORQUE_ERR_INVAL;
 	}
 	if((cerr = cudaGetDeviceProperties(&dprop, c)) != CUDA_SUCCESS){
@@ -58,23 +59,23 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	}
 	cpudesc->spec.cuda.major = dprop.major;
 	cpudesc->spec.cuda.minor = dprop.minor;
-	cerr = cuDeviceGetAttribute(&attr,CU_DEVICE_ATTRIBUTE_WARP_SIZE,c);
-	if(cerr != CUDA_SUCCESS || attr <= 0){
+	cres = cuDeviceGetAttribute(&attr,CU_DEVICE_ATTRIBUTE_WARP_SIZE,c);
+	if(cres != CUDA_SUCCESS || attr <= 0){
 		return TORQUE_ERR_ASSERT;
 	}
 	cpudesc->threadspercore = 1;
-	cerr = cuDeviceGetAttribute(&attr,CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT,c);
-	if(cerr != CUDA_SUCCESS || attr <= 0){
+	cres = cuDeviceGetAttribute(&attr,CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT,c);
+	if(cres != CUDA_SUCCESS || attr <= 0){
 		return TORQUE_ERR_ASSERT;
 	}
 	cpudesc->coresperpackage = attr;
-	if((cerr = cuDeviceTotalMem(&mem,c)) != CUDA_SUCCESS){
+	if((cres = cuDeviceTotalMem(&mem,c)) != CUDA_SUCCESS){
 		return TORQUE_ERR_ASSERT;
 	}
 	if((str = malloc(CUDASTRLEN)) == NULL){
 		return TORQUE_ERR_RESOURCE;
 	}
-	if((cerr = cuDeviceGetName(str,CUDASTRLEN,c)) != CUDA_SUCCESS){
+	if((cres = cuDeviceGetName(str,CUDASTRLEN,c)) != CUDA_SUCCESS){
 		free(str);
 		return TORQUE_ERR_ASSERT;
 	}

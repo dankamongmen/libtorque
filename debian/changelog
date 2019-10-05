@@ -1,6 +1,7 @@
 libtorque (0.0.1-2) unstable; urgency=medium
 
   * Fix up debian/copyright file
+  * Move to quilt from native
 
  -- Nick Black <dankamongmen@gmail.com>  Fri, 20 Sep 2019 22:27:50 -0400
 
