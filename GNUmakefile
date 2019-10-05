@@ -23,11 +23,11 @@ UNAME:=$(shell uname)
 # specified. Provide the defaults here. Document these in the README.
 -include GNUmakefile.local
 
-PREFIX?=/usr/local
+prefix?=/usr/local
 ifeq ($(UNAME),FreeBSD)
-DOCPREFIX?=$(PREFIX)/man
+DOCPREFIX?=$(prefix)/man
 else
-DOCPREFIX?=$(PREFIX)/share/man
+DOCPREFIX?=$(prefix)/share/man
 endif
 
 # Some systems don't install exuberant-ctags as 'ctags'. Some people use etags.
@@ -407,31 +407,31 @@ mrproper: clean
 install: unsafe-install
 
 unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
-	@mkdir -p $(PREFIX)/lib
-	$(INSTALL) -m 0644 $(realpath $(REALSOS) $(LIBOUT)/$(TORQUESTAT)) $(PREFIX)/lib
-	@(cd $(PREFIX)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOL)))
+	@mkdir -p $(prefix)/lib
+	$(INSTALL) -m 0644 $(realpath $(REALSOS) $(LIBOUT)/$(TORQUESTAT)) $(prefix)/lib
+	@(cd $(prefix)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOL)))
 ifeq ($(UNAME),FreeBSD)
-	@(cd $(PREFIX)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOR)))
+	@(cd $(prefix)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOR)))
 endif
-	@mkdir -p $(PREFIX)/bin
-	@$(INSTALL) $(BINS) $(PREFIX)/bin
-	@mkdir -p $(PREFIX)/include/lib$(TORQUE)
-	@$(INSTALL) -m 0644 $(INCINSTALL) $(PREFIX)/include/lib$(TORQUE)/
-	@[ ! -d $(PREFIX)/lib/pkgconfig ] || \
-		$(INSTALL) -m 0644 $(PKGCONFIG) $(PREFIX)/lib/pkgconfig
+	@mkdir -p $(prefix)/bin
+	@$(INSTALL) $(BINS) $(prefix)/bin
+	@mkdir -p $(prefix)/include/lib$(TORQUE)
+	@$(INSTALL) -m 0644 $(INCINSTALL) $(prefix)/include/lib$(TORQUE)/
+	@[ ! -d $(prefix)/lib/pkgconfig ] || \
+		$(INSTALL) -m 0644 $(PKGCONFIG) $(prefix)/lib/pkgconfig
 	@mkdir -p $(DOCPREFIX)/man1 $(DOCPREFIX)/man3
 	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
 	@$(INSTALL) -m 0644 $(MAN3OBJ) $(DOCPREFIX)/man3
-	@echo "Running $(LDCONFIG) $(PREFIX)/lib..." && $(LDCONFIG) $(PREFIX)/lib
+	@echo "Running $(LDCONFIG) $(prefix)/lib..." && $(LDCONFIG) $(prefix)/lib
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
 
 deinstall:
 	rm -f $(addprefix $(DOCPREFIX)/man3/,$(notdir $(MAN3OBJ)))
 	rm -f $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
-	rm -rf $(PREFIX)/include/lib$(TORQUE)
-	rm -f $(PREFIX)/lib/pkgconfig/$(notdir $(PKGCONFIG))
-	rm -f $(addprefix $(PREFIX)/bin/,$(notdir $(BINS)))
-	rm -f $(addprefix $(PREFIX)/lib/,$(notdir $(LIBS)))
-	rm -f $(addprefix $(PREFIX)/lib/,$(notdir $(REALSOS) $(TORQUESOL)))
-	@echo "Running $(LDCONFIG) $(PREFIX)/lib..." && $(LDCONFIG) $(PREFIX)/lib
+	rm -rf $(prefix)/include/lib$(TORQUE)
+	rm -f $(prefix)/lib/pkgconfig/$(notdir $(PKGCONFIG))
+	rm -f $(addprefix $(prefix)/bin/,$(notdir $(BINS)))
+	rm -f $(addprefix $(prefix)/lib/,$(notdir $(LIBS)))
+	rm -f $(addprefix $(prefix)/lib/,$(notdir $(REALSOS) $(TORQUESOL)))
+	@echo "Running $(LDCONFIG) $(prefix)/lib..." && $(LDCONFIG) $(prefix)/lib
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
