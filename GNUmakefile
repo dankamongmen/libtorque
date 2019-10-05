@@ -25,9 +25,9 @@ UNAME:=$(shell uname)
 
 prefix?=/usr/local
 ifeq ($(UNAME),FreeBSD)
-DOCPREFIX?=$(prefix)/man
+DOCPREFIX?=$(DESTDIR)/man
 else
-DOCPREFIX?=$(prefix)/share/man
+DOCPREFIX?=$(DESTDIR)/share/man
 endif
 
 # Some systems don't install exuberant-ctags as 'ctags'. Some people use etags.
@@ -407,31 +407,31 @@ mrproper: clean
 install: unsafe-install
 
 unsafe-install: $(LIBS) $(BINS) $(PKGCONFIG) $(DOCS)
-	@mkdir -p $(prefix)/lib
-	$(INSTALL) -m 0644 $(realpath $(REALSOS) $(LIBOUT)/$(TORQUESTAT)) $(prefix)/lib
-	@(cd $(prefix)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOL)))
+	@mkdir -p $(DESTDIR)$(prefix)/lib
+	$(INSTALL) -m 0644 $(realpath $(REALSOS) $(LIBOUT)/$(TORQUESTAT)) $(DESTDIR)$(prefix)/lib
+	@(cd $(DESTDIR)$(prefix)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOL)))
 ifeq ($(UNAME),FreeBSD)
-	@(cd $(prefix)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOR)))
+	@(cd $(DESTDIR)$(prefix)/lib ; ln -sf $(notdir $(REALSOS) $(TORQUESOR)))
 endif
-	@mkdir -p $(prefix)/bin
-	@$(INSTALL) $(BINS) $(prefix)/bin
-	@mkdir -p $(prefix)/include/lib$(TORQUE)
-	@$(INSTALL) -m 0644 $(INCINSTALL) $(prefix)/include/lib$(TORQUE)/
-	@[ ! -d $(prefix)/lib/pkgconfig ] || \
-		$(INSTALL) -m 0644 $(PKGCONFIG) $(prefix)/lib/pkgconfig
+	@mkdir -p $(DESTDIR)$(prefix)/bin
+	@$(INSTALL) $(BINS) $(DESTDIR)$(prefix)/bin
+	@mkdir -p $(DESTDIR)$(prefix)/include/lib$(TORQUE)
+	@$(INSTALL) -m 0644 $(INCINSTALL) $(DESTDIR)$(prefix)/include/lib$(TORQUE)/
+	@mkdir -p $(DESTDIR)$(prefix)/lib/pkgconfig
+	@$(INSTALL) -m 0644 $(PKGCONFIG) $(DESTDIR)$(prefix)/lib/pkgconfig/
 	@mkdir -p $(DOCPREFIX)/man1 $(DOCPREFIX)/man3
 	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
 	@$(INSTALL) -m 0644 $(MAN3OBJ) $(DOCPREFIX)/man3
-	@echo "Running $(LDCONFIG) $(prefix)/lib..." && $(LDCONFIG) $(prefix)/lib
-	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
+	@echo "Running $(LDCONFIG) $(DESTDIR)$(prefix)/lib..." && $(LDCONFIG) $(DESTDIR)$(prefix)/lib || true
+	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX) || true
 
 deinstall:
 	rm -f $(addprefix $(DOCPREFIX)/man3/,$(notdir $(MAN3OBJ)))
 	rm -f $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
-	rm -rf $(prefix)/include/lib$(TORQUE)
-	rm -f $(prefix)/lib/pkgconfig/$(notdir $(PKGCONFIG))
-	rm -f $(addprefix $(prefix)/bin/,$(notdir $(BINS)))
-	rm -f $(addprefix $(prefix)/lib/,$(notdir $(LIBS)))
-	rm -f $(addprefix $(prefix)/lib/,$(notdir $(REALSOS) $(TORQUESOL)))
-	@echo "Running $(LDCONFIG) $(prefix)/lib..." && $(LDCONFIG) $(prefix)/lib
-	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
+	rm -rf $(DESTDIR)$(prefix)/include/lib$(TORQUE)
+	rm -f $(DESTDIR)$(prefix)/lib/pkgconfig/$(notdir $(PKGCONFIG))
+	rm -f $(addprefix $(DESTDIR)$(prefix)/bin/,$(notdir $(BINS)))
+	rm -f $(addprefix $(DESTDIR)$(prefix)/lib/,$(notdir $(LIBS)))
+	rm -f $(addprefix $(DESTDIR)$(prefix)/lib/,$(notdir $(REALSOS) $(TORQUESOL)))
+	@echo "Running $(LDCONFIG) $(DESTDIR)$(prefix)/lib..." && $(LDCONFIG) $(DESTDIR)$(prefix)/lib || true
+	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX) || true

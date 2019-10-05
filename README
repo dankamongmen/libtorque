@@ -188,7 +188,7 @@ install it.
 
 Environment variables can affect the build by overriding defaults:
 
- PREFIX (Installation prefix. Default: /usr/local)
+ DESTDIR (Installation prefix. Default: /usr/local)
  DOCPREFIX (Doc installation prefix. Default: /usr/local/share (Linux),
                                                 /usr/local (FreeBSD))
  CC (C compiler executable. Default: gcc-4.4 (Linux), gcc44 (FreeBSD))
