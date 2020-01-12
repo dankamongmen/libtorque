@@ -1,6 +1,6 @@
 pipeline:
   build:
-    image: library/debian:unstable
+    image: dankamongmen/unstable_builder:2020-01-06a
     commands: 
       - apt-get update
       - apt-get -y install devscripts git-buildpackage
