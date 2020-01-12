@@ -54,7 +54,7 @@ torque_err cudaid(torque_cput *cpudesc,unsigned devno){
 	if((cres = cuDeviceGet(&c,devno)) != CUDA_SUCCESS){
 		return TORQUE_ERR_INVAL;
 	}
-	if((cerr = cudaGetDeviceProperties(&dprop, c)) != CUDA_SUCCESS){
+	if((cerr = cudaGetDeviceProperties(&dprop, c)) != cudaSuccess){
 		return TORQUE_ERR_INVAL;
 	}
 	cpudesc->spec.cuda.major = dprop.major;
