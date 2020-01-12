@@ -3,11 +3,11 @@ Upstream-Name: libtorque
 Source: https://nick-black.com/dankwiki/index.php/Libtorque
 
 Files: *
-Copyright: 2010-2019 Nick Black <dankamongmen@gmail.com>
+Copyright: 2010-2020 Nick Black <dankamongmen@gmail.com>
 License: Apache-2.0
 
 Files: debian/*
-Copyright: 2019 Nick Black <dankamongmen@gmail.com>
+Copyright: 2019-2020 Nick Black <dankamongmen@gmail.com>
 License: Apache-2.0
 
 License: Apache-2.0

@@ -1,3 +1,9 @@
+libtorque (0.0.1-5) unstable; urgency=medium
+
+  * Update copyright dates
+
+ -- Nick Black <dankamongmen@gmail.com>  Sat, 11 Jan 2020 22:39:04 -0500
+
 libtorque (0.0.1-4) unstable; urgency=medium
 
   * Add libadns1-dev to run deps of libtorque-dev
