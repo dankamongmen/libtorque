@@ -108,6 +108,7 @@ typedef struct x86_details {
 		// Floating-point conversion ops, scheduled for AMD Bulldozer.
 		unsigned cvt16 : 1;
 	} features;
+	uint32_t apic; // advanced programmable interrupt controller ID
 } x86_details;
 
 typedef struct cuda_details {

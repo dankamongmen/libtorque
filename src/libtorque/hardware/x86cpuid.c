@@ -54,8 +54,11 @@ typedef enum {
 	CPUID_AMD_L1CACHE_TLB		=       0x80000005, // l1, tlb0 (AMD)
 	CPUID_EXTENDED_L23CACHE_TLB	=       0x80000006, // l2,3, tlb1
 	CPUID_EXTENDED_ENHANCEDPOWER	=       0x80000006, // epm support
-	CPUID_EXTENDED_TOPOLOGY         =       0x80000008, // topology (AMD)
+	CPUID_EXTENDED_LMADDRICORE =       0x80000008, // longmode addr info/corecount
 	CPUID_EXTENDED_GBTLB            =       0x80000019, // 1GB tlbs
+  CPUID_EXTENDED_CACHEPROP = 0x8000001D, // extended cache properties
+  CPUID_EXTENDED_APICID = 0x8000001E, // extended APIC IC
+  CPUID_EXTENDED
 } cpuid_class;
 
 // Uses all four primary general-purpose 32-bit registers (e[abcd]x), returning
@@ -1603,16 +1606,58 @@ id_x86_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *cpu
 #define CPUID_RDTSCP			0x08000000u	// read tscp
 #define CPUID_1GB			0x04000000u	// 1GB/4-level pages
 
+static inline int
+x86apic(unsigned maxlevel,uint32_t *apic){
+	uint32_t gpregs[4],lev;
+
+	// CPUID1.EBX[31:24] is the local APIC on Intel and AMD
+	if(maxlevel < CPUID_CPU_VERSION){
+		return -1; // FIXME any other way to get local APIC?
+	}
+	cpuid(CPUID_CPU_VERSION,0,gpregs);
+	*apic = (gpregs[1] >> 24u) & 0xffu; 	// 8-bit legacy APIC
+	// AMD doesn't have extended APIC as of 25481-Revision 2.28 FIXME
+  // (but does by the time of 25481 Rev 2.34, 2010-09)
+	if(maxlevel < CPUID_STANDARD_TOPOLOGY){ // We only have legacy APIC
+		return 0;
+	}
+	cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
+	// EDX holds the 32-bit Extended APIC. Last 8 bits ought equal legacy.
+	if((gpregs[3] & 0xff) != *apic){
+fprintf(stderr, "apic nonmatch %u != %u\n", gpregs[3], *apic);
+		return -1;
+	}
+fprintf(stderr, "apic nmatch %u == %u\n", gpregs[3], *apic);
+	*apic = gpregs[3];
+	// ECX[15..8] holds "Level type": 0 == invalid, 1 == thread, 2 == core
+	while( (lev = (gpregs[2] >> 8u) & 0xffu) ){
+		switch(lev){
+			case 0x2: // core
+				break;
+			case 0x1: // thread
+				break;
+			default:
+				return -1;
+		}
+		cpuid(CPUID_STANDARD_TOPOLOGY,++lev,gpregs);
+		if(gpregs[3] != *apic){
+			return -1;
+		}
+	}
+	return 0;
+}
+
 static int
-id_amd_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *cpu){
+id_amd_topology(uint32_t maxfunc, const struct feature_flags *ff,
+                torque_cput *cpu){
 	unsigned apiccorebits;
 	uint32_t gpregs[4];
 
 	cpu->coresperpackage = 1;
-	if(maxfunc < CPUID_EXTENDED_TOPOLOGY){
+	if(maxfunc < CPUID_EXTENDED_LMADDRICORE){
 		return id_x86_topology(maxfunc,ff,cpu);
 	}
-	cpuid(CPUID_EXTENDED_TOPOLOGY,0,gpregs);
+	cpuid(CPUID_EXTENDED_LMADDRICORE,0,gpregs);
 	if( (apiccorebits = ((gpregs[2] >> 12u) & 0xf)) ){
 		unsigned z = apiccorebits;
 
@@ -1629,6 +1674,9 @@ id_amd_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *cpu
 		return id_x86_topology(maxfunc,ff,cpu);
 	}
 	cpu->threadspercore = 1;
+	if(x86apic(maxfunc, &cpu->spec.x86.apic)){
+		return -1;
+	}
 	return 0;
 }
 
@@ -1651,6 +1699,9 @@ id_intel_topology(uint32_t maxfunc,const struct feature_flags *ff,torque_cput *c
 		return -1;
 	}
 	if((cpu->coresperpackage = (gpregs[1] & 0xffffu)) == 0){
+		return -1;
+	}
+	if(x86apic(maxfunc, &cpu->spec.x86.apic)){
 		return -1;
 	}
 	return 0;
@@ -1723,61 +1774,21 @@ x86_getprocsig(uint32_t maxfunc,x86_details *cpu,struct feature_flags *ff){
 	return 0;
 }
 
-static inline int
-x86apic(unsigned maxlevel,uint32_t *apic){
-	uint32_t gpregs[4],lev;
-
-	// CPUID1.EBX[31:24] is the local APIC on Intel and AMD
-	if(maxlevel < CPUID_CPU_VERSION){
-		return -1; // FIXME any other way to get local APIC?
-	}
-	cpuid(CPUID_CPU_VERSION,0,gpregs);
-	*apic = (gpregs[1] >> 24u) & 0xffu; 	// 8-bit legacy APIC
-	// AMD doesn't have extended APIC as of 25481-Revision 2.28 FIXME
-	if(maxlevel < CPUID_STANDARD_TOPOLOGY){ // We only have legacy APIC
-		return 0;
-	}
-	cpuid(CPUID_STANDARD_TOPOLOGY,0,gpregs);
-	// EDX holds the 32-bit Extended APIC. Last 8 bits ought equal legacy.
-	if((gpregs[3] & 0xff) != *apic){
-		return -1;
-	}
-	*apic = gpregs[3];
-	// ECX[15..8] holds "Level type": 0 == invalid, 1 == thread, 2 == core
-	while( (lev = (gpregs[2] >> 8u) & 0xffu) ){
-		switch(lev){
-			case 0x2: // core
-				break;
-			case 0x1: // thread
-				break;
-			default:
-				return -1;
-		}
-		cpuid(CPUID_STANDARD_TOPOLOGY,++lev,gpregs);
-		if(gpregs[3] != *apic){
-			return -1;
-		}
-	}
-	return 0;
-}
-
 static int
-x86topology(unsigned maxlevel,const torque_cput *cpu,unsigned *thread,
-				unsigned *core,unsigned *pkg){
-	unsigned tpc,cpp;
-	uint32_t apic;
+x86topology(const torque_cput *cpu, unsigned *thread, 
+            unsigned *core, unsigned *pkg){
+	unsigned tpc, cpp;
+  uint32_t apic;
 
 	*core = 0;
 	*thread = 0;
-	if(x86apic(maxlevel,&apic)){
-		return -1;
-	}
 	if((tpc = cpu->threadspercore) == 0){
 		return -1;
 	}
 	if((cpp = cpu->coresperpackage) == 0){
 		return -1;
 	}
+  apic = cpu->spec.x86.apic;
 	*thread = apic & (tpc - 1);
 	while( (tpc /= 2) ){
 		apic >>= 1;
@@ -1792,8 +1803,7 @@ x86topology(unsigned maxlevel,const torque_cput *cpu,unsigned *thread,
 
 // Before this is called, pin to the desired processor (FIXME enforce?). Relies
 // on the caller to free data upon error.
-int x86cpuid(torque_cput *cpudesc,unsigned *thread,unsigned *core,
-						unsigned *pkg){
+int x86cpuid(torque_cput *cpudesc, unsigned *thread, unsigned *core, unsigned *pkg){
 	const known_x86_vendor *vendor;
 	struct feature_flags ff;
 	uint32_t gpregs[4];
@@ -1804,30 +1814,30 @@ int x86cpuid(torque_cput *cpudesc,unsigned *thread,unsigned *core,
 	cpudesc->memdescs = NULL;
 	cpudesc->strdescription = NULL;
 	cpudesc->tlbs = cpudesc->memories = 0;
-	memset(&cpudesc->spec,0,sizeof(cpudesc->spec));
+	memset(&cpudesc->spec, 0, sizeof(cpudesc->spec));
 	cpudesc->spec.x86.x86type = PROCESSOR_X86_UNKNOWN;
 	cpudesc->threadspercore = cpudesc->coresperpackage = 0;
 	if(!cpuid_available()){
 		return -1;
 	}
-	cpuid(CPUID_MAX_SUPPORT,0,gpregs);
+	cpuid(CPUID_MAX_SUPPORT, 0, gpregs);
 	maxlevel = gpregs[0];
 	if((vendor = lookup_vendor(gpregs + 1)) == NULL){
 		return -1;
 	}
-	if(x86_getprocsig(maxlevel,&cpudesc->spec.x86,&ff)){
+	if(x86_getprocsig(maxlevel, &cpudesc->spec.x86, &ff)){
 		return -1;
 	}
-	if(vendor->topfxn && vendor->topfxn(maxlevel,&ff,cpudesc)){
+	if(vendor->topfxn && vendor->topfxn(maxlevel, &ff, cpudesc)){
 		return -1;
 	}
-	if(vendor->memfxn(maxlevel,&ff,cpudesc)){
+	if(vendor->memfxn(maxlevel, &ff, cpudesc)){
 		return -1;
 	}
 	if(x86_getbrandname(cpudesc)){
 		return -1;
 	}
-	if(x86topology(maxlevel,cpudesc,thread,core,pkg)){
+	if(x86topology(cpudesc, thread, core, pkg)){
 		return -1;
 	}
 	cpudesc->isa = TORQUE_ISA_X86;
