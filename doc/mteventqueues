@@ -112,7 +112,7 @@ availability suffices to synchronize the event handling. An example of this
 would be a callback which simply loops on accept(2) until EAGAIN/EWOULDBLOCK,
 possibly performing some MT-safe processing on each new file descriptor (adding
 the new fd to the event queue would be fine, since we've already shown event
-queue operations to be MT-safe. Otherwise, for instance if reading data from
+queue operations to be MT-safe). Otherwise, for instance if reading data from
 the fd into an associated buffer:
 
  - ET event 1 becomes ready
@@ -190,7 +190,7 @@ anymore, but only a contention-free mutex acquisition and release have been
 "added". Furthermore, this removes the event queue system call from each
 thread; they now only need perform userspace locking (with, of course, a
 system call to waitqueues should the lock be contended, but we presumed
-that this was rare. What we want to avoid is a queue *modification*,
+that this was rare). What we want to avoid is a queue *modification*,
 generated during the event loop, blocking against a retrieval operation
 (preferably without adding a batching step ala the kqueue() API, since this
 can add latency. Remember, retrievals contending means either that load is
